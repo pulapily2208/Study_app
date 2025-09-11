@@ -1,6 +1,6 @@
 # 📂 Study App
-Dự án cuối kỳ môn Phát triển phần mềm trên thiết bị di động
-Nhóm thực hiện: [Trần Trim - Trần Thảo - Phanh - Manh]
+- Dự án cuối kỳ môn Phát triển phần mềm trên thiết bị di động
+-  Nhóm thực hiện: [Trần Trim - Trần Thảo - Phanh - Manh]
 
 ---
 
