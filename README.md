@@ -2,13 +2,13 @@
 - Dự án cuối kỳ môn Phát triển phần mềm trên thiết bị di động
 -  Nhóm thực hiện: [Trần Trim - Trần Thảo - Phanh - Manh]
 - Chia module:
- > **Trim —> Môn học**
+ > **Trim —> Quản lý môn học / học phần**
  >
  > **Phanh —> Thời khóa biểu**
  >
- > **Thảo —> Deadline**
+ > **Thảo —> Deadline & Bài tập**
  >
- > **Manh —> Ghi chú + Thống kê**
+ > **Manh —> Ghi chú / Tài liệu học tập + Thống kê**
 ---
 
 # 🚀 Hướng dẫn tham gia dự án Study App
