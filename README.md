@@ -35,6 +35,9 @@ git pull origin main
 để cập nhật code mới nhất từ mọi người.
 
 ✅ Quy tắc làm việc chung: 
-- Nhớ chạy git pull origin main trước khi code để tránh xung đột.
+- Nhớ chạy trước khi code để tránh xung đột.
+```
+git pull origin main
+```
 - Commit ngắn gọn, dễ hiểu (ví dụ: Fix lỗi login, Thêm màn hình ghi chú).
 - Nếu không chắc, hãy hỏi trước khi push.
