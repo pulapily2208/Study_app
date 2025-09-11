@@ -1,3 +1,9 @@
+# 📂 Study App
+Dự án cuối kỳ môn Phát triển phần mềm trên thiết bị di động
+Nhóm thực hiện: [Trần Trim - Trần Thảo - Phanh - Manh]
+
+---
+
 # 🚀 Hướng dẫn tham gia dự án Study App
 
 # 1️⃣. Lấy code về máy (clone)
