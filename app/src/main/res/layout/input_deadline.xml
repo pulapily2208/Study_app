@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#FFFFFF">
+
+    <!-- Tên sự kiện -->
+    <EditText
+        android:id="@+id/edtTenDeadline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="50dp"
+        android:hint="Tên sự kiện"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:padding="12dp"
+        android:background="@android:color/transparent"/>
+    <EditText
+        android:id="@+id/edtGhiChu"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ghi chú deadline này"
+        android:textSize="15sp"
+        android:padding="12dp"
+        android:background="@android:color/transparent"/>
+
+    <!-- Dòng Cả ngày -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="4dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cả ngày"
+            android:textSize="16sp" />
+
+        <Switch
+            android:id="@+id/switchCaNgay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <!-- Từ -->
+    <LinearLayout
+        android:id="@+id/layoutTu"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/txtTu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Từ"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtNgayGioTu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CN, 9 thg 11, 2025 22:30"
+            android:textSize="16sp"
+            android:textColor="#555555"/>
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:tint="#999999"
+            android:layout_marginStart="10dp"/>
+    </LinearLayout>
+
+    <!-- Đến -->
+    <LinearLayout
+        android:id="@+id/layoutDen"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/txtDen"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Đến"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtNgayGioDen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CN, 9 thg 11, 2025 23:30"
+            android:textSize="16sp"
+            android:textColor="#555555"/>
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:tint="#999999"
+            android:layout_marginStart="10dp"/>
+    </LinearLayout>
+
+    <!-- Lặp lại -->
+    <LinearLayout
+        android:id="@+id/layoutLapLai"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Lặp lại"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtLapLai"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sự kiện một lần"
+            android:textSize="16sp"
+            android:textColor="#555555"/>
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:tint="#999999"
+            android:layout_marginStart="10dp"/>
+    </LinearLayout>
+
+    <!-- Nhắc nhở -->
+    <LinearLayout
+        android:id="@+id/layoutNhacNho"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Nhắc nhở"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtNhacNho"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Trước sự kiện 5 phút"
+            android:textSize="16sp"
+            android:textColor="#555555"/>
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:tint="#999999"
+            android:layout_marginStart="10dp"/>
+    </LinearLayout>
+
+    <!-- Nút -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="25dp">
+
+        <Button
+            android:id="@+id/btnHuy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hủy" />
+
+        <Button
+            android:id="@+id/btnThemDeadline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thêm"
+            android:layout_marginStart="20dp"/>
+    </LinearLayout>
+
+</LinearLayout>
