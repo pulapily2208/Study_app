@@ -1,4 +1,4 @@
-package com.example.study_app;
+package com.example.study_app.ui.Dealine;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,15 +8,12 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.study_app.Adapters.AdapterWeek;
-import com.example.study_app.Models.Deadline;
-import com.example.study_app.Models.Week;
+import com.example.study_app.ui.Dealine.Adapters.AdapterWeek;
+import com.example.study_app.ui.Dealine.Models.Deadline;
+import com.example.study_app.ui.Dealine.Models.Week;
+import com.example.study_app.R;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 
 public class MainDeadLine extends AppCompatActivity {
 

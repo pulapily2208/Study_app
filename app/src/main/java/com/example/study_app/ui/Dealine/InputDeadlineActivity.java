@@ -1,4 +1,4 @@
-package com.example.study_app;
+package com.example.study_app.ui.Dealine;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
@@ -12,7 +12,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.study_app.Models.Deadline;
+import com.example.study_app.ui.Dealine.Models.Deadline;
+import com.example.study_app.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;

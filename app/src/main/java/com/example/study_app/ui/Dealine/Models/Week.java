@@ -1,4 +1,4 @@
-package com.example.study_app.Models;
+package com.example.study_app.ui.Dealine.Models;
 
 import java.util.ArrayList;
 

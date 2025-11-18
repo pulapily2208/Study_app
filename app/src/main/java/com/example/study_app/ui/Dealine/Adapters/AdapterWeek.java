@@ -1,4 +1,4 @@
-package com.example.study_app.Adapters;
+package com.example.study_app.ui.Dealine.Adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -9,8 +9,8 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.example.study_app.Models.Deadline;
-import com.example.study_app.Models.Week;
+import com.example.study_app.ui.Dealine.Models.Deadline;
+import com.example.study_app.ui.Dealine.Models.Week;
 import com.example.study_app.R;
 
 import java.util.ArrayList;

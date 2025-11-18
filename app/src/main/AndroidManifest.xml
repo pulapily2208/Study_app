@@ -21,9 +21,14 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainDeadLine"></activity>
+            android:name=".ui.Dealine.MainDeadLine"></activity>
         <activity
-            android:name=".InputDeadlineActivity"></activity>
+            android:name=".ui.Dealine.InputDeadlineActivity"></activity>
+        <activity
+            android:name=".ui.Subject.SubjectListActivity"></activity>
+        <activity
+            android:name=".ui.Subject.SubjectAddActivity"
+            android:label="Thêm môn học mới" />
     </application>
 
 </manifest>

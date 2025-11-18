@@ -1,4 +1,4 @@
-package com.example.study_app.Adapters;
+package com.example.study_app.ui.Dealine.Adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -6,10 +6,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.study_app.Models.Deadline;
+import com.example.study_app.ui.Dealine.Models.Deadline;
 import com.example.study_app.R;
 
 import java.util.ArrayList;
