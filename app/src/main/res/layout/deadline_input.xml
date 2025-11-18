@@ -180,6 +180,64 @@
             tools:ignore="UseAppTint" />
     </LinearLayout>
 
+    <!-- Icon -->
+    <LinearLayout
+        android:id="@+id/layoutIcon"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Icon"
+            android:textSize="16sp" />
+
+        <ImageView
+            android:id="@+id/imgIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@mipmap/ic_avatar"
+            android:layout_marginEnd="10dp"/>
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_more"
+            app:tint="#999999"
+            tools:ignore="UseAppTint" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutMauSac"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Màu sắc"
+            android:textSize="16sp" />
+
+
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:tint="#999999"
+            android:layout_marginStart="10dp"
+            tools:ignore="UseAppTint" />
+
+
+        </LinearLayout>
+
+
     <!-- Nút -->
     <LinearLayout
         android:layout_width="match_parent"

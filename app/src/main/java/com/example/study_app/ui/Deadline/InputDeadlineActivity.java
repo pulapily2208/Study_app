@@ -1,19 +1,24 @@
-package com.example.study_app.ui.Dealine;
+package com.example.study_app.ui.Deadline;
 
 import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.study_app.ui.Dealine.Models.Deadline;
 import com.example.study_app.R;
+import com.example.study_app.ui.Deadline.Adapters.IconAdapter;
+import com.example.study_app.ui.Deadline.Models.Deadline;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -27,7 +32,20 @@ public class InputDeadlineActivity extends AppCompatActivity {
     Button btnHuy, btnThemDeadline;
     Switch switchCaNgay;
 
+    int[] ICON_LIST = {
+            R.drawable.brain,
+            R.drawable.calendar,
+            R.drawable.code,
+            R.drawable.exam,
+            R.drawable.library,
+            R.drawable.note,
+            R.drawable.brain,
+            R.drawable.tasks,
+            R.drawable.teacher
+    };
+
     int weekIndex;
+    ImageView imgIcon;
 
     Calendar calendarTu = Calendar.getInstance();
     Calendar calendarDen = Calendar.getInstance();
@@ -37,7 +55,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.input_deadline);
+        setContentView(R.layout.deadline_input);
 
         edtTenDeadline = findViewById(R.id.edtTenDeadline);
         edtGhiChu = findViewById(R.id.edtGhiChu);
@@ -46,6 +64,13 @@ public class InputDeadlineActivity extends AppCompatActivity {
         switchCaNgay = findViewById(R.id.switchCaNgay);
         btnHuy = findViewById(R.id.btnHuy);
         btnThemDeadline = findViewById(R.id.btnThemDeadline);
+        imgIcon = findViewById(R.id.imgIcon);
+//        LinearLayout layoutMauSac = findViewById(R.id.layoutMauSac);
+//        layoutMauSac.setOnClickListener(v -> openIconDialog());
+        LinearLayout layoutIcon = findViewById(R.id.layoutIcon);
+
+        layoutIcon.setOnClickListener(v -> openIconDialog(imgIcon));
+
 
         weekIndex = getIntent().getIntExtra("weekIndex", 0);
 
@@ -61,6 +86,32 @@ public class InputDeadlineActivity extends AppCompatActivity {
 
         // Nút Hủy
         btnHuy.setOnClickListener(v -> finish());
+        switchCaNgay.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                // Lấy ngày từ calendarTu hiện tại
+                Calendar startOfDay = (Calendar) calendarTu.clone();
+                startOfDay.set(Calendar.HOUR_OF_DAY, 0);
+                startOfDay.set(Calendar.MINUTE, 0);
+                startOfDay.set(Calendar.SECOND, 0);
+                startOfDay.set(Calendar.MILLISECOND, 0);
+
+                Calendar endOfDay = (Calendar) startOfDay.clone();
+                endOfDay.set(Calendar.HOUR_OF_DAY, 23);
+                endOfDay.set(Calendar.MINUTE, 59);
+                endOfDay.set(Calendar.SECOND, 59);
+                endOfDay.set(Calendar.MILLISECOND, 999);
+
+                calendarTu = startOfDay;
+                calendarDen = endOfDay;
+
+                txtNgayGioTu.setText(sdf.format(calendarTu.getTime()));
+                txtNgayGioDen.setText(sdf.format(calendarDen.getTime()));
+            } else {
+                // bật lại chọn giờ thủ công, giữ nguyên thời gian hiện tại
+                txtNgayGioTu.setText(sdf.format(calendarTu.getTime()));
+                txtNgayGioDen.setText(sdf.format(calendarDen.getTime()));
+            }
+        });
 
         // Nút Thêm
         btnThemDeadline.setOnClickListener(v -> {
@@ -78,7 +129,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
             Deadline dlNew;
             if (!ten.isEmpty()) {
 
-                dlNew=new Deadline(ten,ghiChu,tu,den);
+                dlNew=new Deadline(ten,ghiChu,tu,den,selectedIcon);
 
                 Intent result = new Intent();
                 result.putExtra("weekIndex", weekIndex);
@@ -113,4 +164,28 @@ public class InputDeadlineActivity extends AppCompatActivity {
 
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
+
+    private int selectedIcon = R.drawable.ic_launcher_foreground; // icon mặc định
+
+    private void openIconDialog(ImageView targetView) {
+        Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.deadline_dialog_icon);
+
+        GridView gridView = dialog.findViewById(R.id.gridIcons);
+        IconAdapter adapter = new IconAdapter(this, ICON_LIST);
+        gridView.setAdapter(adapter);
+
+        gridView.setOnItemClickListener((parent, view, position, id) -> {
+            selectedIcon = ICON_LIST[position];
+
+            // cập nhật icon ngay cho ImageView
+            targetView.setImageResource(selectedIcon);
+
+            Toast.makeText(this, "Đã chọn icon!", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
 }

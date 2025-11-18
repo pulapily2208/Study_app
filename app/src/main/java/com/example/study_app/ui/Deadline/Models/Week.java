@@ -1,4 +1,4 @@
-package com.example.study_app.ui.Dealine.Models;
+package com.example.study_app.ui.Deadline.Models;
 
 import java.util.ArrayList;
 
