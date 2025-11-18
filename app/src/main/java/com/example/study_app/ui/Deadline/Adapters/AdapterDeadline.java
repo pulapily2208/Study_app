@@ -1,4 +1,4 @@
-package com.example.study_app.Adapters;
+package com.example.study_app.ui.Deadline.Adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -9,8 +9,8 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.study_app.Models.Deadline;
 import com.example.study_app.R;
+import com.example.study_app.ui.Deadline.Models.Deadline;
 
 import java.util.ArrayList;
 
@@ -38,6 +38,11 @@ public class AdapterDeadline extends ArrayAdapter<Deadline> {
         TextView tvTieuDe = convertView.findViewById(R.id.tvTieuDe);
         TextView tvKetQua = convertView.findViewById(R.id.tvKetQua);
         CheckBox cbXacNhan= convertView.findViewById(R.id.cbXacNhan);
+        ImageView ivAnh = convertView.findViewById(R.id.ivAnh);
+
+
+
+        ivAnh.setImageResource(deadlines.get(position).getIcon());
 
         Deadline d = deadlines.get(position);
         tvTieuDe.setText(d.getTieuDe());
@@ -64,8 +69,12 @@ public class AdapterDeadline extends ArrayAdapter<Deadline> {
 
         return convertView;
     }
-    public void addDeadline(Deadline dl) {
-        this.deadlines.add(dl);
-        notifyDataSetChanged();
+
+    public interface OnDeadlineActionListener {
+        void onEdit(Deadline d, int position);
+        void onDelete(Deadline d, int position);
+        void onPin(Deadline d, int position);
     }
+
+
 }

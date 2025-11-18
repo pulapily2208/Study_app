@@ -1,4 +1,4 @@
-package com.example.study_app;
+package com.example.study_app.ui.Deadline;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,15 +8,12 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.study_app.Adapters.AdapterWeek;
-import com.example.study_app.Models.Deadline;
-import com.example.study_app.Models.Week;
+import com.example.study_app.R;
+import com.example.study_app.ui.Deadline.Adapters.AdapterWeek;
+import com.example.study_app.ui.Deadline.Models.Deadline;
+import com.example.study_app.ui.Deadline.Models.Week;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 
 public class MainDeadLine extends AppCompatActivity {
 
@@ -29,7 +26,7 @@ public class MainDeadLine extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main_deadline);
+        setContentView(R.layout.deadline_main);
 
         lvItemTuan = findViewById(R.id.lvItemTuan);
 
@@ -39,7 +36,7 @@ public class MainDeadLine extends AppCompatActivity {
             listWeek.add(new Week("Tuần " + (i + 1)));
         }
 
-        adapterWeek = new AdapterWeek(this, R.layout.item_tuan, listWeek);
+        adapterWeek = new AdapterWeek(this, R.layout.deadline_item_tuan, listWeek);
         lvItemTuan.setAdapter(adapterWeek);
 
 

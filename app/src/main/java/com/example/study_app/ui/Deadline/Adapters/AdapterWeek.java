@@ -1,4 +1,4 @@
-package com.example.study_app.Adapters;
+package com.example.study_app.ui.Deadline.Adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -9,9 +9,9 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.example.study_app.Models.Deadline;
-import com.example.study_app.Models.Week;
 import com.example.study_app.R;
+import com.example.study_app.ui.Deadline.Models.Deadline;
+import com.example.study_app.ui.Deadline.Models.Week;
 
 import java.util.ArrayList;
 
@@ -40,7 +40,7 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         // Tạo adapterDeadline cho từng tuần một lần
         adapters = new ArrayList<>();
         for (Week w : weeks) {
-            adapters.add(new AdapterDeadline(context, R.layout.item_deadline, w.getDeadlines()));
+            adapters.add(new AdapterDeadline(context, R.layout.deadline_item, w.getDeadlines()));
         }
     }
 
