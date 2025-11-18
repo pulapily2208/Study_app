@@ -1,4 +1,4 @@
-package com.example.study_app.ui.Dealine.Models;
+package com.example.study_app.ui.Deadline.Models;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -11,6 +11,7 @@ public class Deadline implements Serializable {
     private Date ngayBatDau;
     private Date ngayKetThuc;
     private boolean completed;
+    private int icon;
 
     public Deadline(String tieuDe,String noiDung, Date ngayBatDau, Date ngayKetThuc) {
         this.tieuDe = tieuDe;
@@ -27,6 +28,14 @@ public class Deadline implements Serializable {
 
     public void setMaDl(int maDl) {
         this.maDl = maDl;
+    }
+
+    public int getIcon() {
+        return icon;
+    }
+
+    public void setIcon(int icon) {
+        this.icon = icon;
     }
 
     public boolean isCompleted() { return completed; }

@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS notes (
 -- Attachments (generic link)
 CREATE TABLE IF NOT EXISTS attachments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    owner_type TEXT NOT NULL, -- 'note' | 'deadline' | 'timetable'
+    owner_type TEXT NOT NULL,
     owner_id INTEGER NOT NULL,
     file_path TEXT,
     file_name TEXT,

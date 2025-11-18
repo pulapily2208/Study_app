@@ -129,7 +129,8 @@ public class InputDeadlineActivity extends AppCompatActivity {
             Deadline dlNew;
             if (!ten.isEmpty()) {
 
-                dlNew=new Deadline(ten,ghiChu,tu,den,selectedIcon);
+                dlNew = new Deadline(ten, ghiChu, tu, den); // 1. Tạo đối tượng với hàm khởi tạo cũ
+                dlNew.setIcon(selectedIcon);                 // 2. Dùng phương thức setIcon() để gán icon
 
                 Intent result = new Intent();
                 result.putExtra("weekIndex", weekIndex);

@@ -1,4 +1,4 @@
-package com.example.study_app.ui.Dealine;
+package com.example.study_app.ui.Deadline;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,8 +9,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
-import com.example.study_app.ui.Dealine.Adapters.AdapterDeadline;
-import com.example.study_app.ui.Dealine.Models.Deadline;
+import com.example.study_app.ui.Deadline.Adapters.AdapterDeadline;
+import com.example.study_app.ui.Deadline.Models.Deadline;
 
 import java.util.ArrayList;
 
@@ -26,7 +26,7 @@ public class MainDeadLine extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main_deadline);
+        setContentView(R.layout.deadline_main);
 
         // Initialize views
         lvDeadlines = findViewById(R.id.lvItemTuan);
@@ -60,7 +60,7 @@ public class MainDeadLine extends AppCompatActivity {
             deadlineList = dbHelper.getDeadlinesByMaHp(subjectMaHp);
 
             // Create and set your old adapter with the correct layout
-            adapterDeadline = new AdapterDeadline(this, R.layout.item_deadline, deadlineList);
+            adapterDeadline = new AdapterDeadline(this, R.layout.deadline_item, deadlineList);
             lvDeadlines.setAdapter(adapterDeadline);
         }
     }

@@ -14,7 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
-import com.example.study_app.ui.Dealine.MainDeadLine;
+import com.example.study_app.ui.Deadline.MainDeadLine;
 import com.example.study_app.ui.Subject.Model.Subject;
 
 import java.util.List;

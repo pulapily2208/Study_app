@@ -3,6 +3,10 @@ package com.example.study_app.ui.Subject;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,6 +28,8 @@ public class SubjectListActivity extends AppCompatActivity {
     private SubjectAdapter subjectAdapter;
     private DatabaseHelper dbHelper;
     private ArrayList<Subject> subjectList;
+    private Spinner spinnerSemesters;
+    private TextView tvEmptyList;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -32,12 +38,13 @@ public class SubjectListActivity extends AppCompatActivity {
 
         fab = findViewById(R.id.fab);
         recyclerViewSubjects = findViewById(R.id.recyclerViewSubjects);
+        spinnerSemesters = findViewById(R.id.spinnerSemesters);
+        tvEmptyList = findViewById(R.id.tvEmptyList);
 
         dbHelper = new DatabaseHelper(this);
         subjectList = new ArrayList<>();
 
         // Set up the adapter and RecyclerView
-        // Pass 'this' as the context, which is now required by the adapter's constructor
         subjectAdapter = new SubjectAdapter(this, subjectList);
         recyclerViewSubjects.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewSubjects.setAdapter(subjectAdapter);
@@ -49,20 +56,48 @@ public class SubjectListActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        spinnerSemesters.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedSemester = (String) parent.getItemAtPosition(position);
+                loadSubjects(selectedSemester);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Load subjects every time the activity is resumed to reflect changes.
-        loadSubjects();
+        // Load semesters every time the activity is resumed.
+        // This will also trigger onItemSelected and load subjects for the first semester.
+        loadSemesters();
     }
 
-    private void loadSubjects() {
-        // 1. Get updated list from the database
-        ArrayList<Subject> updatedSubjects = dbHelper.getAllSubjects();
+    private void loadSemesters() {
+        ArrayList<String> semesterNames = dbHelper.getAllSemesterNames();
+        ArrayAdapter<String> semesterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, semesterNames);
+        semesterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSemesters.setAdapter(semesterAdapter);
 
-        // 2. Clear the old list in the adapter
+        if (semesterNames.isEmpty()) {
+            // If there are no semesters, clear the list and show empty state
+            subjectList.clear();
+            subjectAdapter.notifyDataSetChanged();
+            checkEmptyState();
+        }
+    }
+
+    private void loadSubjects(String semesterName) {
+        // 1. Get updated list from the database for the selected semester
+        ArrayList<Subject> updatedSubjects = dbHelper.getSubjectsBySemester(semesterName);
+
+        // 2. Clear the old list
         subjectList.clear();
 
         // 3. Add all new subjects
@@ -70,5 +105,18 @@ public class SubjectListActivity extends AppCompatActivity {
 
         // 4. Notify the adapter to refresh the RecyclerView
         subjectAdapter.notifyDataSetChanged();
+
+        // 5. Check if the list is empty and update UI
+        checkEmptyState();
+    }
+
+    private void checkEmptyState() {
+        if (subjectList.isEmpty()) {
+            recyclerViewSubjects.setVisibility(View.GONE);
+            tvEmptyList.setVisibility(View.VISIBLE);
+        } else {
+            recyclerViewSubjects.setVisibility(View.VISIBLE);
+            tvEmptyList.setVisibility(View.GONE);
+        }
     }
 }
