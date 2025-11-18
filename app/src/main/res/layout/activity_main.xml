@@ -12,10 +12,13 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_margin="20dp"
-        android:layout_marginTop="100dp">
+        android:layout_marginTop="100dp"
+        tools:ignore="MissingConstraints">
         <Button
+            android:id="@+id/btnSubject"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="Subject"/>
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
