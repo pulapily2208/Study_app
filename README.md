@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+# Study_app
+=======
 # 📂 Study App
 - Dự án cuối kỳ môn Phát triển phần mềm trên thiết bị di động
 -  Nhóm thực hiện: [Trần Trim - Trần Thảo - Phanh - Manh]
@@ -48,3 +51,4 @@ git pull origin main
 ```
 - Commit ngắn gọn, dễ hiểu (ví dụ: Fix lỗi login, Thêm màn hình ghi chú).
 - Nếu không chắc, hãy hỏi trước khi push.
+>>>>>>> cfc3a8b466a6aac45899e2d72a6674ec283721ff
