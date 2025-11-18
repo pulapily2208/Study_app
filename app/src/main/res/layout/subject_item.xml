@@ -26,15 +26,29 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <!-- Nút 3 chấm (Options Menu) -->
+        <ImageView
+            android:id="@+id/iv_options_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@android:drawable/ic_menu_more"
+            android:padding="8dp"
+            app:tint="?android:attr/textColorSecondary"
+            android:contentDescription="Tùy chọn"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+
         <!-- Nội dung chính -->
         <LinearLayout
             android:id="@+id/content_layout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
             android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/iv_options_menu"
             app:layout_constraintStart_toEndOf="@id/color_bar"
             app:layout_constraintTop_toTopOf="parent">
 

@@ -37,7 +37,8 @@ public class SubjectListActivity extends AppCompatActivity {
         subjectList = new ArrayList<>();
 
         // Set up the adapter and RecyclerView
-        subjectAdapter = new SubjectAdapter(subjectList);
+        // Pass 'this' as the context, which is now required by the adapter's constructor
+        subjectAdapter = new SubjectAdapter(this, subjectList);
         recyclerViewSubjects.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewSubjects.setAdapter(subjectAdapter);
 

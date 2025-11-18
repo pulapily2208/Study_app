@@ -1,35 +1,31 @@
 package com.example.study_app.ui.Subject.Model;
 
-import androidx.room.Entity;
-import androidx.room.PrimaryKey;
-
-@Entity(tableName = "subjects")
 public class Subject {
-    @PrimaryKey(autoGenerate = true)
-    public int id;
-    public String maMon;
-    public String tenMon;
+
+    public String maHp;
+    public String tenHp;
+    public int soTinChi;
     public String phongHoc;
-    public String loaiMon; // "Chuyên ngành" hoặc "Môn chung"
+    public String loaiHp;
     public String ngayBatDau;
     public String ngayKetThuc;
     public int soTuanHoc;
     public String gioBatDau;
     public String gioKetThuc;
     public String giangVien;
-    public int soTinChi;
     public String ghiChu;
 
-    // Constructors
+
+    // Default constructor
     public Subject() {
-        // Default constructor required for Room
     }
 
-    public Subject(String maMon, String tenMon, String phongHoc, String loaiMon, String ngayBatDau, String ngayKetThuc, int soTuanHoc, String gioBatDau, String gioKetThuc, String giangVien, int soTinChi, String ghiChu) {
-        this.maMon = maMon;
-        this.tenMon = tenMon;
+    // Constructor for SubjectAddActivity
+    public Subject(String maHp, String tenHp, String phongHoc, String loaiHp, String ngayBatDau, String ngayKetThuc, int soTuanHoc, String gioBatDau, String gioKetThuc, String giangVien, int soTinChi, String ghiChu) {
+        this.maHp = maHp;
+        this.tenHp = tenHp;
         this.phongHoc = phongHoc;
-        this.loaiMon = loaiMon;
+        this.loaiHp = loaiHp;
         this.ngayBatDau = ngayBatDau;
         this.ngayKetThuc = ngayKetThuc;
         this.soTuanHoc = soTuanHoc;
@@ -38,5 +34,15 @@ public class Subject {
         this.giangVien = giangVien;
         this.soTinChi = soTinChi;
         this.ghiChu = ghiChu;
+    }
+
+
+    // Getters and Setters
+    public String getMaHp() {
+        return maHp;
+    }
+
+    public String getTenHp() {
+        return tenHp;
     }
 }

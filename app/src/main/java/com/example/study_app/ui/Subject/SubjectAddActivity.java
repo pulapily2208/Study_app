@@ -172,7 +172,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         // Save to DATABASE using DatabaseHelper
         dbHelper.addSubject(newSubject);
 
-        Toast.makeText(this, "Đã lưu môn học: " + newSubject.tenMon, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Đã lưu môn học: " + newSubject.tenHp, Toast.LENGTH_LONG).show();
         finish(); // Close activity after saving
     }
 }

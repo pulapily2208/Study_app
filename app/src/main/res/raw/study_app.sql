@@ -1,7 +1,4 @@
 PRAGMA foreign_keys = ON;
--- =====================
--- SCHEMA: BẢN GỐC (giữ nguyên/cải tiến)
--- =====================
 
 CREATE TABLE IF NOT EXISTS hoc_ky (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,10 +40,6 @@ CREATE TABLE IF NOT EXISTS hoc_phan_tien_quyet (
     FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp),
     FOREIGN KEY (ma_hp_tien_quyet) REFERENCES mon_hoc(ma_hp)
 );
-
--- =====================
--- SCHEMA: BẢNG MỞ RỘNG CHO ỨNG DỤNG
--- =====================
 
 -- Người dùng
 CREATE TABLE IF NOT EXISTS users (

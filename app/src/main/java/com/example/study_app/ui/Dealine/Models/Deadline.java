@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class Deadline implements Serializable {
+    private int maDl; // Added field for the deadline ID
     private String tieuDe,noiDung;
     private Date ngayBatDau;
     private Date ngayKetThuc;
@@ -18,6 +19,16 @@ public class Deadline implements Serializable {
         this.ngayBatDau = ngayBatDau;
         this.ngayKetThuc = ngayKetThuc;
     }
+
+    // Getter and Setter for maDl
+    public int getMaDl() {
+        return maDl;
+    }
+
+    public void setMaDl(int maDl) {
+        this.maDl = maDl;
+    }
+
     public boolean isCompleted() { return completed; }
     public void setCompleted(boolean completed) { this.completed = completed; }
 
