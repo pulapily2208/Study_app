@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -16,7 +18,8 @@
         android:textSize="18sp"
         android:textStyle="bold"
         android:padding="12dp"
-        android:background="@android:color/transparent"/>
+        android:background="@android:color/transparent" />
+
     <EditText
         android:id="@+id/edtGhiChu"
         android:layout_width="match_parent"
@@ -24,7 +27,7 @@
         android:hint="Ghi chú deadline này"
         android:textSize="15sp"
         android:padding="12dp"
-        android:background="@android:color/transparent"/>
+        android:background="@android:color/transparent" />
 
     <!-- Dòng Cả ngày -->
     <LinearLayout
@@ -69,14 +72,15 @@
             android:layout_height="wrap_content"
             android:text="CN, 9 thg 11, 2025 22:30"
             android:textSize="16sp"
-            android:textColor="#555555"/>
+            android:textColor="#555555" />
 
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_more"
-            android:tint="#999999"
-            android:layout_marginStart="10dp"/>
+            android:layout_marginStart="10dp"
+            app:tint="#999999"
+            tools:ignore="UseAppTint" />
     </LinearLayout>
 
     <!-- Đến -->
@@ -108,7 +112,8 @@
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_more"
             android:tint="#999999"
-            android:layout_marginStart="10dp"/>
+            android:layout_marginStart="10dp"
+            tools:ignore="UseAppTint" />
     </LinearLayout>
 
     <!-- Lặp lại -->
@@ -139,7 +144,8 @@
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_more"
             android:tint="#999999"
-            android:layout_marginStart="10dp"/>
+            android:layout_marginStart="10dp"
+            tools:ignore="UseAppTint" />
     </LinearLayout>
 
     <!-- Nhắc nhở -->
@@ -170,7 +176,8 @@
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_more"
             android:tint="#999999"
-            android:layout_marginStart="10dp"/>
+            android:layout_marginStart="10dp"
+            tools:ignore="UseAppTint" />
     </LinearLayout>
 
     <!-- Nút -->

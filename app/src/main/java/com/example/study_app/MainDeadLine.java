@@ -42,6 +42,31 @@ public class MainDeadLine extends AppCompatActivity {
         adapterWeek = new AdapterWeek(this, R.layout.item_tuan, listWeek);
         lvItemTuan.setAdapter(adapterWeek);
 
+
+
+
+        launcher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+
+                        Intent data = result.getData();
+
+                        // Lấy tuần Index
+                        int weekIndex = data.getIntExtra("weekIndex", 0);
+
+                        // Lấy object Deadline
+                        Deadline dlNew = (Deadline) data.getSerializableExtra(InputDeadlineActivity.KEY_TAI_KHOAN);
+
+                        if (dlNew != null) {
+                            adapterWeek.addDeadlineToWeek(weekIndex, dlNew);
+
+//                            listWeek.get(weekIndex).getDeadlines().add(dlNew);
+                            adapterWeek.notifyDataSetChanged();
+                        }
+                    }
+                }
+        );
         // Khi nhấn nút Thêm ở từng tuần
         adapterWeek.setOnAddDeadlineListener(position -> {
             Intent intent = new Intent(MainDeadLine.this, InputDeadlineActivity.class);
@@ -49,32 +74,5 @@ public class MainDeadLine extends AppCompatActivity {
             launcher.launch(intent);
         });
 
-        // ActivityResultLauncher để nhận dữ liệu từ InputDeadlineActivity
-        launcher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        Intent data = result.getData();
-
-                        int weekIndex = data.getIntExtra("weekIndex", 0);
-                        String ten = data.getStringExtra("ten");
-                        String ghiChu = data.getStringExtra("ghiChu");
-                        String tu = data.getStringExtra("tu");
-                        String den = data.getStringExtra("den");
-
-                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                        try {
-                            Date ngayTu = sdf.parse(tu);
-                            Date ngayDen = sdf.parse(den);
-
-                            Deadline deadline = new Deadline(ten, ngayTu, ngayDen);
-                            listWeek.get(weekIndex).getDeadlines().add(deadline);
-                            adapterWeek.notifyDataSetChanged();
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-        );
     }
 }
