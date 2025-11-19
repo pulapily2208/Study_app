@@ -29,6 +29,13 @@ CREATE TABLE IF NOT EXISTS mon_hoc (
     hoc_ky INTEGER,
     loai_hp TEXT,
     khoa_id INTEGER,
+    giang_vien TEXT,
+    phong_hoc TEXT,
+    ngay_bat_dau TEXT,
+    ngay_ket_thuc TEXT,
+    gio_bat_dau TEXT,
+    gio_ket_thuc TEXT,
+    ghi_chu TEXT,
     color_tag TEXT DEFAULT '#448184',
     FOREIGN KEY (khoa_id) REFERENCES khoa(id)
 );

@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -281,6 +282,12 @@ public class SubjectAddActivity extends AppCompatActivity {
             }
             long newRowId = dbHelper.addSubject(subject);
             if (newRowId != -1) {
+                int semesterId = dbHelper.getSemesterIdByName(currentSemesterName);
+                if (semesterId != -1) {
+                    dbHelper.enrollSubjectInSemester(maHp, semesterId);
+                } else {
+                    Log.w("SubjectAddActivity", "Không tìm thấy id học kỳ cho tên: " + currentSemesterName);
+                }
                 Toast.makeText(this, "Thêm môn học thành công", Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
                 finish();
