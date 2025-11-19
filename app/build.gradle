@@ -38,6 +38,12 @@ dependencies {
     implementation "androidx.room:room-runtime:$room_version"
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
+    // them thu vien week view (hien thi tkb)
+    implementation 'com.github.alamkanak:android-week-view:1.2.6'
+
+    // workmanager (tb trươc gio hoc)
+    implementation "androidx.work:work-runtime-ktx:2.9.0"
+
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
