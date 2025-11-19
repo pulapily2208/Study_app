@@ -19,15 +19,16 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "study_app.db";
-    private static final int DB_VERSION = 6; // Incremented version
+    private static final int DB_VERSION = 7; // Tăng phiên bản để migration
 
     private final Context context;
-    // Define date and time formats
+    // Định dạng ngày và giờ
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
@@ -44,55 +45,90 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        try {
-            db.execSQL("DROP TABLE IF EXISTS mon_hoc_tu_chon_map;");
-            db.execSQL("DROP TABLE IF EXISTS notification_schedules;");
-            db.execSQL("DROP TABLE IF EXISTS enrollments;");
-            db.execSQL("DROP TABLE IF EXISTS timetable_sessions;");
-            db.execSQL("DROP TABLE IF EXISTS attachments;");
-            db.execSQL("DROP TABLE IF EXISTS notes;");
-            db.execSQL("DROP TABLE IF EXISTS deadlines;");
-            db.execSQL("DROP TABLE IF EXISTS users;");
-            db.execSQL("DROP TABLE IF EXISTS hoc_phan_tien_quyet;");
-            db.execSQL("DROP TABLE IF EXISTS mon_hoc;");
-            db.execSQL("DROP TABLE IF EXISTS hoc_phan_tu_chon;");
-            db.execSQL("DROP TABLE IF EXISTS khoa;");
-            db.execSQL("DROP TABLE IF EXISTS hoc_ky;");
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error dropping tables.", e);
+        // Migration an toàn: thêm cột thiếu vào bảng mon_hoc nếu cần
+        if (oldVersion < 7) {
+            Log.i("DatabaseHelper", "Đang thực hiện migration từ phiên bản " + oldVersion + " lên " + newVersion);
+            try {
+                // Lấy danh sách các cột hiện tại trong bảng mon_hoc
+                List<String> existingColumns = getColumns(db, "mon_hoc");
+                
+                // Danh sách các cột cần có
+                String[] requiredColumns = {
+                    "giang_vien", "phong_hoc", "ngay_bat_dau", "ngay_ket_thuc",
+                    "gio_bat_dau", "gio_ket_thuc", "ghi_chu"
+                };
+                
+                // Thêm từng cột nếu chưa tồn tại
+                for (String column : requiredColumns) {
+                    if (!existingColumns.contains(column)) {
+                        try {
+                            String alterQuery = "ALTER TABLE mon_hoc ADD COLUMN " + column + " TEXT";
+                            db.execSQL(alterQuery);
+                            Log.i("DatabaseHelper", "Đã thêm cột: " + column);
+                        } catch (Exception e) {
+                            Log.e("DatabaseHelper", "Lỗi khi thêm cột " + column, e);
+                        }
+                    }
+                }
+                
+                Log.i("DatabaseHelper", "Migration hoàn tất thành công");
+            } catch (Exception e) {
+                Log.e("DatabaseHelper", "Lỗi trong quá trình migration", e);
+            }
         }
-        onCreate(db);
     }
 
-    // Helper to parse date string to Date object
+    // Helper method để lấy danh sách cột từ một bảng
+    private List<String> getColumns(SQLiteDatabase db, String tableName) {
+        List<String> columns = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex("name");
+                do {
+                    columns.add(cursor.getString(nameIndex));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách cột từ bảng " + tableName, e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return columns;
+    }
+
+    // Helper để chuyển đổi chuỗi ngày thành đối tượng Date
     private Date parseDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return null;
         try {
             return dateFormat.parse(dateStr);
         } catch (ParseException e) {
-            Log.e("DatabaseHelper", "Error parsing date: " + dateStr, e);
+            Log.e("DatabaseHelper", "Lỗi khi phân tích ngày: " + dateStr, e);
             return null;
         }
     }
 
-    // Helper to parse time string to Date object
+    // Helper để chuyển đổi chuỗi giờ thành đối tượng Date
     private Date parseTime(String timeStr) {
         if (timeStr == null || timeStr.isEmpty()) return null;
         try {
             return timeFormat.parse(timeStr);
         } catch (ParseException e) {
-            Log.e("DatabaseHelper", "Error parsing time: " + timeStr, e);
+            Log.e("DatabaseHelper", "Lỗi khi phân tích giờ: " + timeStr, e);
             return null;
         }
     }
 
-    // Helper to format Date object to date string
+    // Helper để định dạng đối tượng Date thành chuỗi ngày
     private String formatDate(Date date) {
         if (date == null) return null;
         return dateFormat.format(date);
     }
 
-    // Helper to format Date object to time string
+    // Helper để định dạng đối tượng Date thành chuỗi giờ
     private String formatTime(Date time) {
         if (time == null) return null;
         return timeFormat.format(time);
@@ -114,7 +150,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     try {
                         db.execSQL(sqlBuilder.toString());
                     } catch (Exception e) {
-                        Log.e("DatabaseHelper", "Failed to execute SQL: " + sqlBuilder.toString(), e);
+                        Log.e("DatabaseHelper", "Thất bại khi thực thi SQL: " + sqlBuilder.toString(), e);
                     }
                     sqlBuilder.setLength(0);
                 } else {
@@ -122,7 +158,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException("Error reading or executing SQL file.", e);
+            throw new RuntimeException("Lỗi khi đọc hoặc thực thi file SQL.", e);
         }
     }
 
@@ -140,7 +176,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error while getting semester names", e);
+            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách tên học kỳ", e);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -151,14 +187,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public int getSemesterIdByName(String semesterName) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = null;
-        int semesterId = -1; // Default to an invalid ID
+        int semesterId = -1; // Mặc định là ID không hợp lệ
         try {
             cursor = db.query("hoc_ky", new String[]{"id"}, "ten_hoc_ky = ?", new String[]{semesterName}, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
                 semesterId = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error while getting semester ID by name", e);
+            Log.e("DatabaseHelper", "Lỗi khi lấy ID học kỳ theo tên", e);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -192,12 +228,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     subject.gioKetThuc = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
                     subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
                     subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
-                    subject.tenHk = semesterName; // Set semester name
+                    subject.tenHk = semesterName; // Gán tên học kỳ
                     subjectList.add(subject);
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error while getting subjects by semester. Make sure all columns exist in 'mon_hoc' table.", e);
+            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách môn học theo học kỳ. Đảm bảo tất cả các cột tồn tại trong bảng 'mon_hoc'.", e);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -228,7 +264,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error while getting subject by ma_hp. Make sure all columns exist in 'mon_hoc' table.", e);
+            Log.e("DatabaseHelper", "Lỗi khi lấy thông tin môn học theo mã học phần. Đảm bảo tất cả các cột tồn tại trong bảng 'mon_hoc'.", e);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -252,13 +288,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
         values.put("ghi_chu", subject.ghiChu);
         values.put("color_tag", subject.mauSac);
-        return db.insert("mon_hoc", null, values);
+        
+        try {
+            long result = db.insertOrThrow("mon_hoc", null, values);
+            Log.i("DatabaseHelper", "Thêm môn học thành công: " + subject.maHp);
+            return result;
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi thêm môn học: " + subject.maHp, e);
+            return -1;
+        }
     }
 
     public void enrollSubjectInSemester(String maHp, int semesterId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("user_id", 1); // Assuming a default user_id of 1 for now
+        values.put("user_id", 1); // Giả định user_id mặc định là 1 hiện tại
         values.put("ma_hp", maHp);
         values.put("hoc_ky", semesterId);
         db.insert("enrollments", null, values);
@@ -299,7 +343,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     String title = cursor.getString(cursor.getColumnIndexOrThrow("title"));
                     String description = cursor.getString(cursor.getColumnIndexOrThrow("description"));
                     long dueDate = cursor.getLong(cursor.getColumnIndexOrThrow("due_date"));
-                    // Assuming Deadline constructor takes title, description, startDate, and endDate
+                    // Giả định constructor Deadline nhận title, description, startDate, và endDate
                     Deadline deadline = new Deadline(title, description, new Date(dueDate * 1000), new Date(dueDate * 1000));
                     deadline.setMaDl(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
                     deadlineList.add(deadline);
@@ -307,7 +351,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-             Log.e("DatabaseHelper", "Error getting deadlines", e);
+             Log.e("DatabaseHelper", "Lỗi khi lấy danh sách deadline", e);
         } finally {
             if (cursor != null) {
                 cursor.close();
