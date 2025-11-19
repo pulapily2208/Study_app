@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -63,7 +64,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         if (getIntent().hasExtra("SEMESTER_NAME")) {
             currentSemesterName = getIntent().getStringExtra("SEMESTER_NAME");
         } else {
-            Toast.makeText(this, "Lỗi: Không tìm thấy thông tin học kỳ.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_semester_not_found, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -78,7 +79,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             if (!colorViews.isEmpty()) {
                 colorViews.get(0).performClick();
             }
-            rbGeneral.setChecked(true); // Mặc định chọn Môn chung
+            rbGeneral.setChecked(true); // Mặc định chọn Môn chung (đại cương)
         }
     }
 
@@ -117,19 +118,19 @@ public class SubjectAddActivity extends AppCompatActivity {
         if (getIntent().hasExtra("SUBJECT_ID")) {
             isEditMode = true;
             maHpToEdit = getIntent().getStringExtra("SUBJECT_ID");
-            tvActivityTitle.setText("Sửa Môn Học");
+            tvActivityTitle.setText(R.string.edit_subject_title);
             etSubjectCode.setEnabled(false);
 
             Subject subject = dbHelper.getSubjectByMaHp(maHpToEdit);
             if (subject != null) {
                 populateUI(subject);
             } else {
-                Toast.makeText(this, "Lỗi: Không tìm thấy môn học để sửa.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.error_subject_not_found, Toast.LENGTH_SHORT).show();
                 finish();
             }
         } else {
             isEditMode = false;
-            tvActivityTitle.setText("Thêm Môn Học");
+            tvActivityTitle.setText(R.string.add_subject_title);
         }
     }
 
@@ -158,7 +159,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         // Highlight màu đã chọn trong picker
         for (View colorView : colorViews) {
             if (colorView.getTag() != null && colorView.getTag().toString().equalsIgnoreCase(subject.mauSac)) {
-                selectColor(colorView); // Áp dụng hiệu ứng chọn
+                selectColor(colorView); // Áp dụng hiệu ứng chọn màu
                 break;
             }
         }
@@ -168,53 +169,53 @@ public class SubjectAddActivity extends AppCompatActivity {
         // --- VALIDATION ---
         String maHp = etSubjectCode.getText().toString().trim();
         if (TextUtils.isEmpty(maHp)) {
-            Toast.makeText(this, "Mã môn học không được để trống.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_subject_code_empty, Toast.LENGTH_SHORT).show();
             etSubjectCode.requestFocus();
             return;
         }
 
         String tenHp = etSubjectName.getText().toString().trim();
         if (TextUtils.isEmpty(tenHp)) {
-            Toast.makeText(this, "Tên môn học không được để trống.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_subject_name_empty, Toast.LENGTH_SHORT).show();
             etSubjectName.requestFocus();
             return;
         }
 
         String soTcStr = etCredits.getText().toString().trim();
         if (TextUtils.isEmpty(soTcStr)) {
-            Toast.makeText(this, "Số tín chỉ không được để trống.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_credits_empty, Toast.LENGTH_SHORT).show();
             etCredits.requestFocus();
             return;
         }
 
         if (TextUtils.isEmpty(etStartDate.getText().toString())) {
-            Toast.makeText(this, "Vui lòng chọn ngày bắt đầu.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_start_date_empty, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (TextUtils.isEmpty(etEndDate.getText().toString())) {
-            Toast.makeText(this, "Vui lòng chọn ngày kết thúc.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_end_date_empty, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (TextUtils.isEmpty(etStartTime.getText().toString())) {
-            Toast.makeText(this, "Vui lòng chọn giờ bắt đầu.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_start_time_empty, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (TextUtils.isEmpty(etEndTime.getText().toString())) {
-            Toast.makeText(this, "Vui lòng chọn giờ kết thúc.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_end_time_empty, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (selectedColor == null) {
-            Toast.makeText(this, "Vui lòng chọn màu cho môn học.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_color_not_selected, Toast.LENGTH_SHORT).show();
             return;
         }
 
         int selectedRadioButtonId = rgSubjectType.getCheckedRadioButtonId();
         if (selectedRadioButtonId == -1) {
-            Toast.makeText(this, "Vui lòng chọn loại môn học.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_subject_type_not_selected, Toast.LENGTH_SHORT).show();
             return;
         }
         // --- End of Validation ---
@@ -231,7 +232,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         try {
             soTc = Integer.parseInt(soTcStr);
         } catch (NumberFormatException e) {
-            Toast.makeText(this, "Số tín chỉ không hợp lệ.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_credits_invalid, Toast.LENGTH_SHORT).show();
             etCredits.requestFocus();
             return;
         }
@@ -245,7 +246,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             gioBatDau = timeFormat.parse(etStartTime.getText().toString());
             gioKetThuc = timeFormat.parse(etEndTime.getText().toString());
         } catch (ParseException e) {
-            Toast.makeText(this, "Định dạng ngày/giờ không hợp lệ.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_date_time_format, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -268,24 +269,42 @@ public class SubjectAddActivity extends AppCompatActivity {
         if (isEditMode) {
             int rowsAffected = dbHelper.updateSubject(subject);
             if (rowsAffected > 0) {
-                Toast.makeText(this, "Cập nhật môn học thành công", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.update_subject_success, Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
                 finish();
             } else {
-                Toast.makeText(this, "Cập nhật môn học thất bại", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.update_subject_failed, Toast.LENGTH_SHORT).show();
             }
         } else {
+            // Kiểm tra trùng mã môn học
             if (dbHelper.getSubjectByMaHp(maHp) != null) {
-                Toast.makeText(this, "Mã môn học đã tồn tại.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.error_subject_code_exists, Toast.LENGTH_SHORT).show();
                 return;
             }
+            
             long newRowId = dbHelper.addSubject(subject);
             if (newRowId != -1) {
-                Toast.makeText(this, "Thêm môn học thành công", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.add_subject_success, Toast.LENGTH_SHORT).show();
+                
+                // Tự động đăng ký môn học vào học kỳ hiện tại
+                int semesterId = dbHelper.getSemesterIdByName(currentSemesterName);
+                if (semesterId != -1) {
+                    try {
+                        dbHelper.enrollSubjectInSemester(maHp, semesterId);
+                        Log.i("SubjectAddActivity", "Đã tự động đăng ký môn " + maHp + " vào học kỳ " + currentSemesterName);
+                    } catch (Exception e) {
+                        Log.e("SubjectAddActivity", "Lỗi khi tự động đăng ký môn học: " + e.getMessage());
+                        Toast.makeText(this, R.string.enroll_subject_failed, Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Log.w("SubjectAddActivity", "Không tìm thấy ID học kỳ cho: " + currentSemesterName);
+                    Toast.makeText(this, R.string.enroll_subject_failed, Toast.LENGTH_SHORT).show();
+                }
+                
                 setResult(RESULT_OK);
                 finish();
             } else {
-                Toast.makeText(this, "Thêm môn học thất bại", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.add_subject_failed, Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -320,7 +339,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         try {
             colors = getResources().getStringArray(R.array.subject_colors);
         } catch (Exception e) {
-            Toast.makeText(this, "Lỗi: Không tìm thấy R.array.subject_colors", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_color_array_not_found, Toast.LENGTH_SHORT).show();
             colors = new String[]{"#CCCCCC"}; // fallback
         }
 
@@ -350,13 +369,13 @@ public class SubjectAddActivity extends AppCompatActivity {
     private void selectColor(View view) {
         String newColor = (String) view.getTag();
 
-        // Bỏ chọn view cũ
+        // Bỏ chọn view cũ (xóa viền)
         if (selectedColorView != null) {
             GradientDrawable oldBg = (GradientDrawable) selectedColorView.getBackground();
             oldBg.setStroke(4, Color.TRANSPARENT);
         }
 
-        // Chọn view mới
+        // Chọn view mới (thêm viền đen)
         GradientDrawable newBg = (GradientDrawable) view.getBackground();
         newBg.setStroke(10, Color.BLACK); // Thêm viền đen 10px
 
