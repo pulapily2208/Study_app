@@ -24,7 +24,7 @@ import java.util.Locale;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "study_app.db";
-    private static final int DB_VERSION = 6; // Incremented version
+    private static final int DB_VERSION = 7; // Incremented version
 
     private final Context context;
     // Define date and time formats
@@ -45,23 +45,106 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         try {
-            db.execSQL("DROP TABLE IF EXISTS mon_hoc_tu_chon_map;");
-            db.execSQL("DROP TABLE IF EXISTS notification_schedules;");
-            db.execSQL("DROP TABLE IF EXISTS enrollments;");
-            db.execSQL("DROP TABLE IF EXISTS timetable_sessions;");
-            db.execSQL("DROP TABLE IF EXISTS attachments;");
-            db.execSQL("DROP TABLE IF EXISTS notes;");
-            db.execSQL("DROP TABLE IF EXISTS deadlines;");
-            db.execSQL("DROP TABLE IF EXISTS users;");
-            db.execSQL("DROP TABLE IF EXISTS hoc_phan_tien_quyet;");
-            db.execSQL("DROP TABLE IF EXISTS mon_hoc;");
-            db.execSQL("DROP TABLE IF EXISTS hoc_phan_tu_chon;");
-            db.execSQL("DROP TABLE IF EXISTS khoa;");
-            db.execSQL("DROP TABLE IF EXISTS hoc_ky;");
+            // Safe migration for version 7: add missing columns to mon_hoc table
+            if (oldVersion < 7) {
+                Log.i("DatabaseHelper", "Upgrading database from version " + oldVersion + " to " + newVersion);
+                
+                // Get existing columns in mon_hoc table
+                ArrayList<String> existingCols = getColumns(db, "mon_hoc");
+                
+                // Add missing columns if they don't exist
+                if (!existingCols.contains("giang_vien")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN giang_vien TEXT");
+                        Log.i("DatabaseHelper", "Added column: giang_vien");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column giang_vien", e);
+                    }
+                }
+                
+                if (!existingCols.contains("phong_hoc")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN phong_hoc TEXT");
+                        Log.i("DatabaseHelper", "Added column: phong_hoc");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column phong_hoc", e);
+                    }
+                }
+                
+                if (!existingCols.contains("ngay_bat_dau")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN ngay_bat_dau TEXT");
+                        Log.i("DatabaseHelper", "Added column: ngay_bat_dau");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column ngay_bat_dau", e);
+                    }
+                }
+                
+                if (!existingCols.contains("ngay_ket_thuc")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN ngay_ket_thuc TEXT");
+                        Log.i("DatabaseHelper", "Added column: ngay_ket_thuc");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column ngay_ket_thuc", e);
+                    }
+                }
+                
+                if (!existingCols.contains("gio_bat_dau")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN gio_bat_dau TEXT");
+                        Log.i("DatabaseHelper", "Added column: gio_bat_dau");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column gio_bat_dau", e);
+                    }
+                }
+                
+                if (!existingCols.contains("gio_ket_thuc")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN gio_ket_thuc TEXT");
+                        Log.i("DatabaseHelper", "Added column: gio_ket_thuc");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column gio_ket_thuc", e);
+                    }
+                }
+                
+                if (!existingCols.contains("ghi_chu")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN ghi_chu TEXT");
+                        Log.i("DatabaseHelper", "Added column: ghi_chu");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column ghi_chu", e);
+                    }
+                }
+                
+                Log.i("DatabaseHelper", "Database upgrade completed successfully");
+            }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error dropping tables.", e);
+            Log.e("DatabaseHelper", "Error during database upgrade", e);
         }
-        onCreate(db);
+    }
+
+    // Helper method to get existing columns in a table using PRAGMA table_info
+    private ArrayList<String> getColumns(SQLiteDatabase db, String tableName) {
+        ArrayList<String> columns = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex("name");
+                if (nameIndex != -1) {
+                    do {
+                        columns.add(cursor.getString(nameIndex));
+                    } while (cursor.moveToNext());
+                }
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting columns for table: " + tableName, e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return columns;
     }
 
     // Helper to parse date string to Date object
@@ -252,7 +335,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
         values.put("ghi_chu", subject.ghiChu);
         values.put("color_tag", subject.mauSac);
-        return db.insert("mon_hoc", null, values);
+        
+        try {
+            long newRowId = db.insertOrThrow("mon_hoc", null, values);
+            Log.i("DatabaseHelper", "Successfully added subject with ma_hp: " + subject.maHp);
+            return newRowId;
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Failed to add subject with ma_hp: " + subject.maHp, e);
+            return -1;
+        }
     }
 
     public void enrollSubjectInSemester(String maHp, int semesterId) {
