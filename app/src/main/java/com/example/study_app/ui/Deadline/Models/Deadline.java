@@ -13,6 +13,7 @@ public class Deadline implements Serializable {
     private int icon;
     private String reminder; // ví dụ: "Trước 5 phút"
     private String repeat;   // ví dụ: "Một lần", "Hằng tuần"
+    private boolean isPinned = false;
 
     public Deadline(String tieuDe, String noiDung, Date ngayBatDau, Date ngayKetThuc, int icon) {
         this.tieuDe = tieuDe;
@@ -21,6 +22,10 @@ public class Deadline implements Serializable {
         this.ngayKetThuc = ngayKetThuc;
         this.icon = icon;
     }
+
+    public boolean isPinned() { return isPinned; }
+    public void setPinned(boolean pinned) { isPinned = pinned; }
+
     public String getReminderText() {
         return reminder != null ? reminder : "Không có";
     }

@@ -21,14 +21,25 @@ public class AdapterWeek extends ArrayAdapter<Week> {
     private int resource;
     private ArrayList<Week> weeks;
     private OnAddDeadlineListener listener;
-    private ArrayList<AdapterDeadline> adapters; // AdapterDeadline cho từng tuần
+    private OnDeadlineLongClickListener longClickListener; // Listener cho sự kiện nhấn giữ
+    private ArrayList<AdapterDeadline> adapters;
 
+    // Interface thêm mới
     public interface OnAddDeadlineListener {
         void onAddDeadline(int weekIndex);
     }
 
+    // Interface nhấn giữ (Mới thêm)
+    public interface OnDeadlineLongClickListener {
+        void onDeadlineLongClick(int weekIndex, int deadlineIndex, Deadline deadline);
+    }
+
     public void setOnAddDeadlineListener(OnAddDeadlineListener listener) {
         this.listener = listener;
+    }
+
+    public void setOnDeadlineLongClickListener(OnDeadlineLongClickListener listener) {
+        this.longClickListener = listener;
     }
 
     public AdapterWeek(Context context, int resource, ArrayList<Week> weeks) {
@@ -37,7 +48,6 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         this.resource = resource;
         this.weeks = weeks;
 
-        // Tạo adapterDeadline cho từng tuần một lần
         adapters = new ArrayList<>();
         for (Week w : weeks) {
             adapters.add(new AdapterDeadline(context, R.layout.deadline_item, w.getDeadlines()));
@@ -62,12 +72,19 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         Week week = weeks.get(position);
         holder.tvTuan.setText(week.getTenTuan());
 
-        // Chỉ set adapter một lần cho ListView con
         if (holder.lvCongViec.getAdapter() == null) {
             holder.lvCongViec.setAdapter(adapters.get(position));
         }
 
-        // Cập nhật chiều cao ListView con
+        // Xử lý sự kiện nhấn giữ vào item con (Deadline)
+        holder.lvCongViec.setOnItemLongClickListener((parentAv, viewAv, positionAv, idAv) -> {
+            if (longClickListener != null) {
+                // position: vị trí tuần, positionAv: vị trí deadline trong tuần đó
+                longClickListener.onDeadlineLongClick(position, positionAv, week.getDeadlines().get(positionAv));
+            }
+            return true; // Trả về true để không kích hoạt thêm sự kiện click thường
+        });
+
         setListViewHeightBasedOnChildren(holder.lvCongViec);
 
         holder.btnThem.setOnClickListener(v -> {
@@ -77,17 +94,19 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         return convertView;
     }
 
-    // Thêm deadline vào tuần
     public void addDeadlineToWeek(int weekIndex, Deadline dl) {
-        // Thêm vào danh sách tuần
         weeks.get(weekIndex).getDeadlines().add(dl);
-
-        // Chỉ thông báo adapterDeadline cập nhật, không cần adapterWeek.notifyDataSetChanged() nữa
         AdapterDeadline adapter = adapters.get(weekIndex);
-        adapter.notifyDataSetChanged();  // cập nhật ListView con
+        adapter.notifyDataSetChanged();
+    }
+    
+    // Hàm cập nhật UI sau khi xóa/sửa
+    public void updateWeek(int weekIndex) {
+        if (weekIndex >= 0 && weekIndex < adapters.size()) {
+            adapters.get(weekIndex).notifyDataSetChanged();
+        }
     }
 
-    // Tính chiều cao ListView con
     private void setListViewHeightBasedOnChildren(ListView listView) {
         android.widget.ListAdapter adapter = listView.getAdapter();
         if (adapter == null) return;
@@ -105,7 +124,6 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         listView.requestLayout();
     }
 
-    // ViewHolder pattern để tránh tạo lại view
     private static class ViewHolder {
         TextView tvTuan;
         ListView lvCongViec;

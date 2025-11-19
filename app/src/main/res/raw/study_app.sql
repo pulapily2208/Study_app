@@ -62,23 +62,73 @@ CREATE TABLE IF NOT EXISTS users (
     is_active INTEGER DEFAULT 1
 );
 
--- Deadline / Task
-CREATE TABLE IF NOT EXISTS deadlines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    ma_hp TEXT,
+-- Bảng Weeks (Tuần học)
+CREATE TABLE IF NOT EXISTS Weeks (
+    week_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ma_hp TEXT, -- Thay subject_id bằng ma_hp để liên kết với mon_hoc
+    start_date TEXT NOT NULL,
+    num_of_weeks INTEGER NOT NULL,
+    end_date TEXT,
+    FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp) ON DELETE CASCADE
+);
+
+-- Bảng Icons
+CREATE TABLE IF NOT EXISTS Icons (
+    icon_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    icon_name TEXT,
+    icon_path TEXT
+);
+
+-- Bảng Colors
+CREATE TABLE IF NOT EXISTS Colors (
+    color_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    color_name TEXT,
+    color_code TEXT
+);
+
+-- Deadline / Task (CẬP NHẬT THEO YÊU CẦU)
+CREATE TABLE IF NOT EXISTS Deadlines (
+    deadline_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    week_id INTEGER NOT NULL,
     title TEXT NOT NULL,
+    note TEXT,
+    start_datetime TEXT NOT NULL, -- 'YYYY-MM-DD HH:MM:SS'
+    end_datetime TEXT NOT NULL,
+    
+    repeat_type TEXT DEFAULT 'once', -- 'once', 'weekly', 'custom'
+    repeat_days TEXT DEFAULT NULL,   -- Ví dụ: 'Mon,Tue,Wed'
+    
+    completed INTEGER DEFAULT 0,     -- 0 = False, 1 = True
+    
+    icon_id INTEGER,
+    color_id INTEGER,
+    
+    FOREIGN KEY (week_id) REFERENCES Weeks(week_id) ON DELETE CASCADE,
+    FOREIGN KEY (icon_id) REFERENCES Icons(icon_id) ON DELETE SET NULL,
+    FOREIGN KEY (color_id) REFERENCES Colors(color_id) ON DELETE SET NULL
+);
+
+-- Bảng Reminders
+CREATE TABLE IF NOT EXISTS Reminders (
+    reminder_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deadline_id INTEGER NOT NULL,
+    
+    before_start_minutes INTEGER DEFAULT 0,  -- Nhắc trước khi bắt đầu
+    before_end_minutes INTEGER DEFAULT 0,    -- Nhắc trước khi đến hạn
+    
     description TEXT,
-    due_date INTEGER NOT NULL,
-    remind_at INTEGER,
-    priority INTEGER DEFAULT 0,
-    status TEXT DEFAULT 'todo',
-    repeat_rule TEXT,
-    created_at INTEGER,
-    updated_at INTEGER,
-    completed_at INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp) ON DELETE SET NULL
+    
+    FOREIGN KEY (deadline_id) REFERENCES Deadlines(deadline_id) ON DELETE CASCADE
+);
+
+-- Bảng Notifications
+CREATE TABLE IF NOT EXISTS Notifications (
+    notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deadline_id INTEGER NOT NULL,
+    time_remaining INTEGER,       -- thời gian còn lại tính theo phút
+    is_sent INTEGER DEFAULT 0,    -- 0 = False, 1 = True
+    
+    FOREIGN KEY (deadline_id) REFERENCES Deadlines(deadline_id) ON DELETE CASCADE
 );
 
 -- Notes
@@ -174,6 +224,18 @@ CREATE TABLE IF NOT EXISTS mon_hoc_tu_chon_map (
 -- =====================
 -- SEED DATA: DỮ LIỆU GỐC (ĐÃ ĐƠN GIẢN HÓA)
 -- =====================
+
+-- Icons
+INSERT INTO Icons (icon_name, icon_path) VALUES
+('Important', 'icons/important.png'),
+('Study', 'icons/study.png'),
+('Work', 'icons/work.png');
+
+-- Colors
+INSERT INTO Colors (color_name, color_code) VALUES
+('Red', '#FF0000'),
+('Blue', '#0000FF'),
+('Green', '#00FF00');
 
 -- Học kỳ
 INSERT OR IGNORE INTO hoc_ky (id, ten_hoc_ky, nam_hoc) VALUES
