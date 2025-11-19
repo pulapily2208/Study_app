@@ -24,7 +24,7 @@ import java.util.Locale;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "study_app.db";
-    private static final int DB_VERSION = 6; // Incremented version
+    private static final int DB_VERSION = 7; // Incremented version to apply schema changes
 
     private final Context context;
     // Define date and time formats
@@ -252,7 +252,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
         values.put("ghi_chu", subject.ghiChu);
         values.put("color_tag", subject.mauSac);
-        return db.insert("mon_hoc", null, values);
+        try {
+            return db.insertOrThrow("mon_hoc", null, values);
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "addSubject failed", e);
+            return -1;
+        }
     }
 
     public void enrollSubjectInSemester(String maHp, int semesterId) {
