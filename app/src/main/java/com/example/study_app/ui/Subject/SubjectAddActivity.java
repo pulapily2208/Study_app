@@ -78,7 +78,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             if (!colorViews.isEmpty()) {
                 colorViews.get(0).performClick();
             }
-            rbGeneral.setChecked(true); // Mặc định chọn Môn chung
+            rbGeneral.setChecked(true); // Mặc định chọn Môn chung (đại cương)
         }
     }
 
@@ -280,6 +280,7 @@ public class SubjectAddActivity extends AppCompatActivity {
                 Toast.makeText(this, R.string.subject_code_exists, Toast.LENGTH_SHORT).show();
                 return;
             }
+            
             long newRowId = dbHelper.addSubject(subject);
             if (newRowId != -1) {
                 // Enroll the subject in the current semester
@@ -358,13 +359,13 @@ public class SubjectAddActivity extends AppCompatActivity {
     private void selectColor(View view) {
         String newColor = (String) view.getTag();
 
-        // Bỏ chọn view cũ
+        // Bỏ chọn view cũ (xóa viền)
         if (selectedColorView != null) {
             GradientDrawable oldBg = (GradientDrawable) selectedColorView.getBackground();
             oldBg.setStroke(4, Color.TRANSPARENT);
         }
 
-        // Chọn view mới
+        // Chọn view mới (thêm viền đen)
         GradientDrawable newBg = (GradientDrawable) view.getBackground();
         newBg.setStroke(10, Color.BLACK); // Thêm viền đen 10px
 

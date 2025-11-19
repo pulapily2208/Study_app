@@ -25,6 +25,10 @@ import java.util.Locale;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "study_app.db";
+    private static final int DB_VERSION = 7; // Tăng version để thêm các cột mới vào mon_hoc
+
+    private final Context context;
+    // Định dạng ngày giờ
     private static final int DB_VERSION = 7; // Tăng phiên bản để migration
 
     private final Context context;
@@ -45,6 +49,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Migration an toàn: không xóa dữ liệu, chỉ thêm cột thiếu
+        if (oldVersion < 7) {
+            Log.i("DatabaseHelper", "Nâng cấp database từ version " + oldVersion + " lên " + newVersion);
+            
+            // Lấy danh sách cột hiện có trong bảng mon_hoc
+            ArrayList<String> existingColumns = getColumns(db, "mon_hoc");
+            
+            // Danh sách cột cần thêm
+            String[] requiredColumns = {
+                "giang_vien", "phong_hoc", "ngay_bat_dau", 
+                "ngay_ket_thuc", "gio_bat_dau", "gio_ket_thuc", "ghi_chu"
+            };
+            
+            // Thêm từng cột nếu chưa tồn tại
+            for (String column : requiredColumns) {
+                if (!existingColumns.contains(column)) {
+                    try {
+                        String sql = "ALTER TABLE mon_hoc ADD COLUMN " + column + " TEXT";
+                        db.execSQL(sql);
+                        Log.i("DatabaseHelper", "Đã thêm cột " + column + " vào bảng mon_hoc");
+                    } catch (Exception e) {
+                        Log.w("DatabaseHelper", "Không thể thêm cột " + column + ": " + e.getMessage());
+                    }
+                }
+            }
+            
+            Log.i("DatabaseHelper", "Migration hoàn tất, dữ liệu được giữ nguyên");
+        }
+    }
+    
+    // Helper method để lấy danh sách cột của một bảng
         // Migration an toàn: thêm cột thiếu vào bảng mon_hoc nếu cần
         if (oldVersion < 7) {
             Log.i("DatabaseHelper", "Đang thực hiện migration từ phiên bản " + oldVersion + " lên " + newVersion);
@@ -169,6 +204,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null);
             if (cursor != null && cursor.moveToFirst()) {
                 int nameIndex = cursor.getColumnIndex("name");
+                do {
+                    columns.add(cursor.getString(nameIndex));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy thông tin cột của bảng " + tableName, e);
                 if (nameIndex != -1) {
                     do {
                         columns.add(cursor.getString(nameIndex));
