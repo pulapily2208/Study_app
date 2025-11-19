@@ -13,6 +13,9 @@ public class Deadline implements Serializable {
     private boolean completed;
     private int icon;
 
+    // No-argument constructor required for instantiation from database
+    public Deadline() {}
+
     public Deadline(String tieuDe,String noiDung, Date ngayBatDau, Date ngayKetThuc) {
         this.tieuDe = tieuDe;
         this.noiDung = noiDung;

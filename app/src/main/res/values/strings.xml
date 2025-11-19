@@ -44,4 +44,33 @@
     <!-- Activity titles -->
     <string name="activity_title_add">Thêm Môn Học</string>
     <string name="activity_title_edit">Sửa Môn Học</string>
+
+    <string-array name="weeks_array">
+        <item>1 Tuần</item>
+        <item>2 Tuần</item>
+        <item>3 Tuần</item>
+        <item>4 Tuần</item>
+        <item>5 Tuần</item>
+        <item>6 Tuần</item>
+        <item>7 Tuần</item>
+        <item>8 Tuần</item>
+        <item>9 Tuần</item>
+        <item>10 Tuần</item>
+        <item>11 Tuần</item>
+        <item>12 Tuần</item>
+        <item>13 Tuần</item>
+        <item>14 Tuần</item>
+        <item>15 Tuần</item>
+    </string-array>
+
+    <string-array name="subject_colors">
+        <item>@color/green</item>
+        <item>@color/blue</item>
+        <item>@color/yellow</item>
+        <item>@color/beige</item>
+        <item>@color/red</item>
+        <item>@color/purple_500</item>
+        <item>#8BC34A</item>
+        <item>#FFC6FF</item>
+    </string-array>
 </resources>
