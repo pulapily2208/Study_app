@@ -1,48 +1,27 @@
 package com.example.study_app.ui.Subject.Model;
 
+import java.util.Date;
+
 public class Subject {
 
     public String maHp;
     public String tenHp;
-    public int soTinChi;
-    public String phongHoc;
-    public String loaiHp;
-    public String ngayBatDau;
-    public String ngayKetThuc;
-    public int soTuanHoc;
-    public String gioBatDau;
-    public String gioKetThuc;
-    public String giangVien;
-    public String ghiChu;
+    public String tenGv; // Tên giảng viên
+    public int soTc; // Số tín chỉ
+    public String ghiChu; // Ghi chú
+    public String phongHoc; // Phòng học
+    public Date ngayBatDau; // Ngày bắt đầu
+    public Date ngayKetThuc; // Ngày kết thúc
+    public Date gioBatDau; // Giờ bắt đầu
+    public Date gioKetThuc; // Giờ kết thúc
+    public String loaiMon; // Loại môn (Chuyên ngành, Đại cương)
+    public String mauSac; // Màu sắc (VD: #FFFFFF)
+    public String tenHk; // Tên học kỳ (Khóa ngoại)
+    public int soTuanHoc; // Số tuần học
 
 
     // Default constructor
     public Subject() {
     }
 
-    // Constructor for SubjectAddActivity
-    public Subject(String maHp, String tenHp, String phongHoc, String loaiHp, String ngayBatDau, String ngayKetThuc, int soTuanHoc, String gioBatDau, String gioKetThuc, String giangVien, int soTinChi, String ghiChu) {
-        this.maHp = maHp;
-        this.tenHp = tenHp;
-        this.phongHoc = phongHoc;
-        this.loaiHp = loaiHp;
-        this.ngayBatDau = ngayBatDau;
-        this.ngayKetThuc = ngayKetThuc;
-        this.soTuanHoc = soTuanHoc;
-        this.gioBatDau = gioBatDau;
-        this.gioKetThuc = gioKetThuc;
-        this.giangVien = giangVien;
-        this.soTinChi = soTinChi;
-        this.ghiChu = ghiChu;
-    }
-
-
-    // Getters and Setters
-    public String getMaHp() {
-        return maHp;
-    }
-
-    public String getTenHp() {
-        return tenHp;
-    }
 }
