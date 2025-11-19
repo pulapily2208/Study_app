@@ -282,20 +282,14 @@ public class SubjectAddActivity extends AppCompatActivity {
             }
             long newRowId = dbHelper.addSubject(subject);
             if (newRowId != -1) {
-                // Thêm môn thành công, tự động enroll vào học kỳ hiện tại
-                try {
-                    int semesterId = dbHelper.getSemesterIdByName(currentSemesterName);
-                    if (semesterId != -1) {
-                        dbHelper.enrollSubjectInSemester(maHp, semesterId);
-                        Log.i("SubjectAddActivity", "Đã tự động enroll môn " + maHp + " vào học kỳ " + currentSemesterName);
-                    } else {
-                        Log.w("SubjectAddActivity", "Không tìm thấy ID học kỳ cho: " + currentSemesterName);
-                    }
-                } catch (Exception e) {
-                    Log.e("SubjectAddActivity", "Lỗi khi tự động enroll môn học", e);
+                // Enroll the subject in the current semester
+                int semesterId = dbHelper.getSemesterIdByName(currentSemesterName);
+                if (semesterId != -1) {
+                    dbHelper.enrollSubjectInSemester(maHp, semesterId);
+                } else {
+                    android.util.Log.w("SubjectAddActivity", "Could not enroll subject: semester ID not found for " + currentSemesterName);
                 }
-                
-                Toast.makeText(this, R.string.add_subject_success, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Thêm môn học thành công", Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
                 finish();
             } else {
