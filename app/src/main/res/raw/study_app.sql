@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS mon_hoc (
     hoc_ky INTEGER,
     loai_hp TEXT,
     khoa_id INTEGER,
+    color_tag TEXT DEFAULT '#448184',
     FOREIGN KEY (khoa_id) REFERENCES khoa(id)
 );
 

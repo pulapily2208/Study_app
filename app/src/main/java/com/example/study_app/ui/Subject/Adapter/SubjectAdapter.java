@@ -1,32 +1,36 @@
 package com.example.study_app.ui.Subject.Adapter;
 
-import android.content.Context;
-import android.content.Intent;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.study_app.R;
-import com.example.study_app.ui.Deadline.MainDeadLine;
 import com.example.study_app.ui.Subject.Model.Subject;
-
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectViewHolder> {
 
     private List<Subject> subjectList;
-    private final Context context;
+    private final OnSubjectActionClickListener actionListener;
 
-    public SubjectAdapter(Context context, List<Subject> subjectList) {
-        this.context = context;
+    public interface OnSubjectActionClickListener {
+        void onEdit(Subject subject);
+        void onDelete(Subject subject);
+        void onViewDeadlines(Subject subject);
+    }
+
+    public SubjectAdapter(List<Subject> subjectList, OnSubjectActionClickListener listener) {
         this.subjectList = subjectList;
+        this.actionListener = listener;
     }
 
     @NonNull
@@ -40,55 +44,61 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
     public void onBindViewHolder(@NonNull SubjectViewHolder holder, int position) {
         Subject subject = subjectList.get(position);
 
-        // --- Start of Safe Data Binding ---
-
-        // 1. Set Subject Name and Code (already safe)
+        // Set subject name and description
         holder.tvSubjectName.setText(subject.tenHp != null ? subject.tenHp : "Chưa có tên môn học");
-        holder.tvSubjectDesc.setText(subject.maHp != null ? subject.maHp : "Chưa có mã môn học");
+        holder.tvSubjectDesc.setText(subject.maHp != null ? "Mã HP: " + subject.maHp : "");
 
-        // 2. Set Time (Safely)
-        String timeText;
-        if (subject.gioBatDau != null && !subject.gioBatDau.isEmpty() && subject.gioKetThuc != null && !subject.gioKetThuc.isEmpty()) {
-            timeText = subject.gioBatDau + " - " + subject.gioKetThuc;
+        // Handle Time display
+        holder.timeLayout.setVisibility(View.VISIBLE); // Always show the time layout
+        boolean hasTime = subject.gioBatDau != null && subject.gioKetThuc != null;
+        if (hasTime) {
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            String startTime = sdf.format(subject.gioBatDau);
+            String endTime = sdf.format(subject.gioKetThuc);
+            holder.tvTime.setText(startTime + " - " + endTime);
         } else {
-            timeText = "Chưa có giờ học";
+            holder.tvTime.setText("Chưa có giờ học");
         }
-        holder.tvTime.setText(timeText);
 
-        // 3. Set Location (Safely)
-        String locationText;
-        if (subject.phongHoc != null && !subject.phongHoc.isEmpty()) {
-            locationText = "Phòng: " + subject.phongHoc;
+        // Handle Location display
+        holder.locationLayout.setVisibility(View.VISIBLE); // Always show the location layout
+        boolean hasLocation = subject.phongHoc != null && !subject.phongHoc.isEmpty();
+        if (hasLocation) {
+            holder.tvLocation.setText("Phòng: " + subject.phongHoc);
         } else {
-            locationText = "Chưa có phòng học";
+            holder.tvLocation.setText("Chưa có phòng học");
         }
-        holder.tvLocation.setText(locationText);
 
-        // --- End of Safe Data Binding ---
+        // Handle Color Bar
+        if (subject.mauSac != null && !subject.mauSac.isEmpty()) {
+            try {
+                holder.colorBar.setBackgroundColor(Color.parseColor(subject.mauSac));
+            } catch (IllegalArgumentException e) {
+                holder.colorBar.setBackgroundColor(Color.LTGRAY); // Default color on error
+            }
+        } else {
+            holder.colorBar.setBackgroundColor(Color.LTGRAY); // Default color if not set
+        }
 
-
+        // Set listener for the options menu
         holder.ivOptionsMenu.setOnClickListener(v -> showPopupMenu(v, subject));
     }
 
     private void showPopupMenu(View view, Subject subject) {
-        PopupMenu popup = new PopupMenu(context, view);
+        PopupMenu popup = new PopupMenu(view.getContext(), view);
         popup.getMenuInflater().inflate(R.menu.subject_options_menu, popup.getMenu());
         popup.setOnMenuItemClickListener(item -> {
+            if (actionListener == null) return false;
+
             int itemId = item.getItemId();
             if (itemId == R.id.action_edit_subject) {
-                // Use the safe getter for the name
-                Toast.makeText(context, "Sửa: " + (subject.tenHp != null ? subject.tenHp : "N/A"), Toast.LENGTH_SHORT).show();
+                actionListener.onEdit(subject);
                 return true;
             } else if (itemId == R.id.action_delete_subject) {
-                // Use the safe getter for the name
-                Toast.makeText(context, "Xóa: " + (subject.tenHp != null ? subject.tenHp : "N/A"), Toast.LENGTH_SHORT).show();
+                actionListener.onDelete(subject);
                 return true;
             } else if (itemId == R.id.action_view_deadlines) {
-                Intent intent = new Intent(context, MainDeadLine.class);
-                // Pass the String ma_hp instead of the integer id
-                intent.putExtra("SUBJECT_MA_HP", subject.maHp);
-                intent.putExtra("SUBJECT_TEN_HP", subject.tenHp);
-                context.startActivity(intent);
+                actionListener.onViewDeadlines(subject);
                 return true;
             }
             return false;
@@ -113,6 +123,8 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
         private final TextView tvSubjectDesc;
         private final TextView tvLocation;
         private final ImageView ivOptionsMenu;
+        private final View timeLayout;
+        private final View locationLayout;
 
         public SubjectViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -122,6 +134,8 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
             tvSubjectDesc = itemView.findViewById(R.id.tvSubjectDesc);
             tvLocation = itemView.findViewById(R.id.tvLocation);
             ivOptionsMenu = itemView.findViewById(R.id.iv_options_menu);
+            timeLayout = itemView.findViewById(R.id.time_layout); // Find the layout
+            locationLayout = itemView.findViewById(R.id.location_layout); // Find the layout
         }
     }
 }
