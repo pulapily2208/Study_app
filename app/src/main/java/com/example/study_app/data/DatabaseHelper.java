@@ -19,6 +19,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
@@ -28,6 +29,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private final Context context;
     // Định dạng ngày giờ
+    private static final int DB_VERSION = 7; // Tăng phiên bản để migration
+
+    private final Context context;
+    // Định dạng ngày và giờ
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
@@ -75,6 +80,123 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
     
     // Helper method để lấy danh sách cột của một bảng
+        // Migration an toàn: thêm cột thiếu vào bảng mon_hoc nếu cần
+        if (oldVersion < 7) {
+            Log.i("DatabaseHelper", "Đang thực hiện migration từ phiên bản " + oldVersion + " lên " + newVersion);
+            try {
+                // Lấy danh sách các cột hiện tại trong bảng mon_hoc
+                List<String> existingColumns = getColumns(db, "mon_hoc");
+                
+                // Danh sách các cột cần có
+                String[] requiredColumns = {
+                    "giang_vien", "phong_hoc", "ngay_bat_dau", "ngay_ket_thuc",
+                    "gio_bat_dau", "gio_ket_thuc", "ghi_chu"
+                };
+                
+                // Thêm từng cột nếu chưa tồn tại
+                for (String column : requiredColumns) {
+                    if (!existingColumns.contains(column)) {
+                        try {
+                            String alterQuery = "ALTER TABLE mon_hoc ADD COLUMN " + column + " TEXT";
+                            db.execSQL(alterQuery);
+                            Log.i("DatabaseHelper", "Đã thêm cột: " + column);
+                        } catch (Exception e) {
+                            Log.e("DatabaseHelper", "Lỗi khi thêm cột " + column, e);
+                        }
+                    }
+                }
+                
+                Log.i("DatabaseHelper", "Migration hoàn tất thành công");
+            } catch (Exception e) {
+                Log.e("DatabaseHelper", "Lỗi trong quá trình migration", e);
+            }
+        }
+    }
+
+    // Helper method để lấy danh sách cột từ một bảng
+    private List<String> getColumns(SQLiteDatabase db, String tableName) {
+        List<String> columns = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            // Safe migration for version 7: add missing columns to mon_hoc table
+            if (oldVersion < 7) {
+                Log.i("DatabaseHelper", "Upgrading database from version " + oldVersion + " to " + newVersion);
+                
+                // Get existing columns in mon_hoc table
+                ArrayList<String> existingCols = getColumns(db, "mon_hoc");
+                
+                // Add missing columns if they don't exist
+                if (!existingCols.contains("giang_vien")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN giang_vien TEXT");
+                        Log.i("DatabaseHelper", "Added column: giang_vien");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column giang_vien", e);
+                    }
+                }
+                
+                if (!existingCols.contains("phong_hoc")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN phong_hoc TEXT");
+                        Log.i("DatabaseHelper", "Added column: phong_hoc");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column phong_hoc", e);
+                    }
+                }
+                
+                if (!existingCols.contains("ngay_bat_dau")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN ngay_bat_dau TEXT");
+                        Log.i("DatabaseHelper", "Added column: ngay_bat_dau");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column ngay_bat_dau", e);
+                    }
+                }
+                
+                if (!existingCols.contains("ngay_ket_thuc")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN ngay_ket_thuc TEXT");
+                        Log.i("DatabaseHelper", "Added column: ngay_ket_thuc");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column ngay_ket_thuc", e);
+                    }
+                }
+                
+                if (!existingCols.contains("gio_bat_dau")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN gio_bat_dau TEXT");
+                        Log.i("DatabaseHelper", "Added column: gio_bat_dau");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column gio_bat_dau", e);
+                    }
+                }
+                
+                if (!existingCols.contains("gio_ket_thuc")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN gio_ket_thuc TEXT");
+                        Log.i("DatabaseHelper", "Added column: gio_ket_thuc");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column gio_ket_thuc", e);
+                    }
+                }
+                
+                if (!existingCols.contains("ghi_chu")) {
+                    try {
+                        db.execSQL("ALTER TABLE mon_hoc ADD COLUMN ghi_chu TEXT");
+                        Log.i("DatabaseHelper", "Added column: ghi_chu");
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "Error adding column ghi_chu", e);
+                    }
+                }
+                
+                Log.i("DatabaseHelper", "Database upgrade completed successfully");
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error during database upgrade", e);
+        }
+    }
+
+    // Helper method to get existing columns in a table using PRAGMA table_info
     private ArrayList<String> getColumns(SQLiteDatabase db, String tableName) {
         ArrayList<String> columns = new ArrayList<>();
         Cursor cursor = null;
@@ -88,6 +210,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         } catch (Exception e) {
             Log.e("DatabaseHelper", "Lỗi khi lấy thông tin cột của bảng " + tableName, e);
+                if (nameIndex != -1) {
+                    do {
+                        columns.add(cursor.getString(nameIndex));
+                    } while (cursor.moveToNext());
+                }
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting columns for table: " + tableName, e);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -96,35 +226,35 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return columns;
     }
 
-    // Helper để parse chuỗi ngày thành Date object
+    // Helper để chuyển đổi chuỗi ngày thành đối tượng Date
     private Date parseDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return null;
         try {
             return dateFormat.parse(dateStr);
         } catch (ParseException e) {
-            Log.e("DatabaseHelper", "Lỗi parse ngày: " + dateStr, e);
+            Log.e("DatabaseHelper", "Lỗi khi phân tích ngày: " + dateStr, e);
             return null;
         }
     }
 
-    // Helper để parse chuỗi giờ thành Date object
+    // Helper để chuyển đổi chuỗi giờ thành đối tượng Date
     private Date parseTime(String timeStr) {
         if (timeStr == null || timeStr.isEmpty()) return null;
         try {
             return timeFormat.parse(timeStr);
         } catch (ParseException e) {
-            Log.e("DatabaseHelper", "Lỗi parse giờ: " + timeStr, e);
+            Log.e("DatabaseHelper", "Lỗi khi phân tích giờ: " + timeStr, e);
             return null;
         }
     }
 
-    // Helper để format Date object thành chuỗi ngày
+    // Helper để định dạng đối tượng Date thành chuỗi ngày
     private String formatDate(Date date) {
         if (date == null) return null;
         return dateFormat.format(date);
     }
 
-    // Helper để format Date object thành chuỗi giờ
+    // Helper để định dạng đối tượng Date thành chuỗi giờ
     private String formatTime(Date time) {
         if (time == null) return null;
         return timeFormat.format(time);
@@ -146,7 +276,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     try {
                         db.execSQL(sqlBuilder.toString());
                     } catch (Exception e) {
-                        Log.e("DatabaseHelper", "Lỗi thực thi SQL: " + sqlBuilder.toString(), e);
+                        Log.e("DatabaseHelper", "Thất bại khi thực thi SQL: " + sqlBuilder.toString(), e);
                     }
                     sqlBuilder.setLength(0);
                 } else {
@@ -154,7 +284,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException("Lỗi đọc hoặc thực thi file SQL.", e);
+            throw new RuntimeException("Lỗi khi đọc hoặc thực thi file SQL.", e);
         }
     }
 
@@ -260,7 +390,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy môn học theo mã HP. Đảm bảo tất cả các cột tồn tại trong bảng 'mon_hoc'.", e);
+            Log.e("DatabaseHelper", "Lỗi khi lấy thông tin môn học theo mã học phần. Đảm bảo tất cả các cột tồn tại trong bảng 'mon_hoc'.", e);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -286,11 +416,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("color_tag", subject.mauSac);
         
         try {
-            long result = db.insertOrThrow("mon_hoc", null, values);
-            Log.i("DatabaseHelper", "Thêm môn học thành công: " + subject.maHp);
-            return result;
+            long newRowId = db.insertOrThrow("mon_hoc", null, values);
+            Log.i("DatabaseHelper", "Successfully added subject with ma_hp: " + subject.maHp);
+            return newRowId;
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi thêm môn học " + subject.maHp + ": " + e.getMessage(), e);
+            Log.e("DatabaseHelper", "Failed to add subject with ma_hp: " + subject.maHp, e);
             return -1;
         }
     }
@@ -298,7 +428,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void enrollSubjectInSemester(String maHp, int semesterId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("user_id", 1); // Giả định user_id mặc định là 1
+        values.put("user_id", 1); // Giả định user_id mặc định là 1 hiện tại
         values.put("ma_hp", maHp);
         values.put("hoc_ky", semesterId);
         db.insert("enrollments", null, values);
@@ -339,7 +469,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     String title = cursor.getString(cursor.getColumnIndexOrThrow("title"));
                     String description = cursor.getString(cursor.getColumnIndexOrThrow("description"));
                     long dueDate = cursor.getLong(cursor.getColumnIndexOrThrow("due_date"));
-                    // Giả sử Deadline constructor nhận title, description, startDate và endDate
+                    // Giả định constructor Deadline nhận title, description, startDate, và endDate
                     Deadline deadline = new Deadline(title, description, new Date(dueDate * 1000), new Date(dueDate * 1000));
                     deadline.setMaDl(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
                     deadlineList.add(deadline);
@@ -347,7 +477,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-             Log.e("DatabaseHelper", "Lỗi khi lấy deadline", e);
+             Log.e("DatabaseHelper", "Lỗi khi lấy danh sách deadline", e);
         } finally {
             if (cursor != null) {
                 cursor.close();

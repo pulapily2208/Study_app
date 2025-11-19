@@ -46,11 +46,10 @@ public class SubjectAddActivity extends AppCompatActivity {
     private String maHpToEdit = null;
     private String currentSemesterName;
 
-    // --- Biến cho Color Picker ---
+    // Biến cho Color Picker
     private String selectedColor = null;
     private final List<View> colorViews = new ArrayList<>();
     private View selectedColorView = null;
-    // ---------------------------
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +63,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         if (getIntent().hasExtra("SEMESTER_NAME")) {
             currentSemesterName = getIntent().getStringExtra("SEMESTER_NAME");
         } else {
-            Toast.makeText(this, R.string.error_semester_not_found, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_no_semester_info, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -118,7 +117,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         if (getIntent().hasExtra("SUBJECT_ID")) {
             isEditMode = true;
             maHpToEdit = getIntent().getStringExtra("SUBJECT_ID");
-            tvActivityTitle.setText(R.string.edit_subject_title);
+            tvActivityTitle.setText(R.string.activity_title_edit);
             etSubjectCode.setEnabled(false);
 
             Subject subject = dbHelper.getSubjectByMaHp(maHpToEdit);
@@ -130,7 +129,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             }
         } else {
             isEditMode = false;
-            tvActivityTitle.setText(R.string.add_subject_title);
+            tvActivityTitle.setText(R.string.activity_title_add);
         }
     }
 
@@ -166,61 +165,61 @@ public class SubjectAddActivity extends AppCompatActivity {
     }
 
     private void saveSubject() {
-        // --- VALIDATION ---
+        // Xác thực dữ liệu đầu vào
         String maHp = etSubjectCode.getText().toString().trim();
         if (TextUtils.isEmpty(maHp)) {
-            Toast.makeText(this, R.string.error_subject_code_empty, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.subject_code_required, Toast.LENGTH_SHORT).show();
             etSubjectCode.requestFocus();
             return;
         }
 
         String tenHp = etSubjectName.getText().toString().trim();
         if (TextUtils.isEmpty(tenHp)) {
-            Toast.makeText(this, R.string.error_subject_name_empty, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.subject_name_required, Toast.LENGTH_SHORT).show();
             etSubjectName.requestFocus();
             return;
         }
 
         String soTcStr = etCredits.getText().toString().trim();
         if (TextUtils.isEmpty(soTcStr)) {
-            Toast.makeText(this, R.string.error_credits_empty, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.credits_required, Toast.LENGTH_SHORT).show();
             etCredits.requestFocus();
             return;
         }
 
         if (TextUtils.isEmpty(etStartDate.getText().toString())) {
-            Toast.makeText(this, R.string.error_start_date_empty, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.start_date_required, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (TextUtils.isEmpty(etEndDate.getText().toString())) {
-            Toast.makeText(this, R.string.error_end_date_empty, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.end_date_required, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (TextUtils.isEmpty(etStartTime.getText().toString())) {
-            Toast.makeText(this, R.string.error_start_time_empty, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.start_time_required, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (TextUtils.isEmpty(etEndTime.getText().toString())) {
-            Toast.makeText(this, R.string.error_end_time_empty, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.end_time_required, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (selectedColor == null) {
-            Toast.makeText(this, R.string.error_color_not_selected, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.color_required, Toast.LENGTH_SHORT).show();
             return;
         }
 
         int selectedRadioButtonId = rgSubjectType.getCheckedRadioButtonId();
         if (selectedRadioButtonId == -1) {
-            Toast.makeText(this, R.string.error_subject_type_not_selected, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.subject_type_required, Toast.LENGTH_SHORT).show();
             return;
         }
-        // --- End of Validation ---
+        // Kết thúc xác thực dữ liệu
 
-        // --- DATA PROCESSING ---
+        // Xử lý dữ liệu
         RadioButton selectedRadioButton = findViewById(selectedRadioButtonId);
         String loaiMon = selectedRadioButton.getText().toString();
 
@@ -232,7 +231,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         try {
             soTc = Integer.parseInt(soTcStr);
         } catch (NumberFormatException e) {
-            Toast.makeText(this, R.string.error_credits_invalid, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.credits_invalid, Toast.LENGTH_SHORT).show();
             etCredits.requestFocus();
             return;
         }
@@ -246,11 +245,11 @@ public class SubjectAddActivity extends AppCompatActivity {
             gioBatDau = timeFormat.parse(etStartTime.getText().toString());
             gioKetThuc = timeFormat.parse(etEndTime.getText().toString());
         } catch (ParseException e) {
-            Toast.makeText(this, R.string.error_date_time_format, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.date_time_format_invalid, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // --- DATABASE INTERACTION ---
+        // Tương tác với cơ sở dữ liệu
         Subject subject = new Subject();
         subject.maHp = maHp;
         subject.tenHp = tenHp;
@@ -276,31 +275,22 @@ public class SubjectAddActivity extends AppCompatActivity {
                 Toast.makeText(this, R.string.update_subject_failed, Toast.LENGTH_SHORT).show();
             }
         } else {
-            // Kiểm tra trùng mã môn học
+            // Chế độ thêm mới
             if (dbHelper.getSubjectByMaHp(maHp) != null) {
-                Toast.makeText(this, R.string.error_subject_code_exists, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.subject_code_exists, Toast.LENGTH_SHORT).show();
                 return;
             }
             
             long newRowId = dbHelper.addSubject(subject);
             if (newRowId != -1) {
-                Toast.makeText(this, R.string.add_subject_success, Toast.LENGTH_SHORT).show();
-                
-                // Tự động đăng ký môn học vào học kỳ hiện tại
+                // Enroll the subject in the current semester
                 int semesterId = dbHelper.getSemesterIdByName(currentSemesterName);
                 if (semesterId != -1) {
-                    try {
-                        dbHelper.enrollSubjectInSemester(maHp, semesterId);
-                        Log.i("SubjectAddActivity", "Đã tự động đăng ký môn " + maHp + " vào học kỳ " + currentSemesterName);
-                    } catch (Exception e) {
-                        Log.e("SubjectAddActivity", "Lỗi khi tự động đăng ký môn học: " + e.getMessage());
-                        Toast.makeText(this, R.string.enroll_subject_failed, Toast.LENGTH_SHORT).show();
-                    }
+                    dbHelper.enrollSubjectInSemester(maHp, semesterId);
                 } else {
-                    Log.w("SubjectAddActivity", "Không tìm thấy ID học kỳ cho: " + currentSemesterName);
-                    Toast.makeText(this, R.string.enroll_subject_failed, Toast.LENGTH_SHORT).show();
+                    android.util.Log.w("SubjectAddActivity", "Could not enroll subject: semester ID not found for " + currentSemesterName);
                 }
-                
+                Toast.makeText(this, "Thêm môn học thành công", Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
                 finish();
             } else {
@@ -339,8 +329,8 @@ public class SubjectAddActivity extends AppCompatActivity {
         try {
             colors = getResources().getStringArray(R.array.subject_colors);
         } catch (Exception e) {
-            Toast.makeText(this, R.string.error_color_array_not_found, Toast.LENGTH_SHORT).show();
-            colors = new String[]{"#CCCCCC"}; // fallback
+            Toast.makeText(this, R.string.error_color_picker, Toast.LENGTH_SHORT).show();
+            colors = new String[]{"#CCCCCC"}; // Màu dự phòng
         }
 
         colorPickerContainer.removeAllViews();
