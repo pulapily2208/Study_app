@@ -282,11 +282,12 @@ public class SubjectAddActivity extends AppCompatActivity {
             }
             long newRowId = dbHelper.addSubject(subject);
             if (newRowId != -1) {
+                // Enroll the subject in the current semester
                 int semesterId = dbHelper.getSemesterIdByName(currentSemesterName);
                 if (semesterId != -1) {
                     dbHelper.enrollSubjectInSemester(maHp, semesterId);
                 } else {
-                    Log.w("SubjectAddActivity", "Không tìm thấy id học kỳ cho tên: " + currentSemesterName);
+                    android.util.Log.w("SubjectAddActivity", "Could not enroll subject: semester ID not found for " + currentSemesterName);
                 }
                 Toast.makeText(this, "Thêm môn học thành công", Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
