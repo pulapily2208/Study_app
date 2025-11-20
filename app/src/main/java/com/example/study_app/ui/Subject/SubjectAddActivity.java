@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -46,10 +47,11 @@ public class SubjectAddActivity extends AppCompatActivity {
     private String maHpToEdit = null;
     private String currentSemesterName;
 
-    // Biến cho Color Picker
     private String selectedColor = null;
     private final List<View> colorViews = new ArrayList<>();
     private View selectedColorView = null;
+    private ArrayAdapter<String> weeksAdapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +61,9 @@ public class SubjectAddActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         findViews();
         setClickListeners();
+        setupWeeksSpinner(); // Thêm hàm này
+        setupColorPicker();
+
 
         if (getIntent().hasExtra("SEMESTER_NAME")) {
             currentSemesterName = getIntent().getStringExtra("SEMESTER_NAME");
@@ -68,17 +73,15 @@ public class SubjectAddActivity extends AppCompatActivity {
             return;
         }
 
-        // Phải gọi trước khi kiểm tra mode Thêm/Sửa để `colorViews` được khởi tạo
-        setupColorPicker();
-
         checkForEditOrAddMode();
 
-        // Nếu là mode Thêm mới, chọn màu đầu tiên và loại môn mặc định
+        // Mặc định cho mode Thêm mới
         if (!isEditMode) {
             if (!colorViews.isEmpty()) {
                 colorViews.get(0).performClick();
             }
-            rbGeneral.setChecked(true); // Mặc định chọn Môn chung (đại cương)
+            rbGeneral.setChecked(true); // Mặc định là môn đại cương
+            spinnerNumberOfWeeks.setSelection(0); // Mặc định là 15 tuần
         }
     }
 
@@ -149,45 +152,62 @@ public class SubjectAddActivity extends AppCompatActivity {
         if (subject.gioBatDau != null) etStartTime.setText(timeFormat.format(subject.gioBatDau));
         if (subject.gioKetThuc != null) etEndTime.setText(timeFormat.format(subject.gioKetThuc));
 
-        if ("Chuyên ngành".equals(subject.loaiMon)) {
+        // Sửa lỗi: chọn đúng radio button
+        if (getString(R.string.subject_type_major).equals(subject.loaiMon)) {
             rbMajor.setChecked(true);
         } else {
             rbGeneral.setChecked(true);
         }
 
-        // Highlight màu đã chọn trong picker
-        for (View colorView : colorViews) {
-            if (colorView.getTag() != null && colorView.getTag().toString().equalsIgnoreCase(subject.mauSac)) {
-                selectColor(colorView); // Áp dụng hiệu ứng chọn màu
-                break;
+        // Sửa lỗi: Hiển thị đúng số tuần đã lưu
+        if (weeksAdapter != null) {
+            int weekPosition = weeksAdapter.getPosition(String.valueOf(subject.soTuan));
+            if (weekPosition >= 0) {
+                spinnerNumberOfWeeks.setSelection(weekPosition);
             }
+        }
+
+        // Sửa lỗi CRASH: Thêm kiểm tra null cho màu sắc
+        if (subject.mauSac != null && !subject.mauSac.isEmpty()) {
+            boolean colorFound = false;
+            for (View colorView : colorViews) {
+                if (colorView.getTag() != null && colorView.getTag().toString().equalsIgnoreCase(subject.mauSac)) {
+                    selectColor(colorView);
+                    colorFound = true;
+                    break;
+                }
+            }
+            // Nếu không tìm thấy màu đã lưu, chọn màu mặc định
+            if (!colorFound && !colorViews.isEmpty()) {
+                colorViews.get(0).performClick();
+            }
+        } else if (!colorViews.isEmpty()) {
+            // Nếu môn học cũ không có màu, chọn màu mặc định
+            colorViews.get(0).performClick();
         }
     }
 
     private void saveSubject() {
-        // Xác thực dữ liệu đầu vào
+        // --- Xác thực dữ liệu (giữ nguyên) ---
         String maHp = etSubjectCode.getText().toString().trim();
         if (TextUtils.isEmpty(maHp)) {
             Toast.makeText(this, R.string.subject_code_required, Toast.LENGTH_SHORT).show();
             etSubjectCode.requestFocus();
             return;
         }
-
         String tenHp = etSubjectName.getText().toString().trim();
         if (TextUtils.isEmpty(tenHp)) {
             Toast.makeText(this, R.string.subject_name_required, Toast.LENGTH_SHORT).show();
             etSubjectName.requestFocus();
             return;
         }
-
         String soTcStr = etCredits.getText().toString().trim();
         if (TextUtils.isEmpty(soTcStr)) {
             Toast.makeText(this, R.string.credits_required, Toast.LENGTH_SHORT).show();
             etCredits.requestFocus();
             return;
         }
-
-        if (TextUtils.isEmpty(etStartDate.getText().toString())) {
+         if (TextUtils.isEmpty(etStartDate.getText().toString())) {
             Toast.makeText(this, R.string.start_date_required, Toast.LENGTH_SHORT).show();
             return;
         }
@@ -217,16 +237,13 @@ public class SubjectAddActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.subject_type_required, Toast.LENGTH_SHORT).show();
             return;
         }
-        // Kết thúc xác thực dữ liệu
 
-        // Xử lý dữ liệu
+        // --- Xử lý dữ liệu ---
         RadioButton selectedRadioButton = findViewById(selectedRadioButtonId);
         String loaiMon = selectedRadioButton.getText().toString();
-
         String tenGv = etLecturerName.getText().toString().trim();
         String ghiChu = etNotes.getText().toString().trim();
         String phongHoc = etLocation.getText().toString().trim();
-
         int soTc;
         try {
             soTc = Integer.parseInt(soTcStr);
@@ -234,6 +251,15 @@ public class SubjectAddActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.credits_invalid, Toast.LENGTH_SHORT).show();
             etCredits.requestFocus();
             return;
+        }
+        
+        // Sửa lỗi: Lấy đúng giá trị từ Spinner
+        int soTuan = 15; // Giá trị mặc định
+        try {
+            soTuan = Integer.parseInt(spinnerNumberOfWeeks.getSelectedItem().toString());
+        } catch (Exception e) {
+            Log.e("SubjectAddActivity", "Không thể lấy số tuần", e);
+            Toast.makeText(this, "Lỗi: Không thể lấy số tuần", Toast.LENGTH_SHORT).show();
         }
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
@@ -249,7 +275,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             return;
         }
 
-        // Tương tác với cơ sở dữ liệu
+        // --- Tương tác với cơ sở dữ liệu ---
         Subject subject = new Subject();
         subject.maHp = maHp;
         subject.tenHp = tenHp;
@@ -263,6 +289,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         subject.gioKetThuc = gioKetThuc;
         subject.loaiMon = loaiMon;
         subject.mauSac = selectedColor;
+        subject.soTuan = soTuan; // Sửa lỗi: lưu số tuần
         subject.tenHk = currentSemesterName;
 
         if (isEditMode) {
@@ -275,7 +302,6 @@ public class SubjectAddActivity extends AppCompatActivity {
                 Toast.makeText(this, R.string.update_subject_failed, Toast.LENGTH_SHORT).show();
             }
         } else {
-            // Chế độ thêm mới
             if (dbHelper.getSubjectByMaHp(maHp) != null) {
                 Toast.makeText(this, R.string.subject_code_exists, Toast.LENGTH_SHORT).show();
                 return;
@@ -293,6 +319,7 @@ public class SubjectAddActivity extends AppCompatActivity {
     }
 
     private void showDatePickerDialog(final EditText editText) {
+        //... giữ nguyên
         Calendar calendar = Calendar.getInstance();
         int year = calendar.get(Calendar.YEAR);
         int month = calendar.get(Calendar.MONTH);
@@ -306,6 +333,7 @@ public class SubjectAddActivity extends AppCompatActivity {
     }
 
     private void showTimePickerDialog(final EditText editText) {
+        //... giữ nguyên
         Calendar calendar = Calendar.getInstance();
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
@@ -316,14 +344,30 @@ public class SubjectAddActivity extends AppCompatActivity {
         }, hour, minute, true);
         timePickerDialog.show();
     }
+    
+    // Hàm mới để setup Spinner
+    private void setupWeeksSpinner() {
+        try {
+            String[] weeks = getResources().getStringArray(R.array.weeks_array);
+            weeksAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, weeks);
+            weeksAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerNumberOfWeeks.setAdapter(weeksAdapter);
+        } catch (Exception e) {
+            Toast.makeText(this, "Lỗi: không thể tải danh sách tuần.", Toast.LENGTH_SHORT).show();
+            // Cung cấp một adapter rỗng để tránh crash
+             weeksAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"15"});
+             spinnerNumberOfWeeks.setAdapter(weeksAdapter);
+        }
+    }
 
     private void setupColorPicker() {
+        //... giữ nguyên
         String[] colors;
         try {
             colors = getResources().getStringArray(R.array.subject_colors);
         } catch (Exception e) {
             Toast.makeText(this, R.string.error_color_picker, Toast.LENGTH_SHORT).show();
-            colors = new String[]{"#CCCCCC"}; // Màu dự phòng
+            colors = new String[]{"#CCCCCC"};
         }
 
         colorPickerContainer.removeAllViews();
@@ -338,7 +382,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             GradientDrawable background = new GradientDrawable();
             background.setShape(GradientDrawable.OVAL);
             background.setColor(Color.parseColor(colorHex));
-            background.setStroke(4, Color.TRANSPARENT); // Viền trong suốt ban đầu
+            background.setStroke(4, Color.TRANSPARENT);
             colorSwatch.setBackground(background);
 
             colorSwatch.setTag(colorHex);
@@ -352,17 +396,14 @@ public class SubjectAddActivity extends AppCompatActivity {
     private void selectColor(View view) {
         String newColor = (String) view.getTag();
 
-        // Bỏ chọn view cũ (xóa viền)
         if (selectedColorView != null) {
             GradientDrawable oldBg = (GradientDrawable) selectedColorView.getBackground();
             oldBg.setStroke(4, Color.TRANSPARENT);
         }
 
-        // Chọn view mới (thêm viền đen)
         GradientDrawable newBg = (GradientDrawable) view.getBackground();
-        newBg.setStroke(10, Color.BLACK); // Thêm viền đen 10px
+        newBg.setStroke(10, Color.BLACK);
 
-        // Cập nhật trạng thái
         selectedColor = newColor;
         selectedColorView = view;
     }

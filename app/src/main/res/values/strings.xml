@@ -46,30 +46,30 @@
     <string name="activity_title_edit">Sửa Môn Học</string>
 
     <string-array name="weeks_array">
-        <item>1 Tuần</item>
-        <item>2 Tuần</item>
-        <item>3 Tuần</item>
-        <item>4 Tuần</item>
-        <item>5 Tuần</item>
-        <item>6 Tuần</item>
-        <item>7 Tuần</item>
-        <item>8 Tuần</item>
-        <item>9 Tuần</item>
-        <item>10 Tuần</item>
-        <item>11 Tuần</item>
-        <item>12 Tuần</item>
-        <item>13 Tuần</item>
-        <item>14 Tuần</item>
-        <item>15 Tuần</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
     </string-array>
 
     <string-array name="subject_colors">
-        <item>@color/green</item>
-        <item>@color/blue</item>
-        <item>@color/yellow</item>
-        <item>@color/beige</item>
-        <item>@color/red</item>
-        <item>@color/purple_500</item>
+        <item>#448184</item>
+        <item>#6989df</item>
+        <item>#f9bd7a</item>
+        <item>#FFF9EB</item>
+        <item>#e46471</item>
+        <item>#EE958F</item>
         <item>#8BC34A</item>
         <item>#FFC6FF</item>
     </string-array>
