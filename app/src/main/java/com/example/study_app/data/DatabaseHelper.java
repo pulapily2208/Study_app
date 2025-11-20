@@ -216,7 +216,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // --- Quản lý Môn học (Subject) ---
-    // Thay thế / cập nhật phương thức addSubject hiện tại bằng đoạn sau
     public long addSubject(Subject subject) {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -416,13 +415,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     deadline.setNgayBatDau(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
                     deadline.setNgayKetThuc(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
                     deadline.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
-                    
-                    // Tạm thời vô hiệu hóa để chờ cập nhật model Deadline
-                    // int maHpIndex = cursor.getColumnIndex("ma_hp");
-                    // if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
-                    //     deadline.setMaHp(cursor.getString(maHpIndex));
-                    // }
-                    
+
+                    // Bật đọc ma_hp nếu tồn tại
+                    int maHpIndex = cursor.getColumnIndex("ma_hp");
+                    if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
+                        deadline.setMaHp(cursor.getString(maHpIndex));
+                    }
+
                     deadlineList.add(deadline);
                 } while (cursor.moveToNext());
             }
@@ -451,11 +450,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     deadline.setNgayKetThuc(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
                     deadline.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
 
-                    // Tạm thời vô hiệu hóa để chờ cập nhật model Deadline
-                    // int maHpIndex = cursor.getColumnIndex("ma_hp");
-                    // if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
-                    //     deadline.setMaHp(cursor.getString(maHpIndex));
-                    // }
+                    int maHpIndex = cursor.getColumnIndex("ma_hp");
+                    if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
+                        deadline.setMaHp(cursor.getString(maHpIndex));
+                    }
 
                     deadlineList.add(deadline);
                 } while (cursor.moveToNext());
@@ -476,9 +474,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("ngay_bat_dau", formatDate(deadline.getNgayBatDau()));
         values.put("ngay_ket_thuc", formatDate(deadline.getNgayKetThuc()));
         values.put("completed", deadline.isCompleted() ? 1 : 0);
-        // Tạm thời vô hiệu hóa để chờ cập nhật model Deadline
-        // values.put("ma_hp", deadline.getMaHp());
-        return db.insert("deadline", null, values);
+        // Ghi ma_hp nếu có
+        if (deadline.getMaHp() != null) {
+            values.put("ma_hp", deadline.getMaHp());
+        }
+        long id = db.insert("deadline", null, values);
+        return id;
     }
 
     public int updateDeadline(Deadline deadline) {
@@ -489,12 +490,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("ngay_bat_dau", formatDate(deadline.getNgayBatDau()));
         values.put("ngay_ket_thuc", formatDate(deadline.getNgayKetThuc()));
         values.put("completed", deadline.isCompleted() ? 1 : 0);
-        // Tạm thời vô hiệu hóa để chờ cập nhật model Deadline
-        // values.put("ma_hp", deadline.getMaHp());
-        
+        if (deadline.getMaHp() != null) {
+            values.put("ma_hp", deadline.getMaHp());
+        }
+
         return db.update("deadline", values, "id = ?", new String[]{String.valueOf(deadline.getMaDl())});
     }
-
     public void deleteDeadline(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete("deadline", "id = ?", new String[]{String.valueOf(id)});
