@@ -1,5 +1,7 @@
 package com.example.study_app.ui.Subject.Adapter;
 
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +14,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.study_app.R;
 import com.example.study_app.ui.Subject.Model.Subject;
+import com.example.study_app.ui.Subject.SubjectDetailActivity;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -88,9 +92,19 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
         PopupMenu popup = new PopupMenu(view.getContext(), view);
         popup.getMenuInflater().inflate(R.menu.subject_options_menu, popup.getMenu());
         popup.setOnMenuItemClickListener(item -> {
+            int itemId = item.getItemId();
+
+            if (itemId == R.id.action_view_details) {
+                Context context = view.getContext();
+                Intent intent = new Intent(context, SubjectDetailActivity.class);
+                intent.putExtra("SUBJECT_ID", subject.maHp);
+                context.startActivity(intent);
+                return true;
+            }
+
+            // For other actions, use the listener
             if (actionListener == null) return false;
 
-            int itemId = item.getItemId();
             if (itemId == R.id.action_edit_subject) {
                 actionListener.onEdit(subject);
                 return true;
