@@ -39,7 +39,6 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
     private static final int ADD_SUBJECT_REQUEST = 1;
     private static final int EDIT_SUBJECT_REQUEST = 2;
 
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -179,6 +178,8 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
         Intent intent = new Intent(this, MainDeadLine.class);
         intent.putExtra("SUBJECT_MA_HP", subject.maHp);
         intent.putExtra("SUBJECT_TEN_HP", subject.tenHp);
+        // Gửi số tuần vào màn hình deadline
+        intent.putExtra("SUBJECT_WEEKS", subject.soTuan);
         startActivity(intent);
     }
 }

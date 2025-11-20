@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/beige">
+    android:background="@color/beige"
+    android:fitsSystemWindows="true">
 
     <!-- Header -->
     <LinearLayout
@@ -188,6 +189,7 @@
                 android:orientation="horizontal">
 
                 <LinearLayout
+                    android:id="@+id/layoutStartDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
@@ -227,6 +229,7 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/layoutEndDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -265,20 +268,28 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Số tuần học -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/number_of_weeks_hint"
-                android:textStyle="bold" />
-
-            <Spinner
-                android:id="@+id/spinnerNumberOfWeeks"
+            <!-- Số tuần học (tự động) -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:entries="@array/weeks_array" />
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/number_of_weeks_hint"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvCalculatedWeeks"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textSize="16sp"
+                    tools:text="0" />
+            </LinearLayout>
 
 
             <!-- Thời gian trong ngày -->

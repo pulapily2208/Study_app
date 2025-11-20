@@ -1,7 +1,4 @@
 PRAGMA foreign_keys = ON;
--- =====================
--- SCHEMA: BẢN GỐC (giữ nguyên/cải tiến)
--- =====================
 
 CREATE TABLE IF NOT EXISTS hoc_ky (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,6 +29,14 @@ CREATE TABLE IF NOT EXISTS mon_hoc (
     hoc_ky INTEGER,
     loai_hp TEXT,
     khoa_id INTEGER,
+    giang_vien TEXT,
+    phong_hoc TEXT,
+    ngay_bat_dau TEXT,
+    ngay_ket_thuc TEXT,
+    gio_bat_dau TEXT,
+    gio_ket_thuc TEXT,
+    ghi_chu TEXT,
+    color_tag TEXT DEFAULT '#448184',
     FOREIGN KEY (khoa_id) REFERENCES khoa(id)
 );
 
@@ -43,10 +48,6 @@ CREATE TABLE IF NOT EXISTS hoc_phan_tien_quyet (
     FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp),
     FOREIGN KEY (ma_hp_tien_quyet) REFERENCES mon_hoc(ma_hp)
 );
-
--- =====================
--- SCHEMA: BẢNG MỞ RỘNG CHO ỨNG DỤNG
--- =====================
 
 -- Người dùng
 CREATE TABLE IF NOT EXISTS users (
@@ -92,7 +93,6 @@ CREATE TABLE IF NOT EXISTS notes (
     color_tag TEXT,
     created_at INTEGER,
     updated_at INTEGER,
-    image_path TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp) ON DELETE SET NULL
 );
@@ -101,7 +101,6 @@ CREATE TABLE IF NOT EXISTS notes (
 CREATE TABLE IF NOT EXISTS attachments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     owner_type TEXT NOT NULL,
-    -- 'note' | 'deadline' | 'timetable'
     owner_id INTEGER NOT NULL,
     file_path TEXT,
     file_name TEXT,

@@ -13,6 +13,9 @@ public class Deadline implements Serializable {
     private boolean completed;
     private int icon;
 
+    // Thêm maHp để biết deadline thuộc môn nào
+    private String maHp;
+
     // No-argument constructor required for instantiation from database
     public Deadline() {}
 
@@ -67,6 +70,10 @@ public class Deadline implements Serializable {
     public void setNgayKetThuc(Date ngayKetThuc) {
         this.ngayKetThuc = ngayKetThuc;
     }
+
+    // getter/setter maHp
+    public String getMaHp() { return maHp; }
+    public void setMaHp(String maHp) { this.maHp = maHp; }
 
     public String getConLai() {
         long diff = ngayKetThuc.getTime() - new Date().getTime();

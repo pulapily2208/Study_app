@@ -3,15 +3,15 @@
 =======
 # 📂 Study App
 - Dự án cuối kỳ môn Phát triển phần mềm trên thiết bị di động
--  Nhóm thực hiện: [Trần Trim - Trần Thảo - Phanh - Manh]
+-  Nhóm thực hiện: [Huyền Phương  - Trần Thảo - Phương Anh - Mai Anh]
 - Chia module:
- > **Trim —> Quản lý môn học / học phần**
+ > **Huyền Phương —> Quản lý môn học / học phần**
  >
- > **Phanh —> Thời khóa biểu**
+ > **Phương Anh —> Thời khóa biểu**
  >
  > **Thảo —> Deadline & Bài tập**
  >
- > **Manh —> Ghi chú / Tài liệu học tập + Thống kê**
+ > **Mai Anh —> Ghi chú / Tài liệu học tập + Thống kê**
 ---
 
 # 🚀 Hướng dẫn tham gia dự án Study App
@@ -51,4 +51,4 @@ git pull origin main
 ```
 - Commit ngắn gọn, dễ hiểu (ví dụ: Fix lỗi login, Thêm màn hình ghi chú).
 - Nếu không chắc, hãy hỏi trước khi push.
->>>>>>> cfc3a8b466a6aac45899e2d72a6674ec283721ff
+

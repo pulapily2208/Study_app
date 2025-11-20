@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.example.study_app.R;
 import com.example.study_app.ui.Notes.Model.Note;
+import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Subject.Model.Subject;
 
@@ -52,8 +53,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 7) {
             List<String> existingColumns = getColumns(db, "mon_hoc");
             String[] requiredTextColumns = {
-                    "giang_vien", "phong_hoc", "ngay_bat_dau",
-                    "ngay_ket_thuc", "gio_bat_dau", "gio_ket_thuc", "ghi_chu"
+                "giang_vien", "phong_hoc", "ngay_bat_dau",
+                "ngay_ket_thuc", "gio_bat_dau", "gio_ket_thuc", "ghi_chu"
             };
 
             for (String column : requiredTextColumns) {
@@ -70,18 +71,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
 
         if (oldVersion < 8) {
-            List<String> existingColumns = getColumns(db, "mon_hoc");
-            if (!existingColumns.contains("so_tuan")) {
-                try {
-                    String sql = "ALTER TABLE mon_hoc ADD COLUMN so_tuan INTEGER";
-                    db.execSQL(sql);
-                    Log.i("DatabaseHelper", "Đã thêm cột so_tuan vào bảng mon_hoc");
-                } catch (Exception e) {
-                    Log.w("DatabaseHelper", "Không thể thêm cột so_tuan: " + e.getMessage());
-                }
-            }
+             List<String> existingColumns = getColumns(db, "mon_hoc");
+             if (!existingColumns.contains("so_tuan")) {
+                 try {
+                     String sql = "ALTER TABLE mon_hoc ADD COLUMN so_tuan INTEGER";
+                     db.execSQL(sql);
+                     Log.i("DatabaseHelper", "Đã thêm cột so_tuan vào bảng mon_hoc");
+                 } catch (Exception e) {
+                     Log.w("DatabaseHelper", "Không thể thêm cột so_tuan: " + e.getMessage());
+                 }
+             }
         }
-
+        
         if (oldVersion < 9) {
             List<String> existingColumns = getColumns(db, "deadline");
             if (!existingColumns.contains("ma_hp")) {
@@ -145,7 +146,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             throw new RuntimeException("Lỗi khi đọc hoặc thực thi file SQL.", e);
         }
     }
-
+    
     // --- Helpers Date/Time ---
     private Date parseDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return null;
@@ -280,7 +281,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("ghi_chu", subject.ghiChu);
         values.put("color_tag", subject.mauSac);
         values.put("so_tuan", subject.soTuan);
-
+        
         return db.update("mon_hoc", values, "ma_hp = ?", new String[]{subject.maHp});
     }
 
@@ -297,7 +298,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.endTransaction();
         }
     }
-
+    
     public ArrayList<Subject> getSubjectsBySemester(String semesterName) {
         ArrayList<Subject> subjectList = new ArrayList<>();
         String selectQuery = "SELECT m.* FROM mon_hoc m " +
@@ -387,6 +388,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     deadline.setNgayBatDau(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
                     deadline.setNgayKetThuc(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
                     deadline.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
+
+                    // Bật đọc ma_hp nếu tồn tại
+                    int maHpIndex = cursor.getColumnIndex("ma_hp");
+                    if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
+                        deadline.setMaHp(cursor.getString(maHpIndex));
+                    }
+
                     deadlineList.add(deadline);
                 } while (cursor.moveToNext());
             }
@@ -414,6 +422,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     deadline.setNgayBatDau(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
                     deadline.setNgayKetThuc(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
                     deadline.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
+
+                    int maHpIndex = cursor.getColumnIndex("ma_hp");
+                    if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
+                        deadline.setMaHp(cursor.getString(maHpIndex));
+                    }
+
                     deadlineList.add(deadline);
                 } while (cursor.moveToNext());
             }
@@ -433,8 +447,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("ngay_bat_dau", formatDate(deadline.getNgayBatDau()));
         values.put("ngay_ket_thuc", formatDate(deadline.getNgayKetThuc()));
         values.put("completed", deadline.isCompleted() ? 1 : 0);
-//        values.put("ma_hp", deadline.getMaHp());
-        return db.insert("deadline", null, values);
+        // Ghi ma_hp nếu có
+        if (deadline.getMaHp() != null) {
+            values.put("ma_hp", deadline.getMaHp());
+        }
+        long id = db.insert("deadline", null, values);
+        return id;
     }
 
     public int updateDeadline(Deadline deadline) {
@@ -445,7 +463,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("ngay_bat_dau", formatDate(deadline.getNgayBatDau()));
         values.put("ngay_ket_thuc", formatDate(deadline.getNgayKetThuc()));
         values.put("completed", deadline.isCompleted() ? 1 : 0);
-//        values.put("ma_hp", deadline.getMaHp());
+        if (deadline.getMaHp() != null) {
+            values.put("ma_hp", deadline.getMaHp());
+        }
 
         return db.update("deadline", values, "id = ?", new String[]{String.valueOf(deadline.getMaDl())});
     }
@@ -563,4 +583,84 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
+
+    public List<Curriculum> getAllCoursesForCurriculum() {
+        List<Curriculum> courseList = new ArrayList<>();
+        String selectQuery = "SELECT * FROM mon_hoc ORDER BY hoc_ky, ten_hp";
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery(selectQuery, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    Curriculum course = new Curriculum();
+                    course.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
+                    course.setTenHp(cursor.getString(cursor.getColumnIndexOrThrow("ten_hp")));
+                    course.setSoTinChi(cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi")));
+                    course.setSoTietLyThuyet(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_ly_thuyet")));
+                    course.setSoTietThucHanh(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_thuc_hanh")));
+                    course.setNhomTuChon(cursor.getString(cursor.getColumnIndexOrThrow("nhom_tu_chon")));
+                    course.setHocKy(cursor.getInt(cursor.getColumnIndexOrThrow("hoc_ky")));
+                    course.setLoaiHp(cursor.getString(cursor.getColumnIndexOrThrow("loai_hp")));
+                    course.setKhoaId(cursor.getInt(cursor.getColumnIndexOrThrow("khoa_id")));
+                    courseList.add(course);
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy dữ liệu chương trình đào tạo", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return courseList;
+    }
+
+    // --- Curriculum Filter Helpers ---
+
+    public Map<String, Integer> getFacultiesMap() {
+        Map<String, Integer> faculties = new LinkedHashMap<>(); // Use LinkedHashMap to preserve order
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+        try {
+            cursor = db.query("khoa", new String[]{"id", "ten_khoa"}, null, null, null, null, "ten_khoa");
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    faculties.put(cursor.getString(cursor.getColumnIndexOrThrow("ten_khoa")), cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách Khoa", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return faculties;
+    }
+
+    public List<String> getAllCourseGroups() {
+        List<String> groups = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        // Query both tables and merge distinct results
+        String query = "SELECT ten_nhom FROM hoc_phan_tu_chon WHERE ten_nhom IS NOT NULL " +
+                       "UNION " +
+                       "SELECT nhom_tu_chon FROM mon_hoc WHERE nhom_tu_chon IS NOT NULL";
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery(query, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    groups.add(cursor.getString(0));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách Nhóm học phần", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return groups;
+    }
 }

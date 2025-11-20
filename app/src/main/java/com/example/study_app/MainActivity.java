@@ -10,25 +10,34 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.ui.Deadline.MainDeadLine;
 import com.example.study_app.ui.Notes.NotesActivity;
+import com.example.study_app.ui.Subject.SubjectListActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button btnDeadLine;
     Button btnNote;
+    Button btnDeadLine, btnSubject, btnCurriculum;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
         btnDeadLine=findViewById(R.id.btnDeadLine);
         btnNote = findViewById(R.id.btnNote);
+        btnSubject = findViewById(R.id.btnSubject);
+        btnCurriculum = findViewById(R.id.btnCurriculum);
 
         btnDeadLine.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent=new Intent(MainActivity.this, MainDeadLine.class);
                 startActivity(intent);
-//                finish();//dừng app
+            }
+        });
+
+        btnSubject.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, SubjectListActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -40,5 +49,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        btnCurriculum.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, CurriculumActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 }
