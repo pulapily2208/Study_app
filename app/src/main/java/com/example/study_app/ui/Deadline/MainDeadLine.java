@@ -2,6 +2,7 @@ package com.example.study_app.ui.Deadline;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,6 +38,9 @@ public class MainDeadLine extends AppCompatActivity {
     private ArrayList<Week> weeks; // data for adapter
     private static final int REQ_ADD_DEADLINE = 1001;
     private int lastRequestedWeekIndex = -1;
+
+    // New field to keep track of subject weeks across reloads
+    private int subjectWeeksGlobal = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +86,9 @@ public class MainDeadLine extends AppCompatActivity {
             subjectStart = subject.ngayBatDau;
         }
 
+        // Keep global copy for later reloads
+        subjectWeeksGlobal = subjectWeeks;
+
         // Get deadlines from DB
         deadlineList = dbHelper.getDeadlinesByMaHp(subjectMaHp);
 
@@ -98,7 +105,8 @@ public class MainDeadLine extends AppCompatActivity {
                     week = (int) (diffDays / 7) + 1;
                     if (week < 1) week = 1;
                 }
-                if (subjectWeeks > 0 && week > subjectWeeks) week = subjectWeeks;
+                // Dòng này bị xóa vì nó gây ra lỗi ép deadline về tuần cũ
+                // if (subjectWeeks > 0 && week > subjectWeeks) week = subjectWeeks;
 
                 if (!weekMap.containsKey(week)) weekMap.put(week, new ArrayList<>());
                 weekMap.get(week).add(d);
@@ -106,7 +114,8 @@ public class MainDeadLine extends AppCompatActivity {
             }
         }
 
-        int totalWeeksToShow = subjectWeeks > 0 ? subjectWeeks : Math.max(15, maxWeekFound);
+        // Logic hiển thị thông minh hơn: luôn hiển thị đủ số tuần cần thiết
+        int totalWeeksToShow = Math.max(subjectWeeks, Math.max(15, maxWeekFound));
 
         // Build Weeks list
         weeks = new ArrayList<>();
@@ -139,7 +148,10 @@ public class MainDeadLine extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQ_ADD_DEADLINE && resultCode == RESULT_OK && data != null) {
             Deadline newDl = (Deadline) data.getSerializableExtra(InputDeadlineActivity.KEY_TAI_KHOAN);
-            int weekIndex = data.getIntExtra("weekIndex", lastRequestedWeekIndex);
+            // The Input activity may return a weekIndex. We will try to interpret it.
+            int returnedWeekIndex = data.getIntExtra("weekIndex", lastRequestedWeekIndex);
+            Log.d("MainDeadLine", "onActivityResult returnedWeekIndex=" + returnedWeekIndex + ", lastRequested=" + lastRequestedWeekIndex + ", weeksSize=" + (weeks != null ? weeks.size() : "null"));
+
             if (newDl != null) {
                 if (subjectMaHp != null) {
                     newDl.setMaHp(subjectMaHp);
@@ -149,10 +161,22 @@ public class MainDeadLine extends AppCompatActivity {
                 long id = dbHelper.addDeadline(newDl);
 
                 if (id != -1) {
-                    // LƯU THÀNH CÔNG: Cập nhật ID cho đối tượng và thêm vào UI
+                    // LƯU THÀNH CÔNG: Cập nhật ID cho đối tượng
                     newDl.setMaDl((int) id);
-                    if (weekIndex >= 0 && weekIndex < weeks.size()) {
-                        adapterWeek.addDeadlineToWeek(weekIndex, newDl);
+
+                    // Giải pháp an toàn: reload toàn bộ dữ liệu từ DB để tránh mismatch index / adapter ẩn tuần trống
+                    // (subjectWeeksGlobal đã được lưu trong loadDeadlines)
+                    loadDeadlines(subjectWeeksGlobal);
+
+                    // Optional: điều chỉnh vị trí cuộn tới tuần vừa thêm (nếu có)
+                    int scrollIndex = returnedWeekIndex;
+                    // Nếu InputDeadlineActivity trả về 1-based (ví dụ: 1 là Tuần 1), chuyển về 0-based
+                    if (scrollIndex > 0 && scrollIndex <= weeks.size()) {
+                        scrollIndex = scrollIndex - 1;
+                    }
+                    if (scrollIndex < 0) scrollIndex = 0;
+                    if (scrollIndex < weeks.size()) {
+                        lvDeadlines.setSelection(scrollIndex);
                     }
                 } else {
                     // LƯU THẤT BẠI: Thông báo cho người dùng
