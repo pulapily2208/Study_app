@@ -6,74 +6,70 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class Deadline implements Serializable {
-    private int maDl; // Added field for the deadline ID
-    private String tieuDe,noiDung;
+
+    private int maDl; // Thêm trường maDl (ID deadline)
+    private String tieuDe, noiDung;
+    private String maHp;
     private Date ngayBatDau;
     private Date ngayKetThuc;
     private boolean completed;
     private int icon;
+    private String reminder; // ví dụ: "Trước 5 phút"
+    private String repeat;   // ví dụ: "Một lần", "Hằng tuần"
+    private boolean isPinned = false;
+    private String conLai;
 
-    // Thêm maHp để biết deadline thuộc môn nào
-    private String maHp;
-
-    // No-argument constructor required for instantiation from database
-    public Deadline() {}
-
-    public Deadline(String tieuDe,String noiDung, Date ngayBatDau, Date ngayKetThuc) {
+    public Deadline(){};
+    public Deadline(String tieuDe, String noiDung, Date ngayBatDau, Date ngayKetThuc, int icon) {
         this.tieuDe = tieuDe;
         this.noiDung = noiDung;
-
         this.ngayBatDau = ngayBatDau;
         this.ngayKetThuc = ngayKetThuc;
-    }
-
-    // Getter and Setter for maDl
-    public int getMaDl() {
-        return maDl;
-    }
-
-    public void setMaDl(int maDl) {
-        this.maDl = maDl;
-    }
-
-    public int getIcon() {
-        return icon;
-    }
-
-    public void setIcon(int icon) {
         this.icon = icon;
     }
 
+    // Getter và Setter cho maDl
+    public String getMaHp() { return maHp; }
+    public void setMaHp(String maHp) { this.maHp = maHp; }
+
+    public int getMaDl() { return maDl; }
+    public void setMaDl(int maDl) { this.maDl = maDl; }
+
+    public boolean isPinned() { return isPinned; }
+    public void setPinned(boolean pinned) { isPinned = pinned; }
+
+    public String getReminderText() {
+        return reminder != null ? reminder : "Không có";
+    }
+
+    public void setReminder(String reminder) {
+        this.reminder = reminder;
+    }
+
+    public String getRepeatText() {
+        return repeat != null ? repeat : "Sự kiện một lần";
+    }
+
+    public void setRepeat(String repeat) {
+        this.repeat = repeat;
+    }
     public boolean isCompleted() { return completed; }
     public void setCompleted(boolean completed) { this.completed = completed; }
 
     public String getTieuDe() { return tieuDe; }
+    public void setTieuDe(String tieuDe) { this.tieuDe = tieuDe; }
+
+    public String getNoiDung() { return noiDung; }
+    public void setNoiDung(String noiDung) { this.noiDung = noiDung; }
+
     public Date getNgayBatDau() { return ngayBatDau; }
+    public void setNgayBatDau(Date ngayBatDau) { this.ngayBatDau = ngayBatDau; }
+
     public Date getNgayKetThuc() { return ngayKetThuc; }
+    public void setNgayKetThuc(Date ngayKetThuc) { this.ngayKetThuc = ngayKetThuc; }
 
-    public void setTieuDe(String tieuDe) {
-        this.tieuDe = tieuDe;
-    }
-
-    public String getNoiDung() {
-        return noiDung;
-    }
-
-    public void setNoiDung(String noiDung) {
-        this.noiDung = noiDung;
-    }
-
-    public void setNgayBatDau(Date ngayBatDau) {
-        this.ngayBatDau = ngayBatDau;
-    }
-
-    public void setNgayKetThuc(Date ngayKetThuc) {
-        this.ngayKetThuc = ngayKetThuc;
-    }
-
-    // getter/setter maHp
-    public String getMaHp() { return maHp; }
-    public void setMaHp(String maHp) { this.maHp = maHp; }
+    public int getIcon() { return icon; }
+    public void setIcon(int icon) { this.icon = icon; }
 
     public String getConLai() {
         long diff = ngayKetThuc.getTime() - new Date().getTime();
@@ -85,11 +81,18 @@ public class Deadline implements Serializable {
         long hours = TimeUnit.MILLISECONDS.toHours(diff);
         return "Còn " + hours + " giờ";
     }
+    public void setConLai(String conLai) { this.conLai = conLai; }
 
     public String getNgayText() {
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm");
         return sdf.format(ngayBatDau) + " - " + sdf.format(ngayKetThuc);
     }
 
+    public String getReminder() {
+        return reminder;
+    }
 
+    public String getRepeat() {
+        return repeat;
+    }
 }

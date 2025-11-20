@@ -22,10 +22,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    // --- BẮT ĐẦU NÂNG CẤP HỆ THỐNG ---
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
+    // --- KẾT THÚC NÂNG CẤP HỆ THỐNG ---
+
 }
 
 dependencies {
@@ -41,8 +45,15 @@ dependencies {
     // them thu vien week view (hien thi tkb)
     implementation 'com.github.alamkanak:android-week-view:1.2.6'
 
+    // Material Calendar View (lich thang)
+    implementation 'com.prolificinteractive:material-calendarview:1.4.3'
+
     // workmanager (tb trươc gio hoc)
     implementation "androidx.work:work-runtime-ktx:2.9.0"
+
+    // Glide for image loading
+    implementation 'com.github.bumptech.glide:glide:4.12.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'
 
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
