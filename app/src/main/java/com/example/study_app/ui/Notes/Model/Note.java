@@ -2,6 +2,7 @@ package com.example.study_app.ui.Notes.Model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.Spanned;
 
 import java.util.Date;
 import java.text.SimpleDateFormat;
@@ -145,7 +146,7 @@ public class Note implements Parcelable {
     public String getContent() {
         return body;
     }
-    
+
     public void setContent(String content) {
         this.body = content;
     }

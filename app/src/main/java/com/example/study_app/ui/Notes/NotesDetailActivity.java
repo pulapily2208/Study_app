@@ -2,9 +2,9 @@ package com.example.study_app.ui.Notes;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.Html;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,17 +54,23 @@ public class NotesDetailActivity extends AppCompatActivity {
         tvTitle = findViewById(R.id.tvTitle);
         tvDate = findViewById(R.id.tvDate);
         tvContent = findViewById(R.id.tvContent);
-        imageContainer = findViewById(R.id.imageContainer); // LinearLayout chứa ảnh
+        imageContainer = findViewById(R.id.imageContainer);
         btnBack = findViewById(R.id.btnBack);
     }
 
     private void loadNoteData(int noteId) {
         Note note = dbHelper.getNoteById(noteId);
-        if (note != null) {
-            tvTitle.setText(note.getTitle());
-            tvContent.setText(note.getBody());
 
-            // Hiển thị ngày tháng
+        if (note != null) {
+
+            tvTitle.setText(note.getTitle());
+
+            // ✔ HIỂN THỊ HTML ĐÚNG CÁCH
+            tvContent.setText(
+                    Html.fromHtml(note.getBody(), Html.FROM_HTML_MODE_LEGACY)
+            );
+
+            // ✔ Ngày tạo
             try {
                 long timestamp = Long.parseLong(note.getCreated_at());
                 SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
@@ -73,15 +79,15 @@ public class NotesDetailActivity extends AppCompatActivity {
                 tvDate.setText(note.getCreated_at());
             }
 
-            // Hiển thị nhiều ảnh
+            // ✔ Hiển thị danh sách ảnh
             imageContainer.removeAllViews();
             String imagePath = note.getImagePath();
+
             if (imagePath != null && !imagePath.isEmpty()) {
                 try {
                     JSONArray array = new JSONArray(imagePath);
                     for (int i = 0; i < array.length(); i++) {
-                        String path = array.getString(i);
-                        addImageToContainer(Uri.parse(path));
+                        addImageToContainer(Uri.parse(array.getString(i)));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -96,17 +102,18 @@ public class NotesDetailActivity extends AppCompatActivity {
 
     private void addImageToContainer(Uri uri) {
         ImageView imageView = new ImageView(this);
+
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
+
         params.setMargins(0, 12, 0, 12);
         imageView.setLayoutParams(params);
-        imageView.setAdjustViewBounds(true); // tự điều chỉnh height theo ảnh
+        imageView.setAdjustViewBounds(true);
         imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
         Glide.with(this).load(uri).into(imageView);
-
         imageContainer.addView(imageView);
     }
 }
