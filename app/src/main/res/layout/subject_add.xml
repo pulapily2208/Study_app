@@ -28,6 +28,7 @@
             app:tint="@android:color/black" />
 
         <TextView
+            android:id="@+id/tvActivityTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -156,27 +157,27 @@
                 android:text="Loại môn"
                 android:textStyle="bold" />
 
-            <LinearLayout
+            <RadioGroup
+                android:id="@+id/rgSubjectType"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/btnMajor"
+                <RadioButton
+                    android:id="@+id/rbMajor"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/subject_type_major" />
 
-                <Button
-                    android:id="@+id/btnGeneral"
+                <RadioButton
+                    android:id="@+id/rbGeneral"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:text="@string/subject_type_general" />
-            </LinearLayout>
+            </RadioGroup>
 
             <!-- Ngày bắt đầu và kết thúc -->
             <LinearLayout
@@ -276,8 +277,8 @@
                 android:id="@+id/spinnerNumberOfWeeks"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:entries="@array/weeks_array" />
+                android:layout_marginTop="4dp"/>
+<!--                android:entries="@array/weeks_array" />-->
 
 
             <!-- Thời gian trong ngày -->

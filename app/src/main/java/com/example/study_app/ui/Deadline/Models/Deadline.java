@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class Deadline implements Serializable {
+    private int maDl; // Thêm trường maDl (ID deadline)
     private String tieuDe, noiDung;
     private Date ngayBatDau;
     private Date ngayKetThuc;
@@ -22,6 +23,10 @@ public class Deadline implements Serializable {
         this.ngayKetThuc = ngayKetThuc;
         this.icon = icon;
     }
+
+    // Getter và Setter cho maDl
+    public int getMaDl() { return maDl; }
+    public void setMaDl(int maDl) { this.maDl = maDl; }
 
     public boolean isPinned() { return isPinned; }
     public void setPinned(boolean pinned) { isPinned = pinned; }
@@ -73,5 +78,13 @@ public class Deadline implements Serializable {
     public String getNgayText() {
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm");
         return sdf.format(ngayBatDau) + " - " + sdf.format(ngayKetThuc);
+    }
+
+    public String getReminder() {
+        return reminder;
+    }
+
+    public String getRepeat() {
+        return repeat;
     }
 }
