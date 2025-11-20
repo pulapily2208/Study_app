@@ -24,10 +24,8 @@ public class AdapterWeek extends ArrayAdapter<Week> {
 
     private Context context;
     private int resource;
-    private ArrayList<Week> weeks;
     private OnAddDeadlineListener addListener;
     private OnDeadlineInteractionListener deadlineListener;
-    private ArrayList<AdapterDeadline> adapters;
     private Date subjectStartDate;
     private int currentWeekIndex = -1;
 
@@ -35,7 +33,6 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         void onAddDeadline(int weekIndex);
     }
 
-    // Sửa ở đây: Thêm onStateChanged vào interface
     public interface OnDeadlineInteractionListener {
         void onDeadlineClick(Deadline deadline);
         void onEditDeadline(Deadline deadline);
@@ -49,10 +46,19 @@ public class AdapterWeek extends ArrayAdapter<Week> {
 
     public void setOnDeadlineInteractionListener(OnDeadlineInteractionListener listener) {
         this.deadlineListener = listener;
-        if (adapters != null) {
-            for (AdapterDeadline adapter : adapters) {
-                adapter.setOnDeadlineInteractionListener(listener);
+    }
+
+    public void setSubjectStartDate(Date subjectStartDate) {
+        this.subjectStartDate = subjectStartDate;
+        if (this.subjectStartDate != null) {
+            long diffMillis = new Date().getTime() - this.subjectStartDate.getTime();
+            if (diffMillis >= 0) {
+                this.currentWeekIndex = (int) (TimeUnit.MILLISECONDS.toDays(diffMillis) / 7);
+            } else {
+                this.currentWeekIndex = -1; // Subject starts in the future
             }
+        } else {
+            this.currentWeekIndex = -1;
         }
     }
 
@@ -60,21 +66,7 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         super(context, resource, weeks);
         this.context = context;
         this.resource = resource;
-        this.weeks = weeks;
-        this.subjectStartDate = subjectStartDate;
-
-        if (this.subjectStartDate != null) {
-            long diffMillis = new Date().getTime() - this.subjectStartDate.getTime();
-            if (diffMillis >= 0) {
-                this.currentWeekIndex = (int) (TimeUnit.MILLISECONDS.toDays(diffMillis) / 7);
-            }
-        }
-
-        adapters = new ArrayList<>();
-        for (Week w : weeks) {
-            AdapterDeadline deadlineAdapter = new AdapterDeadline(context, R.layout.deadline_item, w.getDeadlines());
-            adapters.add(deadlineAdapter);
-        }
+        setSubjectStartDate(subjectStartDate);
     }
 
     @Override
@@ -93,10 +85,11 @@ public class AdapterWeek extends ArrayAdapter<Week> {
             holder = (ViewHolder) convertView.getTag();
         }
 
-        Week week = weeks.get(position);
+        Week week = getItem(position);
+        if (week == null) return convertView;
+
         holder.tvTuan.setText(week.getTenTuan());
 
-        // Logic để hiển thị ngày của tuần
         if (subjectStartDate != null) {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(subjectStartDate);
@@ -109,23 +102,23 @@ public class AdapterWeek extends ArrayAdapter<Week> {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM", Locale.getDefault());
             String dateRange = sdf.format(weekStart) + " - " + sdf.format(weekEnd);
             holder.tvNgayTuan.setText(dateRange);
+            holder.tvNgayTuan.setVisibility(View.VISIBLE);
         } else {
-            holder.tvNgayTuan.setText("...");
+            holder.tvNgayTuan.setText("");
+            holder.tvNgayTuan.setVisibility(View.GONE);
         }
 
-        if (currentWeekIndex != -1 && position > currentWeekIndex) {
+        // Sửa lại logic ở đây: Ẩn nút Thêm cho các tuần trong quá khứ
+        if (currentWeekIndex != -1 && position < currentWeekIndex) {
             holder.btnThem.setVisibility(View.GONE);
         } else {
             holder.btnThem.setVisibility(View.VISIBLE);
         }
 
-        AdapterDeadline currentAdapter = adapters.get(position);
-        if (holder.lvCongViec.getAdapter() == null) {
-            holder.lvCongViec.setAdapter(currentAdapter);
-        }
+        AdapterDeadline deadlineAdapter = new AdapterDeadline(context, R.layout.deadline_item, week.getDeadlines());
+        deadlineAdapter.setOnDeadlineInteractionListener(this.deadlineListener);
+        holder.lvCongViec.setAdapter(deadlineAdapter);
 
-        currentAdapter.setOnDeadlineInteractionListener(this.deadlineListener);
-        
         setListViewHeightBasedOnChildren(holder.lvCongViec);
 
         holder.btnThem.setOnClickListener(v -> {
@@ -141,7 +134,12 @@ public class AdapterWeek extends ArrayAdapter<Week> {
 
     private void setListViewHeightBasedOnChildren(ListView listView) {
         android.widget.ListAdapter adapter = listView.getAdapter();
-        if (adapter == null) return;
+        if (adapter == null || adapter.getCount() == 0) {
+            ViewGroup.LayoutParams params = listView.getLayoutParams();
+            params.height = 0;
+            listView.setLayoutParams(params);
+            return;
+        }
 
         int totalHeight = 0;
         for (int i = 0; i < adapter.getCount(); i++) {
@@ -151,11 +149,7 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         }
 
         ViewGroup.LayoutParams params = listView.getLayoutParams();
-        if (adapter.getCount() > 0) {
-            params.height = totalHeight + (listView.getDividerHeight() * (adapter.getCount() - 1));
-        } else {
-            params.height = 0;
-        }
+        params.height = totalHeight + (listView.getDividerHeight() * (adapter.getCount() - 1));
         listView.setLayoutParams(params);
         listView.requestLayout();
     }

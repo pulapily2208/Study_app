@@ -14,19 +14,17 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
-import com.example.study_app.ui.Deadline.Adapters.AdapterDeadline;
 import com.example.study_app.ui.Deadline.Adapters.AdapterWeek;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Deadline.Models.Week;
 import com.example.study_app.ui.Subject.Model.Subject;
 
-import java.text.SimpleDateFormat;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -38,7 +36,6 @@ public class MainDeadLine extends AppCompatActivity {
 
     private DatabaseHelper dbHelper;
     private AdapterWeek adapterWeek;
-    private ArrayList<Week> weekList = new ArrayList<>();
 
     private String subjectMaHp;
     private Date subjectStartDate; // Lưu ngày bắt đầu để truyền cho adapter
@@ -66,6 +63,10 @@ public class MainDeadLine extends AppCompatActivity {
 
         tvSubjectTitle.setText(subjectTenHp != null ? subjectTenHp : "Deadlines");
 
+        // Khởi tạo adapter một lần duy nhất với danh sách trống
+        adapterWeek = new AdapterWeek(this, R.layout.deadline_item_tuan, new ArrayList<>(), null);
+        lvWeeks.setAdapter(adapterWeek);
+
         setupDeadlineLauncher();
         loadDataFromDatabase();
         btnBack.setOnClickListener(v -> finish());
@@ -77,13 +78,12 @@ public class MainDeadLine extends AppCompatActivity {
             Toast.makeText(this, "Lỗi: Không thể tải thông tin môn học.", Toast.LENGTH_SHORT).show();
             return;
         }
-        subjectStartDate = subject.ngayBatDau; // Lưu lại ngày bắt đầu
+        subjectStartDate = subject.ngayBatDau;
 
         ArrayList<Deadline> allDeadlines = dbHelper.getDeadlinesByMaHp(subjectMaHp);
         Map<Integer, List<Deadline>> deadlinesByWeek = groupDeadlinesIntoWeeks(allDeadlines, subjectStartDate);
 
-        weekList.clear();
-
+        ArrayList<Week> newWeekList = new ArrayList<>();
         int maxWeekFromDeadlines = 0;
         if (!deadlinesByWeek.isEmpty()) {
             for (Integer weekNum : deadlinesByWeek.keySet()) {
@@ -99,12 +99,15 @@ public class MainDeadLine extends AppCompatActivity {
             if (deadlinesByWeek.containsKey(i)) {
                 week.getDeadlines().addAll(deadlinesByWeek.get(i));
             }
-            weekList.add(week);
+            newWeekList.add(week);
         }
 
-        // Sửa lỗi: Truyền `subjectStartDate` vào constructor của AdapterWeek
-        adapterWeek = new AdapterWeek(this, R.layout.deadline_item_tuan, weekList, subjectStartDate);
-        lvWeeks.setAdapter(adapterWeek);
+        // Sửa lỗi ở đây: Cập nhật ngày bắt đầu cho adapter
+        adapterWeek.setSubjectStartDate(subjectStartDate);
+
+        // Cập nhật dữ liệu cho adapter
+        adapterWeek.clear();
+        adapterWeek.addAll(newWeekList);
 
         setupAdapterListeners();
     }
@@ -114,6 +117,7 @@ public class MainDeadLine extends AppCompatActivity {
         if (deadlines == null || startDate == null) return map;
 
         for (Deadline d : deadlines) {
+            if (d.getNgayKetThuc() == null) continue;
             long diffMillis = d.getNgayKetThuc().getTime() - startDate.getTime();
             long diffDays = TimeUnit.MILLISECONDS.toDays(diffMillis);
             int weekNumber = (int) (diffDays / 7) + 1;
@@ -131,9 +135,26 @@ public class MainDeadLine extends AppCompatActivity {
         deadlineLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == RESULT_OK) {
-                        Toast.makeText(this, "Đã cập nhật danh sách!", Toast.LENGTH_SHORT).show();
-                        loadDataFromDatabase(); // Tải lại toàn bộ dữ liệu
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Serializable extra = result.getData().getSerializableExtra(InputDeadlineActivity.KEY_TAI_KHOAN);
+                        if (extra instanceof Deadline) {
+                            Deadline returnedDeadline = (Deadline) extra;
+                            boolean isUpdate = returnedDeadline.getMaDl() > 0;
+
+                            long dbResult;
+                            if (isUpdate) {
+                                dbResult = dbHelper.updateDeadline(returnedDeadline);
+                            } else {
+                                dbResult = dbHelper.addDeadline(returnedDeadline, subjectMaHp);
+                            }
+
+                            if (dbResult != -1) {
+                                Toast.makeText(this, isUpdate ? "Đã cập nhật deadline" : "Đã thêm deadline", Toast.LENGTH_SHORT).show();
+                                loadDataFromDatabase();
+                            } else {
+                                Toast.makeText(this, "Thao tác với database thất bại!", Toast.LENGTH_SHORT).show();
+                            }
+                        }
                     }
                 }
         );
@@ -146,7 +167,6 @@ public class MainDeadLine extends AppCompatActivity {
             Intent intent = new Intent(MainDeadLine.this, InputDeadlineActivity.class);
             intent.putExtra("weekIndex", weekIndex);
             intent.putExtra(InputDeadlineActivity.SUBJECT_MA_HP, subjectMaHp);
-            // Truyền ngày bắt đầu của tuần để InputActivity đặt ngày mặc định
             if (subjectStartDate != null) {
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(subjectStartDate);
@@ -191,8 +211,7 @@ public class MainDeadLine extends AppCompatActivity {
             public void onStateChanged(Deadline deadline, boolean isCompleted) {
                 deadline.setCompleted(isCompleted);
                 dbHelper.updateDeadline(deadline);
-                // Không cần load lại toàn bộ, nhưng để đơn giản thì có thể chấp nhận được
-                 Toast.makeText(MainDeadLine.this, "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainDeadLine.this, "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
             }
         });
     }
