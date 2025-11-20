@@ -3,6 +3,7 @@ package com.example.study_app.ui.Deadline;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -13,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.R;
+import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.ui.Deadline.Adapters.AdapterWeek;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Deadline.Models.Week;
@@ -29,7 +31,7 @@ public class MainDeadLine extends AppCompatActivity {
 
     private ListView lvWeeks;
     private TextView tvSubjectTitle;
-    private ImageView btnBack;
+    private Button btnBack; // Sửa lỗi: Đổi từ ImageView sang Button
 
     private DatabaseHelper dbHelper;
     private AdapterWeek adapterWeek;
@@ -43,16 +45,20 @@ public class MainDeadLine extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.deadline_main);
 
+        // --- Khởi tạo Views và Database ---
         lvWeeks = findViewById(R.id.lvItemTuan);
         tvSubjectTitle = findViewById(R.id.tvSubjectTitle);
         btnBack = findViewById(R.id.btnQuaylai);
         dbHelper = new DatabaseHelper(this);
 
+        // --- Lấy dữ liệu từ Intent ---
         Intent intent = getIntent();
         subjectMaHp = intent.getStringExtra("SUBJECT_MA_HP");
         String subjectTenHp = intent.getStringExtra("SUBJECT_TEN_HP");
 
         if (subjectMaHp == null || subjectMaHp.isEmpty()) {
+            // Nếu không có môn học cụ thể, có thể mở màn hình deadline chung (chức năng tương lai)
+            // Hiện tại, chỉ đóng lại và thông báo
             Toast.makeText(this, "Lỗi: Không có thông tin môn học.", Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -60,7 +66,10 @@ public class MainDeadLine extends AppCompatActivity {
 
         tvSubjectTitle.setText(subjectTenHp != null ? subjectTenHp : "Deadlines");
 
+        // --- Khởi tạo ActivityResultLauncher ---
         setupDeadlineLauncher();
+
+        // --- Tải dữ liệu và hiển thị --- 
         loadDataFromDatabase();
 
         btnBack.setOnClickListener(v -> finish());
@@ -78,8 +87,14 @@ public class MainDeadLine extends AppCompatActivity {
         Map<Integer, List<Deadline>> deadlinesByWeek = groupDeadlinesIntoWeeks(allDeadlines, subject.ngayBatDau);
 
         weekList.clear();
-        int totalWeeks = Math.max(subject.soTuanHoc > 0 ? subject.soTuanHoc : 15,
-                deadlinesByWeek.keySet().stream().max(Integer::compareTo).orElse(0));
+
+        int maxWeekFromDeadlines = 0;
+        for (Integer weekNum : deadlinesByWeek.keySet()) {
+            if (weekNum > maxWeekFromDeadlines) {
+                maxWeekFromDeadlines = weekNum;
+            }
+        }
+        int totalWeeks = Math.max(subject.soTuan > 0 ? subject.soTuan : 15, maxWeekFromDeadlines);
 
         for (int i = 1; i <= totalWeeks; i++) {
             Week week = new Week("Tuần " + i);
@@ -165,7 +180,7 @@ public class MainDeadLine extends AppCompatActivity {
         adapterWeek.setOnDeadlineStateChangeListener((deadline, isCompleted) -> {
             deadline.setCompleted(isCompleted);
             dbHelper.updateDeadline(deadline);
-            adapterWeek.notifyDataSetChanged();
+            loadDataFromDatabase(); 
             Toast.makeText(MainDeadLine.this, "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
         });
     }

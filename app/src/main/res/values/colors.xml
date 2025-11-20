@@ -9,27 +9,5 @@
     <color name="blue">#6989df </color>
     <color name="purple_500">#EE958F</color>
 
-    <string-array name="subject_colors">
-        <item>#e46471</item>
-        <item>#448184</item>
-        <item>#f9bd7a</item>
-        <item>#6989df</item>
-        <item>#EE958F</item>
-        <item>#9C27B0</item>
-        <item>#673AB7</item>
-        <item>#3F51B5</item>
-        <item>#2196F3</item>
-        <item>#00BCD4</item>
-        <item>#009688</item>
-        <item>#4CAF50</item>
-        <item>#8BC34A</item>
-        <item>#CDDC39</item>
-        <item>#FFEB3B</item>
-        <item>#FFC107</item>
-        <item>#FF9800</item>
-        <item>#FF5722</item>
-        <item>#795548</item>
-        <item>#9E9E9E</item>
-        <item>#607D8B</item>
-    </string-array>
+
 </resources>
