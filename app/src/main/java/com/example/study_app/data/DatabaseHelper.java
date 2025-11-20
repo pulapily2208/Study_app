@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import com.example.study_app.R;
+import com.example.study_app.ui.Curriculum.Curriculum;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Subject.Model.Subject;
 
@@ -19,8 +20,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -499,5 +502,85 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void deleteDeadline(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete("deadline", "id = ?", new String[]{String.valueOf(id)});
+    }
+
+    public List<Curriculum> getAllCoursesForCurriculum() {
+        List<Curriculum> courseList = new ArrayList<>();
+        String selectQuery = "SELECT * FROM mon_hoc ORDER BY hoc_ky, ten_hp";
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery(selectQuery, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    Curriculum course = new Curriculum();
+                    course.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
+                    course.setTenHp(cursor.getString(cursor.getColumnIndexOrThrow("ten_hp")));
+                    course.setSoTinChi(cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi")));
+                    course.setSoTietLyThuyet(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_ly_thuyet")));
+                    course.setSoTietThucHanh(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_thuc_hanh")));
+                    course.setNhomTuChon(cursor.getString(cursor.getColumnIndexOrThrow("nhom_tu_chon")));
+                    course.setHocKy(cursor.getInt(cursor.getColumnIndexOrThrow("hoc_ky")));
+                    course.setLoaiHp(cursor.getString(cursor.getColumnIndexOrThrow("loai_hp")));
+                    course.setKhoaId(cursor.getInt(cursor.getColumnIndexOrThrow("khoa_id")));
+                    courseList.add(course);
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy dữ liệu chương trình đào tạo", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return courseList;
+    }
+
+    // --- Curriculum Filter Helpers ---
+
+    public Map<String, Integer> getFacultiesMap() {
+        Map<String, Integer> faculties = new LinkedHashMap<>(); // Use LinkedHashMap to preserve order
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+        try {
+            cursor = db.query("khoa", new String[]{"id", "ten_khoa"}, null, null, null, null, "ten_khoa");
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    faculties.put(cursor.getString(cursor.getColumnIndexOrThrow("ten_khoa")), cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách Khoa", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return faculties;
+    }
+
+    public List<String> getAllCourseGroups() {
+        List<String> groups = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        // Query both tables and merge distinct results
+        String query = "SELECT ten_nhom FROM hoc_phan_tu_chon WHERE ten_nhom IS NOT NULL " +
+                       "UNION " +
+                       "SELECT nhom_tu_chon FROM mon_hoc WHERE nhom_tu_chon IS NOT NULL";
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery(query, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    groups.add(cursor.getString(0));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách Nhóm học phần", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return groups;
     }
 }
