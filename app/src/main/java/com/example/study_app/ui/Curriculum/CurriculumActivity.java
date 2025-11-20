@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.ui.Curriculum.Adapter.CurriculumAdapter;
+import com.example.study_app.ui.Curriculum.Model.Curriculum;
 
 import java.util.ArrayList;
 import java.util.List;

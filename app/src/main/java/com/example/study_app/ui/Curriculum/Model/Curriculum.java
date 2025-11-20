@@ -1,4 +1,4 @@
-package com.example.study_app.ui.Curriculum;
+package com.example.study_app.ui.Curriculum.Model;
 
 public class Curriculum {
     private String maHp;

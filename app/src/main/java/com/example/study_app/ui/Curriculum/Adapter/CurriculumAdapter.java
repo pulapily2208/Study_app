@@ -1,4 +1,4 @@
-package com.example.study_app.ui.Curriculum;
+package com.example.study_app.ui.Curriculum.Adapter;
 
 import android.content.Context;
 import android.text.TextUtils;
@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
+import com.example.study_app.ui.Curriculum.Model.Curriculum;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import com.example.study_app.R;
-import com.example.study_app.ui.Curriculum.Curriculum;
+import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Subject.Model.Subject;
 
