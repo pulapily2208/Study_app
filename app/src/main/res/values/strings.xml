@@ -19,6 +19,31 @@
     <string name="start_date_hint">Ngày bắt đầu</string>
     <string name="end_date_hint">Ngày kết thúc</string>
     <string name="number_of_weeks_hint">Học trong bao nhiêu tuần</string>
+    
+    <!-- Toast messages -->
+    <string name="error_no_semester_info">Lỗi: Không tìm thấy thông tin học kỳ.</string>
+    <string name="error_subject_not_found">Lỗi: Không tìm thấy môn học để sửa.</string>
+    <string name="subject_code_required">Mã môn học không được để trống.</string>
+    <string name="subject_name_required">Tên môn học không được để trống.</string>
+    <string name="credits_required">Số tín chỉ không được để trống.</string>
+    <string name="start_date_required">Vui lòng chọn ngày bắt đầu.</string>
+    <string name="end_date_required">Vui lòng chọn ngày kết thúc.</string>
+    <string name="start_time_required">Vui lòng chọn giờ bắt đầu.</string>
+    <string name="end_time_required">Vui lòng chọn giờ kết thúc.</string>
+    <string name="color_required">Vui lòng chọn màu cho môn học.</string>
+    <string name="subject_type_required">Vui lòng chọn loại môn học.</string>
+    <string name="credits_invalid">Số tín chỉ không hợp lệ.</string>
+    <string name="date_time_format_invalid">Định dạng ngày/giờ không hợp lệ.</string>
+    <string name="subject_code_exists">Mã môn học đã tồn tại.</string>
+    <string name="add_subject_success">Thêm môn học thành công</string>
+    <string name="add_subject_failed">Thêm môn học thất bại</string>
+    <string name="update_subject_success">Cập nhật môn học thành công</string>
+    <string name="update_subject_failed">Cập nhật môn học thất bại</string>
+    <string name="error_color_picker">Lỗi: Không tìm thấy R.array.subject_colors</string>
+    
+    <!-- Activity titles -->
+    <string name="activity_title_add">Thêm Môn Học</string>
+    <string name="activity_title_edit">Sửa Môn Học</string>
 
     <string-array name="weeks_array">
         <item>1</item>
@@ -36,10 +61,16 @@
         <item>13</item>
         <item>14</item>
         <item>15</item>
-        <item>16</item>
-        <item>17</item>
-        <item>18</item>
-        <item>19</item>
-        <item>20</item>
+    </string-array>
+
+    <string-array name="subject_colors">
+        <item>#448184</item>
+        <item>#6989df</item>
+        <item>#f9bd7a</item>
+        <item>#FFF9EB</item>
+        <item>#e46471</item>
+        <item>#EE958F</item>
+        <item>#8BC34A</item>
+        <item>#FFC6FF</item>
     </string-array>
 </resources>
