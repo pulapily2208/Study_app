@@ -1,8 +1,6 @@
 package com.example.study_app.ui.Notes.Adapters;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Color;
 import android.net.Uri;
 import android.text.Html;
 import android.view.LayoutInflater;
@@ -19,17 +17,15 @@ import com.bumptech.glide.Glide;
 import com.example.study_app.R;
 import com.example.study_app.ui.Notes.Model.Note;
 
-import org.json.JSONArray;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHolder> {
-    private List<Note> notes;
-    private Context context;
 
+    private final List<Note> notes;
+    private final Context context;
     private OnNoteClickListener onNoteClickListener;
 
     public interface OnNoteClickListener {
@@ -39,7 +35,6 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
     public void setOnNoteClickListener(OnNoteClickListener listener) {
         this.onNoteClickListener = listener;
     }
-
 
     public NotesAdapter(List<Note> notes, Context context) {
         this.notes = notes;
@@ -54,47 +49,44 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
     }
 
     @Override
-    public void onBindViewHolder(@NonNull NoteViewHolder holder, @SuppressLint("RecyclerView") int position) {
+    public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
         Note note = notes.get(position);
 
         holder.tvTitle.setText(note.getTitle());
-        holder.tvContent.setText(
-                Html.fromHtml(note.getBody(), Html.FROM_HTML_MODE_LEGACY)
-        );
+        holder.tvContent.setText(Html.fromHtml(note.getBody(), Html.FROM_HTML_MODE_LEGACY));
 
         try {
             long timestamp = Long.parseLong(note.getCreated_at());
-            Date date = new Date(timestamp);
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-            holder.tvDate.setText(sdf.format(date));
-        } catch (NumberFormatException e) {
+            holder.tvDate.setText(sdf.format(new Date(timestamp)));
+        } catch (Exception e) {
             holder.tvDate.setText(note.getCreated_at());
         }
 
         if (note.getColor_tag() != null && !note.getColor_tag().isEmpty()) {
             try {
-                holder.cardView.setCardBackgroundColor(Color.parseColor(note.getColor_tag()));
-            } catch (IllegalArgumentException e) {
-            }
+                holder.cardView.setCardBackgroundColor(android.graphics.Color.parseColor(note.getColor_tag()));
+            } catch (IllegalArgumentException ignored) {}
         }
 
-        holder.imageAnh.setVisibility(View.GONE);
-        if (note.getImagePath() != null && !note.getImagePath().isEmpty()){
+        // Hiển thị ảnh nếu có
+        if (note.getImagePath() != null && !note.getImagePath().isEmpty()) {
             holder.imageAnh.setVisibility(View.VISIBLE);
-            holder.imageAnh.setImageURI(Uri.parse(note.getImagePath()));
+            Glide.with(context)
+                    .load(Uri.parse(note.getImagePath()))
+                    .into(holder.imageAnh);
         } else {
             holder.imageAnh.setVisibility(View.GONE);
         }
 
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (onNoteClickListener != null) {
-                    onNoteClickListener.onNoteClick(notes.get(position));
+        holder.itemView.setOnClickListener(v -> {
+            if (onNoteClickListener != null) {
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    onNoteClickListener.onNoteClick(notes.get(pos));
                 }
             }
         });
-
     }
 
     @Override
@@ -102,7 +94,7 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
         return notes.size();
     }
 
-    public class NoteViewHolder extends RecyclerView.ViewHolder {
+    public static class NoteViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvContent, tvDate;
         ImageView imageAnh;
         CardView cardView;

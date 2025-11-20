@@ -27,6 +27,10 @@
         <activity android:name=".ui.Subject.SubjectListActivity"></activity>
         <activity android:name=".ui.Subject.SubjectAddActivity"></activity>
         <activity android:name=".ui.Subject.SubjectDetailActivity"></activity>
+        <activity android:name=".ui.Notes.NotesActivity" />
+        <activity android:name=".ui.Notes.InputNoteActivity" />
+        <activity android:name=".ui.Notes.NotesDetailActivity" />
+
 
         <activity android:name=".ui.Timetable.TimetableWeek" />
 

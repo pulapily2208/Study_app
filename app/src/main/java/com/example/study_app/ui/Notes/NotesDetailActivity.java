@@ -13,7 +13,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.example.study_app.R;
-import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.ui.Notes.Model.Note;
 
 import org.json.JSONArray;
@@ -26,7 +25,6 @@ public class NotesDetailActivity extends AppCompatActivity {
 
     private TextView tvTitle, tvDate, tvContent;
     private LinearLayout imageContainer;
-    private DatabaseHelper dbHelper;
     private ImageView btnBack;
 
     @Override
@@ -34,14 +32,13 @@ public class NotesDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.notes_detail);
 
-        dbHelper = new DatabaseHelper(this);
-
         initView();
 
-        int noteId = getIntent().getIntExtra("noteId", -1);
+        // Lấy Note object từ Intent
+        Note note = getIntent().getParcelableExtra("note");
 
-        if (noteId != -1) {
-            loadNoteData(noteId);
+        if (note != null) {
+            loadNoteData(note);
         } else {
             Toast.makeText(this, "Không tìm thấy ghi chú.", Toast.LENGTH_SHORT).show();
             finish();
@@ -58,45 +55,31 @@ public class NotesDetailActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
     }
 
-    private void loadNoteData(int noteId) {
-        Note note = dbHelper.getNoteById(noteId);
+    private void loadNoteData(Note note) {
+        tvTitle.setText(note.getTitle());
+        tvContent.setText(Html.fromHtml(note.getBody(), Html.FROM_HTML_MODE_LEGACY));
 
-        if (note != null) {
+        // Hiển thị ngày tạo
+        try {
+            long timestamp = Long.parseLong(note.getCreated_at());
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            tvDate.setText(sdf.format(new Date(timestamp)));
+        } catch (Exception e) {
+            tvDate.setText(note.getCreated_at());
+        }
 
-            tvTitle.setText(note.getTitle());
-
-            // ✔ HIỂN THỊ HTML ĐÚNG CÁCH
-            tvContent.setText(
-                    Html.fromHtml(note.getBody(), Html.FROM_HTML_MODE_LEGACY)
-            );
-
-            // ✔ Ngày tạo
+        // Hiển thị ảnh
+        imageContainer.removeAllViews();
+        String imagePath = note.getImagePath();
+        if (imagePath != null && !imagePath.isEmpty()) {
             try {
-                long timestamp = Long.parseLong(note.getCreated_at());
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                tvDate.setText(sdf.format(new Date(timestamp)));
-            } catch (Exception e) {
-                tvDate.setText(note.getCreated_at());
-            }
-
-            // ✔ Hiển thị danh sách ảnh
-            imageContainer.removeAllViews();
-            String imagePath = note.getImagePath();
-
-            if (imagePath != null && !imagePath.isEmpty()) {
-                try {
-                    JSONArray array = new JSONArray(imagePath);
-                    for (int i = 0; i < array.length(); i++) {
-                        addImageToContainer(Uri.parse(array.getString(i)));
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                JSONArray array = new JSONArray(imagePath);
+                for (int i = 0; i < array.length(); i++) {
+                    addImageToContainer(Uri.parse(array.getString(i)));
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-        } else {
-            Toast.makeText(this, "Không thể tải dữ liệu ghi chú.", Toast.LENGTH_SHORT).show();
-            finish();
         }
     }
 
@@ -107,7 +90,6 @@ public class NotesDetailActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-
         params.setMargins(0, 12, 0, 12);
         imageView.setLayoutParams(params);
         imageView.setAdjustViewBounds(true);
