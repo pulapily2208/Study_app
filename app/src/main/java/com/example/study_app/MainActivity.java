@@ -5,18 +5,17 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.ui.Curriculum.CurriculumActivity;
 import com.example.study_app.ui.Deadline.MainDeadLine;
 import com.example.study_app.ui.Notes.NotesActivity;
 import com.example.study_app.ui.Subject.SubjectListActivity;
+import com.example.study_app.ui.Timetable.TimetableWeek;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button btnNote;
-    Button btnDeadLine, btnSubject, btnCurriculum;
+    Button btnNote, btnDeadLine, btnSubject, btnCurriculum, btnTimetable;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -25,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
         btnNote = findViewById(R.id.btnNote);
         btnSubject = findViewById(R.id.btnSubject);
         btnCurriculum = findViewById(R.id.btnCurriculum);
+        btnTimetable = findViewById(R.id.btnTimetable);
 
         btnDeadLine.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -54,6 +54,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, CurriculumActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        btnTimetable.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, TimetableWeek.class);
                 startActivity(intent);
             }
         });
