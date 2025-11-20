@@ -1,47 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="16dp">
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="#FFFFFF"
+    android:descendantFocusability="blocksDescendants">
 
     <ImageView
         android:id="@+id/ivAnh"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_alignParentStart="true"
-        android:layout_centerVertical="true"
-        android:layout_marginEnd="16dp"
-        android:src="@drawable/ic_launcher_background"/>
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_margin="10dp"
+        android:src="@drawable/ic_launcher_background"
+        />
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_toStartOf="@+id/cbXacNhan"
-        android:layout_toEndOf="@id/ivAnh"
-        android:orientation="vertical">
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_margin="10dp">
 
-        <TextView
-            android:id="@+id/tvTieuDe"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Deadline Title"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvTieuDe"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:text="Tên công việc" />
+
+            <ImageView
+                android:id="@+id/ivPin"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@android:drawable/ic_menu_upload"
+                android:rotation="45"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"
+                app:tint="#FF9800"/>
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tvKetQua"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ends: 2024-12-31"
-            android:layout_marginTop="4dp"/>
+            android:text="Còn X ngày"
+            android:textSize="14sp" />
+
     </LinearLayout>
 
     <CheckBox
         android:id="@+id/cbXacNhan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true" />
+        android:layout_margin="10dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:clickable="true"/>
 
-</RelativeLayout>
+</LinearLayout>

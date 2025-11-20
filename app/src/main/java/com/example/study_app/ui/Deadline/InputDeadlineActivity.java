@@ -1,7 +1,7 @@
 package com.example.study_app.ui.Deadline;
 
-import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
@@ -17,6 +17,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.R;
+import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.ui.Deadline.Adapters.IconAdapter;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 
@@ -25,48 +26,59 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-/**
- * Activity để nhập (thêm) một Deadline mới.
- * - Truyền vào: "weekIndex" (int) (tùy optional), "SUBJECT_MA_HP" (String) để gán mã môn cho deadline.
- * - Trả về: Intent chứa Serializable Deadline dưới key InputDeadlineActivity.KEY_TAI_KHOAN
- */
 public class InputDeadlineActivity extends AppCompatActivity {
-    public static final String KEY_TAI_KHOAN = "taiKhoanMoi";
 
-    EditText edtTenDeadline, edtGhiChu;
-    TextView txtNgayGioTu, txtNgayGioDen;
-    Button btnHuy, btnThemDeadline;
-    Switch switchCaNgay;
+    // Constants for Intent Extras
+    public static final String EDIT_DEADLINE = "EDIT_DEADLINE";
+    public static final String SUBJECT_MA_HP = "SUBJECT_MA_HP";
 
-    int[] ICON_LIST = {
+    // Views
+    private EditText edtTenDeadline, edtGhiChu;
+    private TextView txtNgayGioTu, txtNgayGioDen;
+    private Button btnHuy, btnThemDeadline;
+    private Switch switchCaNgay;
+    private ImageView imgIcon;
+
+    // Data & Helpers
+    private DatabaseHelper dbHelper;
+    private String subjectMaHp;
+    private Deadline deadlineToEdit = null;
+    private boolean isEditMode = false;
+
+    private final Calendar calendarTu = Calendar.getInstance();
+    private final Calendar calendarDen = Calendar.getInstance();
+    private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+
+    private int selectedIcon = R.drawable.tasks; // Default icon
+    private final int[] ICON_LIST = {
             R.drawable.brain,
             R.drawable.calendar,
             R.drawable.code,
             R.drawable.exam,
             R.drawable.library,
             R.drawable.note,
-            R.drawable.brain,
             R.drawable.tasks,
             R.drawable.teacher
     };
-
-    int weekIndex;
-    ImageView imgIcon;
-    String subjectMaHp; // mã môn (nếu được truyền từ MainDeadLine)
-
-    Calendar calendarTu = Calendar.getInstance();
-    Calendar calendarDen = Calendar.getInstance();
-
-    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-
-    private int selectedIcon = R.drawable.ic_launcher_foreground; // icon mặc định
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.deadline_input);
 
-        // Views
+        dbHelper = new DatabaseHelper(this);
+        findViews();
+        setupListeners();
+        handleIntent();
+
+        // Initialize UI based on mode
+        if (!isEditMode) {
+            updateDateTimeUI();
+            imgIcon.setImageResource(selectedIcon);
+        }
+    }
+
+    private void findViews() {
         edtTenDeadline = findViewById(R.id.edtTenDeadline);
         edtGhiChu = findViewById(R.id.edtGhiChu);
         txtNgayGioTu = findViewById(R.id.txtNgayGioTu);
@@ -75,91 +87,119 @@ public class InputDeadlineActivity extends AppCompatActivity {
         btnHuy = findViewById(R.id.btnHuy);
         btnThemDeadline = findViewById(R.id.btnThemDeadline);
         imgIcon = findViewById(R.id.imgIcon);
-        LinearLayout layoutIcon = findViewById(R.id.layoutIcon);
+    }
 
-        // Lấy extras
-        weekIndex = getIntent().getIntExtra("weekIndex", 0);
-        subjectMaHp = getIntent().getStringExtra("SUBJECT_MA_HP");
-
-        // Thiết lập giá trị mặc định hiển thị ngày giờ
-        txtNgayGioTu.setText(sdf.format(calendarTu.getTime()));
-        txtNgayGioDen.setText(sdf.format(calendarDen.getTime()));
-
-        // Mở dialog chọn icon khi nhấn
-        layoutIcon.setOnClickListener(v -> openIconDialog(imgIcon));
-
-        // Chọn ngày giờ (từ)
-        txtNgayGioTu.setOnClickListener(v -> pickDateTime(calendarTu, txtNgayGioTu));
-
-        // Chọn ngày giờ (đến)
-        txtNgayGioDen.setOnClickListener(v -> pickDateTime(calendarDen, txtNgayGioDen));
-
-        // Nút Hủy
+    private void setupListeners() {
         btnHuy.setOnClickListener(v -> finish());
+        btnThemDeadline.setOnClickListener(v -> saveDeadline());
 
-        // Switch cả ngày: set start = 00:00, end = 23:59
+        LinearLayout layoutIcon = findViewById(R.id.layoutIcon);
+        layoutIcon.setOnClickListener(v -> openIconDialog());
+
+        txtNgayGioTu.setOnClickListener(v -> pickDateTime(calendarTu));
+        txtNgayGioDen.setOnClickListener(v -> pickDateTime(calendarDen));
+
         switchCaNgay.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
-                // Lấy ngày hiện tại của calendarTu, set full-day
-                Calendar startOfDay = (Calendar) calendarTu.clone();
-                startOfDay.set(Calendar.HOUR_OF_DAY, 0);
-                startOfDay.set(Calendar.MINUTE, 0);
-                startOfDay.set(Calendar.SECOND, 0);
-                startOfDay.set(Calendar.MILLISECOND, 0);
-
-                Calendar endOfDay = (Calendar) startOfDay.clone();
-                endOfDay.set(Calendar.HOUR_OF_DAY, 23);
-                endOfDay.set(Calendar.MINUTE, 59);
-                endOfDay.set(Calendar.SECOND, 59);
-                endOfDay.set(Calendar.MILLISECOND, 999);
-
-                calendarTu = startOfDay;
-                calendarDen = endOfDay;
-
-                txtNgayGioTu.setText(sdf.format(calendarTu.getTime()));
-                txtNgayGioDen.setText(sdf.format(calendarDen.getTime()));
-            } else {
-                // giữ nguyên thời gian hiện tại (không thay đổi)
-                txtNgayGioTu.setText(sdf.format(calendarTu.getTime()));
-                txtNgayGioDen.setText(sdf.format(calendarDen.getTime()));
+                calendarTu.set(Calendar.HOUR_OF_DAY, 0);
+                calendarTu.set(Calendar.MINUTE, 0);
+                calendarDen.setTime(calendarTu.getTime());
+                calendarDen.set(Calendar.HOUR_OF_DAY, 23);
+                calendarDen.set(Calendar.MINUTE, 59);
             }
-        });
-
-        // Nút Thêm: tạo Deadline, gán maHp (nếu có), trả về result
-        btnThemDeadline.setOnClickListener(v -> {
-            String ten = edtTenDeadline.getText().toString().trim();
-            String ghiChu = edtGhiChu.getText().toString().trim();
-            Date tu = calendarTu.getTime();
-            Date den = calendarDen.getTime();
-
-            if (ten.isEmpty()) {
-                edtTenDeadline.setError("Nhập tên deadline");
-                return;
-            }
-
-            // Tạo đối tượng Deadline và gán các thuộc tính
-            Deadline dlNew = new Deadline(ten, ghiChu, tu, den);
-            dlNew.setIcon(selectedIcon);
-            dlNew.setCompleted(false);
-            // Gán mã môn nếu có (để MainDeadLine hoặc DatabaseHelper biết deadline thuộc môn nào)
-            if (subjectMaHp != null) {
-                dlNew.setMaHp(subjectMaHp);
-            }
-
-            // Trả về object Deadline qua Intent (Serializable)
-            Intent result = new Intent();
-            result.putExtra("weekIndex", weekIndex);
-            result.putExtra(KEY_TAI_KHOAN, dlNew);
-            setResult(RESULT_OK, result);
-            Toast.makeText(this, "Đã thêm deadline mới", Toast.LENGTH_SHORT).show();
-            finish();
+            updateDateTimeUI();
         });
     }
 
-    /**
-     * Hiển thị DatePickerDialog rồi TimePickerDialog để chọn ngày giờ.
-     */
-    private void pickDateTime(Calendar calendar, TextView textView) {
+    private void handleIntent() {
+        Intent intent = getIntent();
+        subjectMaHp = intent.getStringExtra(SUBJECT_MA_HP);
+
+        if (intent.hasExtra(EDIT_DEADLINE)) {
+            deadlineToEdit = (Deadline) intent.getSerializableExtra(EDIT_DEADLINE);
+            isEditMode = (deadlineToEdit != null);
+        }
+
+        if (isEditMode) {
+            btnThemDeadline.setText("Lưu thay đổi");
+            populateDataForEdit();
+        } else {
+            btnThemDeadline.setText("Thêm Deadline");
+        }
+    }
+
+    private void populateDataForEdit() {
+        edtTenDeadline.setText(deadlineToEdit.getTieuDe());
+        edtGhiChu.setText(deadlineToEdit.getNoiDung());
+
+        calendarTu.setTime(deadlineToEdit.getNgayBatDau());
+        calendarDen.setTime(deadlineToEdit.getNgayKetThuc());
+
+        selectedIcon = deadlineToEdit.getIcon();
+        imgIcon.setImageResource(selectedIcon);
+        
+        updateDateTimeUI();
+    }
+
+    private void saveDeadline() {
+        String ten = edtTenDeadline.getText().toString().trim();
+        if (ten.isEmpty()) {
+            edtTenDeadline.setError("Tên deadline không được để trống");
+            return;
+        }
+
+        if (!isEditMode && (subjectMaHp == null || subjectMaHp.isEmpty())) {
+            Toast.makeText(this, "Lỗi: Không có mã môn học để thêm deadline.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String ghiChu = edtGhiChu.getText().toString().trim();
+        Date tu = calendarTu.getTime();
+        Date den = calendarDen.getTime();
+
+        Deadline deadline;
+        if (isEditMode) {
+            deadline = deadlineToEdit;
+        } else {
+            deadline = new Deadline(ten, ghiChu, tu, den, selectedIcon);
+        }
+
+        // Update fields
+        deadline.setTieuDe(ten);
+        deadline.setNoiDung(ghiChu);
+        deadline.setNgayBatDau(tu);
+        deadline.setNgayKetThuc(den);
+        deadline.setIcon(selectedIcon);
+        // Set default values for fields not in UI
+        if (deadline.getRepeat() == null) {
+            deadline.setRepeat("once");
+        }
+        if (deadline.getReminder() == null) {
+            deadline.setReminder("Trước 5 phút");
+        }
+
+        long result;
+        if (isEditMode) {
+            result = dbHelper.updateDeadline(deadline);
+        } else {
+            result = dbHelper.addDeadline(deadline, subjectMaHp);
+        }
+
+        if (result != -1) {
+            Toast.makeText(this, isEditMode ? "Đã cập nhật deadline" : "Đã thêm deadline", Toast.LENGTH_SHORT).show();
+            setResult(RESULT_OK, new Intent());
+            finish();
+        } else {
+            Toast.makeText(this, "Thao tác thất bại", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateDateTimeUI() {
+        txtNgayGioTu.setText(sdf.format(calendarTu.getTime()));
+        txtNgayGioDen.setText(sdf.format(calendarDen.getTime()));
+    }
+
+    private void pickDateTime(final Calendar calendar) {
         new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, month);
@@ -168,32 +208,23 @@ public class InputDeadlineActivity extends AppCompatActivity {
             new TimePickerDialog(this, (timePicker, hourOfDay, minute) -> {
                 calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                 calendar.set(Calendar.MINUTE, minute);
-                calendar.set(Calendar.SECOND, 0);
-                calendar.set(Calendar.MILLISECOND, 0);
-                textView.setText(sdf.format(calendar.getTime()));
+                updateDateTimeUI();
             }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show();
 
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
 
-    /**
-     * Mở dialog chọn icon (GridView). Khi chọn, cập nhật ImageView target và đóng dialog.
-     */
-    private void openIconDialog(ImageView targetView) {
+    private void openIconDialog() {
         Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.deadline_dialog_icon);
-
         GridView gridView = dialog.findViewById(R.id.gridIcons);
         IconAdapter adapter = new IconAdapter(this, ICON_LIST);
         gridView.setAdapter(adapter);
-
         gridView.setOnItemClickListener((parent, view, position, id) -> {
             selectedIcon = ICON_LIST[position];
-            targetView.setImageResource(selectedIcon);
-            Toast.makeText(this, "Đã chọn icon!", Toast.LENGTH_SHORT).show();
+            imgIcon.setImageResource(selectedIcon);
             dialog.dismiss();
         });
-
         dialog.show();
     }
 }

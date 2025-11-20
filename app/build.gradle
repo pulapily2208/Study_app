@@ -22,10 +22,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    // --- BẮT ĐẦU NÂNG CẤP HỆ THỐNG ---
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
+    // --- KẾT THÚC NÂNG CẤP HỆ THỐNG ---
+
 }
 
 dependencies {

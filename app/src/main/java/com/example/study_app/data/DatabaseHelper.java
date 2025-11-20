@@ -8,9 +8,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import com.example.study_app.R;
-import com.example.study_app.ui.Notes.Model.Note;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.example.study_app.ui.Deadline.Models.Deadline;
+import com.example.study_app.ui.Notes.Model.Note;
 import com.example.study_app.ui.Subject.Model.Subject;
 
 import java.io.BufferedReader;
@@ -21,7 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -29,13 +29,13 @@ import java.util.Map;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "study_app.db";
-    // Tăng version để thêm cột ma_hp vào bảng deadline
+    // Sửa lỗi: Nâng cấp phiên bản DB để khớp hoặc cao hơn phiên bản trên máy
     private static final int DB_VERSION = 9;
 
     private final Context context;
-    // Định dạng ngày và giờ
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+    private static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
 
     public DatabaseHelper(Context context) {
@@ -50,60 +50,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.i("DatabaseHelper", "Nâng cấp database từ version " + oldVersion + " lên " + newVersion);
-
-        if (oldVersion < 7) {
-            List<String> existingColumns = getColumns(db, "mon_hoc");
-            String[] requiredTextColumns = {
-                "giang_vien", "phong_hoc", "ngay_bat_dau",
-                "ngay_ket_thuc", "gio_bat_dau", "gio_ket_thuc", "ghi_chu"
-            };
-
-            for (String column : requiredTextColumns) {
-                if (!existingColumns.contains(column)) {
-                    try {
-                        String sql = "ALTER TABLE mon_hoc ADD COLUMN " + column + " TEXT";
-                        db.execSQL(sql);
-                        Log.i("DatabaseHelper", "Đã thêm cột " + column + " vào bảng mon_hoc");
-                    } catch (Exception e) {
-                        Log.w("DatabaseHelper", "Không thể thêm cột " + column + ": " + e.getMessage());
-                    }
-                }
-            }
-        }
-
-        if (oldVersion < 8) {
-             List<String> existingColumns = getColumns(db, "mon_hoc");
-             if (!existingColumns.contains("so_tuan")) {
-                 try {
-                     String sql = "ALTER TABLE mon_hoc ADD COLUMN so_tuan INTEGER";
-                     db.execSQL(sql);
-                     Log.i("DatabaseHelper", "Đã thêm cột so_tuan vào bảng mon_hoc");
-                 } catch (Exception e) {
-                     Log.w("DatabaseHelper", "Không thể thêm cột so_tuan: " + e.getMessage());
-                 }
-             }
-        }
-        
-        if (oldVersion < 9) {
-            List<String> existingColumns = getColumns(db, "deadline");
-            if (!existingColumns.contains("ma_hp")) {
-                try {
-                    String sql = "ALTER TABLE deadline ADD COLUMN ma_hp TEXT";
-                    db.execSQL(sql);
-                    Log.i("DatabaseHelper", "Đã thêm cột ma_hp vào bảng deadline");
-                } catch (Exception e) {
-                    Log.w("DatabaseHelper", "Không thể thêm cột ma_hp: " + e.getMessage());
-                }
-            }
-        }
+        // Chiến lược nâng cấp an toàn cho môi trường phát triển:
+        // Xóa hết bảng cũ và tạo lại.
+        Log.w("DatabaseHelper", "Upgrading database from version " + oldVersion + " to " + newVersion + ", which will destroy all old data");
+        db.execSQL("DROP TABLE IF EXISTS hoc_ky");
+        db.execSQL("DROP TABLE IF EXISTS khoa");
+        db.execSQL("DROP TABLE IF EXISTS hoc_phan_tu_chon");
+        db.execSQL("DROP TABLE IF EXISTS mon_hoc");
+        db.execSQL("DROP TABLE IF EXISTS hoc_phan_tien_quyet");
+        db.execSQL("DROP TABLE IF EXISTS users");
+        db.execSQL("DROP TABLE IF EXISTS Weeks");
+        db.execSQL("DROP TABLE IF EXISTS Icons");
+        db.execSQL("DROP TABLE IF EXISTS Colors");
+        db.execSQL("DROP TABLE IF EXISTS Deadlines");
+        db.execSQL("DROP TABLE IF EXISTS Reminders");
+        db.execSQL("DROP TABLE IF EXISTS Notifications");
+        db.execSQL("DROP TABLE IF EXISTS notes");
+        db.execSQL("DROP TABLE IF EXISTS attachments");
+        db.execSQL("DROP TABLE IF EXISTS timetable_sessions");
+        db.execSQL("DROP TABLE IF EXISTS enrollments");
+        db.execSQL("DROP TABLE IF EXISTS notification_schedules");
+        db.execSQL("DROP TABLE IF EXISTS mon_hoc_tu_chon_map");
+        onCreate(db);
     }
 
     private List<String> getColumns(SQLiteDatabase db, String tableName) {
-        ArrayList<String> columns = new ArrayList<>();
-        Cursor cursor = null;
-        try {
-            cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null);
+        List<String> columns = new ArrayList<>();
+        try (Cursor cursor = db.rawQuery("PRAGMA table_info(" + tableName + ")", null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 int nameIndex = cursor.getColumnIndex("name");
                 if (nameIndex != -1) {
@@ -113,13 +86,52 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy thông tin cột của bảng " + tableName, e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
+            Log.e("DatabaseHelper", "Error getting columns for table: " + tableName, e);
         }
         return columns;
+    }
+    
+    private Date parseDate(String dateStr) {
+        if (dateStr == null || dateStr.isEmpty()) return null;
+        try {
+            return dateFormat.parse(dateStr);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
+    private Date parseTime(String timeStr) {
+        if (timeStr == null || timeStr.isEmpty()) return null;
+        try {
+            return timeFormat.parse(timeStr);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
+    private String formatDate(Date date) {
+        if (date == null) return null;
+        return dateFormat.format(date);
+    }
+
+    private String formatTime(Date time) {
+        if (time == null) return null;
+        return timeFormat.format(time);
+    }
+
+    private Date parseDateTime(String dateTimeStr) {
+        if (dateTimeStr == null || dateTimeStr.isEmpty()) return null;
+        try {
+            return dateTimeFormat.parse(dateTimeStr);
+        } catch (ParseException e) {
+            Log.e("DatabaseHelper", "Error parsing dateTime: " + dateTimeStr, e);
+            return null;
+        }
+    }
+
+    private String formatDateTime(Date date) {
+        if (date == null) return null;
+        return dateTimeFormat.format(date);
     }
 
     private void runSqlFromRaw(SQLiteDatabase db, int resId) {
@@ -137,7 +149,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     try {
                         db.execSQL(sqlBuilder.toString());
                     } catch (Exception e) {
-                        Log.e("DatabaseHelper", "Thất bại khi thực thi SQL: " + sqlBuilder.toString(), e);
+                        Log.e("DatabaseHelper", "SQL Error: " + sqlBuilder.toString(), e);
                     }
                     sqlBuilder.setLength(0);
                 } else {
@@ -145,49 +157,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException("Lỗi khi đọc hoặc thực thi file SQL.", e);
+            throw new RuntimeException("Error reading SQL file", e);
         }
     }
     
-    // --- Helpers Date/Time ---
-    private Date parseDate(String dateStr) {
-        if (dateStr == null || dateStr.isEmpty()) return null;
-        try {
-            return dateFormat.parse(dateStr);
-        } catch (ParseException e) {
-            Log.e("DatabaseHelper", "Lỗi khi phân tích ngày: " + dateStr, e);
-            return null;
-        }
-    }
-
-    private Date parseTime(String timeStr) {
-        if (timeStr == null || timeStr.isEmpty()) return null;
-        try {
-            return timeFormat.parse(timeStr);
-        } catch (ParseException e) {
-            Log.e("DatabaseHelper", "Lỗi khi phân tích giờ: " + timeStr, e);
-            return null;
-        }
-    }
-
-    private String formatDate(Date date) {
-        if (date == null) return null;
-        return dateFormat.format(date);
-    }
-
-    private String formatTime(Date time) {
-        if (time == null) return null;
-        return timeFormat.format(time);
-    }
-
-    // --- Quản lý Học kỳ (Semester) ---
     public ArrayList<String> getAllSemesterNames() {
         ArrayList<String> semesterNames = new ArrayList<>();
         String selectQuery = "SELECT ten_hoc_ky FROM hoc_ky ORDER BY nam_hoc, id";
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        try {
-            cursor = db.rawQuery(selectQuery, null);
+        try (Cursor cursor = db.rawQuery(selectQuery, null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 int tenHocKyIndex = cursor.getColumnIndexOrThrow("ten_hoc_ky");
                 do {
@@ -195,77 +173,118 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách tên học kỳ", e);
-        } finally {
-            if (cursor != null) cursor.close();
+            Log.e("DatabaseHelper", "Error getting semesters", e);
         }
         return semesterNames;
     }
 
     public int getSemesterIdByName(String semesterName) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
         int semesterId = -1;
-        try {
-            cursor = db.query("hoc_ky", new String[]{"id"}, "ten_hoc_ky = ?", new String[]{semesterName}, null, null, null);
+        try (Cursor cursor = db.query("hoc_ky", new String[]{"id"}, "ten_hoc_ky = ?", new String[]{semesterName}, null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 semesterId = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy ID học kỳ theo tên", e);
-        } finally {
-            if (cursor != null) cursor.close();
+            Log.e("DatabaseHelper", "Error getting semester ID", e);
         }
         return semesterId;
     }
 
-    // --- Quản lý Môn học (Subject) ---
+    public ArrayList<Subject> getSubjectsBySemester(String semesterName) {
+        ArrayList<Subject> subjectList = new ArrayList<>();
+        String selectQuery = "SELECT m.*, w.num_of_weeks FROM mon_hoc m " +
+                "INNER JOIN enrollments e ON m.ma_hp = e.ma_hp " +
+                "INNER JOIN hoc_ky hk ON e.hoc_ky = hk.id " +
+                "LEFT JOIN Weeks w ON m.ma_hp = w.ma_hp " + 
+                "WHERE hk.ten_hoc_ky = ?";
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor cursor = db.rawQuery(selectQuery, new String[]{semesterName})) {
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    Subject subject = new Subject();
+                    subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
+                    subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
+                    subject.soTc = cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi"));
+                    subject.loaiMon = cursor.getString(cursor.getColumnIndexOrThrow("loai_hp"));
+                    subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
+                    subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
+                    subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
+                    subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
+                    subject.gioBatDau = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
+                    subject.gioKetThuc = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
+                    subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
+                    subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
+                    subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("num_of_weeks")); 
+                    subject.tenHk = semesterName;
+                    subjectList.add(subject);
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting subjects", e);
+        }
+        return subjectList;
+    }
+
+    public Subject getSubjectByMaHp(String maHp) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Subject subject = null;
+        String query = "SELECT m.*, w.num_of_weeks FROM mon_hoc m LEFT JOIN Weeks w ON m.ma_hp = w.ma_hp WHERE m.ma_hp = ?";
+        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
+            if (cursor != null && cursor.moveToFirst()) {
+                subject = new Subject();
+                subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
+                subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
+                subject.soTc = cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi"));
+                subject.loaiMon = cursor.getString(cursor.getColumnIndexOrThrow("loai_hp"));
+                subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
+                subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
+                subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
+                subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
+                subject.gioBatDau = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
+                subject.gioKetThuc = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
+                subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
+                subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
+                subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("num_of_weeks"));
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting subject detail", e);
+        }
+        return subject;
+    }
+
     public long addSubject(Subject subject) {
         SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("ma_hp", subject.maHp);
+        values.put("ten_hp", subject.tenHp);
+        values.put("so_tin_chi", subject.soTc);
+        values.put("loai_hp", subject.loaiMon);
+        values.put("giang_vien", subject.tenGv);
+        values.put("phong_hoc", subject.phongHoc);
+        values.put("ngay_bat_dau", formatDate(subject.ngayBatDau));
+        values.put("ngay_ket_thuc", formatDate(subject.ngayKetThuc));
+        values.put("gio_bat_dau", formatTime(subject.gioBatDau));
+        values.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
+        values.put("ghi_chu", subject.ghiChu);
+        values.put("color_tag", subject.mauSac);
 
-        ContentValues subjectValues = new ContentValues();
-        subjectValues.put("ma_hp", subject.maHp);
-        subjectValues.put("ten_hp", subject.tenHp);
-        subjectValues.put("so_tin_chi", subject.soTc);
-        subjectValues.put("loai_hp", subject.loaiMon);
-        subjectValues.put("giang_vien", subject.tenGv);
-        subjectValues.put("phong_hoc", subject.phongHoc);
-        subjectValues.put("ngay_bat_dau", formatDate(subject.ngayBatDau));
-        subjectValues.put("ngay_ket_thuc", formatDate(subject.ngayKetThuc));
-        subjectValues.put("gio_bat_dau", formatTime(subject.gioBatDau));
-        subjectValues.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
-        subjectValues.put("ghi_chu", subject.ghiChu);
-        subjectValues.put("color_tag", subject.mauSac);
-        subjectValues.put("so_tuan", subject.soTuan);
-
-        db.beginTransaction();
         try {
-            long subjectRowId = db.insertWithOnConflict("mon_hoc", null, subjectValues, SQLiteDatabase.CONFLICT_REPLACE);
-
-            if (subjectRowId == -1) {
-                return -1;
-            }
-
-            int semesterId = getSemesterIdByName(subject.tenHk);
-            if (semesterId == -1) {
-                return -1;
-            }
-
-            ContentValues enrollmentValues = new ContentValues();
-            enrollmentValues.put("ma_hp", subject.maHp);
-            enrollmentValues.put("hoc_ky", semesterId);
-
-            db.insertWithOnConflict("enrollments", null, enrollmentValues, SQLiteDatabase.CONFLICT_IGNORE);
-
-            db.setTransactionSuccessful();
-            return subjectRowId;
-
+            return db.insertOrThrow("mon_hoc", null, values);
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi thêm môn học hoặc enrollment", e);
+            Log.e("DatabaseHelper", "Failed to add subject", e);
             return -1;
-        } finally {
-            db.endTransaction();
         }
+    }
+
+    public void enrollSubjectInSemester(String maHp, int semesterId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("user_id", 1); 
+        values.put("ma_hp", maHp);
+        values.put("hoc_ky", semesterId);
+        db.insert("enrollments", null, values);
     }
 
     public int updateSubject(Subject subject) {
@@ -282,202 +301,141 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
         values.put("ghi_chu", subject.ghiChu);
         values.put("color_tag", subject.mauSac);
-        values.put("so_tuan", subject.soTuan);
-        
         return db.update("mon_hoc", values, "ma_hp = ?", new String[]{subject.maHp});
     }
 
     public void deleteSubject(String maHp) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.beginTransaction();
-        try {
-            db.delete("enrollments", "ma_hp = ?", new String[]{maHp});
-            db.delete("mon_hoc", "ma_hp = ?", new String[]{maHp});
-            db.setTransactionSuccessful();
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi xóa môn học", e);
-        } finally {
-            db.endTransaction();
-        }
+        db.delete("mon_hoc", "ma_hp = ?", new String[]{maHp});
     }
     
-    public ArrayList<Subject> getSubjectsBySemester(String semesterName) {
-        ArrayList<Subject> subjectList = new ArrayList<>();
-        String selectQuery = "SELECT m.* FROM mon_hoc m " +
-                "INNER JOIN enrollments e ON m.ma_hp = e.ma_hp " +
-                "INNER JOIN hoc_ky hk ON e.hoc_ky = hk.id " +
-                "WHERE hk.ten_hoc_ky = ?";
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        try {
-            cursor = db.rawQuery(selectQuery, new String[]{semesterName});
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Subject subject = new Subject();
-                    subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
-                    subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
-                    subject.soTc = cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi"));
-                    subject.loaiMon = cursor.getString(cursor.getColumnIndexOrThrow("loai_hp"));
-                    subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
-                    subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
-                    subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
-                    subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
-                    subject.gioBatDau = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
-                    subject.gioKetThuc = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
-                    subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
-                    subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
-                    subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
-                    subject.tenHk = semesterName;
-                    subjectList.add(subject);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách môn học theo học kỳ", e);
-        } finally {
-            if (cursor != null) cursor.close();
+    public void addOrUpdateWeekForSubject(Subject subject) {
+        if (subject == null || subject.maHp == null) return;
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("ma_hp", subject.maHp);
+        values.put("start_date", formatDate(subject.ngayBatDau));
+        values.put("num_of_weeks", subject.soTuan);
+        values.put("end_date", formatDate(subject.ngayKetThuc));
+
+        int weekId = getWeekIdForSubject(subject.maHp);
+        
+        if (weekId != -1) {
+            db.update("Weeks", values, "week_id = ?", new String[]{String.valueOf(weekId)});
+             Log.d("DatabaseHelper", "Updated week for " + subject.maHp);
+        } else {
+            db.insert("Weeks", null, values);
+            Log.d("DatabaseHelper", "Inserted new week for " + subject.maHp);
         }
-        return subjectList;
     }
 
-    public Subject getSubjectByMaHp(String maHp) {
+    public int getWeekIdForSubject(String maHp) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        Subject subject = null;
-        try {
-            cursor = db.query("mon_hoc", null, "ma_hp = ?", new String[]{maHp}, null, null, null);
+        int weekId = -1;
+        try (Cursor cursor = db.query("Weeks", new String[]{"week_id"}, "ma_hp = ?", new String[]{maHp}, null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) {
-                subject = new Subject();
-                subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
-                subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
-                subject.soTc = cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi"));
-                subject.loaiMon = cursor.getString(cursor.getColumnIndexOrThrow("loai_hp"));
-                subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
-                subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
-                subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
-                subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
-                subject.gioBatDau = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
-                subject.gioKetThuc = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
-                subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
-                subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
-                subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
+                weekId = cursor.getInt(cursor.getColumnIndexOrThrow("week_id"));
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy môn học theo mã HP", e);
-        } finally {
-            if (cursor != null) cursor.close();
+            Log.e("DatabaseHelper", "Error getting week ID for " + maHp, e);
         }
-        return subject;
+        return weekId;
     }
-
-    // --- Quản lý Deadline ---
 
     public ArrayList<Deadline> getDeadlinesByMaHp(String maHp) {
         ArrayList<Deadline> deadlineList = new ArrayList<>();
-        if (maHp == null || maHp.isEmpty()) {
-            return deadlineList;
-        }
-        String selectQuery = "SELECT * FROM deadline WHERE ma_hp = ? ORDER BY ngay_ket_thuc";
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        try {
-            cursor = db.rawQuery(selectQuery, new String[]{maHp});
+        
+        String query = "SELECT d.* FROM Deadlines d JOIN Weeks w ON d.week_id = w.week_id WHERE w.ma_hp = ?";
+
+        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
             if (cursor != null && cursor.moveToFirst()) {
                 do {
-                    Deadline deadline = new Deadline();
-                    deadline.setMaDl(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
-                    deadline.setTieuDe(cursor.getString(cursor.getColumnIndexOrThrow("tieu_de")));
-                    deadline.setNoiDung(cursor.getString(cursor.getColumnIndexOrThrow("noi_dung")));
-                    deadline.setNgayBatDau(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
-                    deadline.setNgayKetThuc(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
+                    String title = cursor.getString(cursor.getColumnIndexOrThrow("title"));
+                    String description = cursor.getString(cursor.getColumnIndexOrThrow("note"));
+                    String startDateTimeStr = cursor.getString(cursor.getColumnIndexOrThrow("start_datetime"));
+                    String endDateTimeStr = cursor.getString(cursor.getColumnIndexOrThrow("end_datetime"));
+                    int iconId = cursor.getInt(cursor.getColumnIndexOrThrow("icon_id"));
+                    
+                    Deadline deadline = new Deadline(title, description, parseDateTime(startDateTimeStr), parseDateTime(endDateTimeStr), iconId);
+                    
+                    deadline.setMaDl(cursor.getInt(cursor.getColumnIndexOrThrow("deadline_id")));
                     deadline.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
-
-                    // Bật đọc ma_hp nếu tồn tại
-                    int maHpIndex = cursor.getColumnIndex("ma_hp");
-                    if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
-                        deadline.setMaHp(cursor.getString(maHpIndex));
-                    }
+                    deadline.setRepeat(cursor.getString(cursor.getColumnIndexOrThrow("repeat_type")));
+                    deadline.setReminder(cursor.getString(cursor.getColumnIndexOrThrow("repeat_days")));
 
                     deadlineList.add(deadline);
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy deadlines theo mã HP: " + e.getMessage(), e);
-        } finally {
-            if (cursor != null) cursor.close();
+             Log.e("DatabaseHelper", "Error getting deadlines for " + maHp, e);
         }
         return deadlineList;
     }
 
-    public ArrayList<Deadline> getAllDeadlines() {
-        ArrayList<Deadline> deadlineList = new ArrayList<>();
-        String selectQuery = "SELECT * FROM deadline ORDER BY ngay_ket_thuc";
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        try {
-            cursor = db.rawQuery(selectQuery, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Deadline deadline = new Deadline();
-                    deadline.setMaDl(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
-                    deadline.setTieuDe(cursor.getString(cursor.getColumnIndexOrThrow("tieu_de")));
-                    deadline.setNoiDung(cursor.getString(cursor.getColumnIndexOrThrow("noi_dung")));
-                    deadline.setNgayBatDau(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
-                    deadline.setNgayKetThuc(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
-                    deadline.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
-
-                    int maHpIndex = cursor.getColumnIndex("ma_hp");
-                    if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
-                        deadline.setMaHp(cursor.getString(maHpIndex));
-                    }
-
-                    deadlineList.add(deadline);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy tất cả deadlines: " + e.getMessage(), e);
-        } finally {
-            if (cursor != null) cursor.close();
+    public long addDeadline(Deadline deadline, String maHp) {
+        int weekId = getWeekIdForSubject(maHp);
+        if (weekId == -1) {
+            Log.e("DatabaseHelper", "Cannot add deadline, no week found for subject: " + maHp);
+            return -1;
         }
-        return deadlineList;
-    }
 
-    public long addDeadline(Deadline deadline) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("tieu_de", deadline.getTieuDe());
-        values.put("noi_dung", deadline.getNoiDung());
-        values.put("ngay_bat_dau", formatDate(deadline.getNgayBatDau()));
-        values.put("ngay_ket_thuc", formatDate(deadline.getNgayKetThuc()));
-        values.put("completed", deadline.isCompleted() ? 1 : 0);
-        // Ghi ma_hp nếu có
-        if (deadline.getMaHp() != null) {
-            values.put("ma_hp", deadline.getMaHp());
+        values.put("week_id", weekId);
+        values.put("title", deadline.getTieuDe());
+        values.put("note", deadline.getNoiDung());
+        values.put("start_datetime", formatDateTime(deadline.getNgayBatDau()));
+        values.put("end_datetime", formatDateTime(deadline.getNgayKetThuc()));
+        
+        String repeatType = deadline.getRepeat();
+        if (repeatType == null || repeatType.isEmpty()) {
+            repeatType = "once";
         }
-        long id = db.insert("deadline", null, values);
-        return id;
+        values.put("repeat_type", repeatType);
+
+        values.put("repeat_days", deadline.getReminder()); 
+        
+        values.put("completed", deadline.isCompleted() ? 1 : 0);
+        values.put("icon_id", deadline.getIcon());
+        
+        try {
+            return db.insertOrThrow("Deadlines", null, values);
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Failed to add deadline", e);
+            return -1;
+        }
     }
 
     public int updateDeadline(Deadline deadline) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("tieu_de", deadline.getTieuDe());
-        values.put("noi_dung", deadline.getNoiDung());
-        values.put("ngay_bat_dau", formatDate(deadline.getNgayBatDau()));
-        values.put("ngay_ket_thuc", formatDate(deadline.getNgayKetThuc()));
-        values.put("completed", deadline.isCompleted() ? 1 : 0);
-        if (deadline.getMaHp() != null) {
-            values.put("ma_hp", deadline.getMaHp());
+        values.put("title", deadline.getTieuDe());
+        values.put("note", deadline.getNoiDung());
+        values.put("start_datetime", formatDateTime(deadline.getNgayBatDau()));
+        values.put("end_datetime", formatDateTime(deadline.getNgayKetThuc()));
+        
+        String repeatType = deadline.getRepeat();
+        if (repeatType == null || repeatType.isEmpty()) {
+            repeatType = "once";
         }
+        values.put("repeat_type", repeatType);
 
-        return db.update("deadline", values, "id = ?", new String[]{String.valueOf(deadline.getMaDl())});
+        values.put("repeat_days", deadline.getReminder());
+        
+        values.put("completed", deadline.isCompleted() ? 1 : 0);
+        values.put("icon_id", deadline.getIcon());
+
+        return db.update("Deadlines", values, "deadline_id = ?", new String[]{String.valueOf(deadline.getMaDl())});
     }
 
-    public void deleteDeadline(int id) {
+    public void deleteDeadline(int deadlineId) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete("deadline", "id = ?", new String[]{String.valueOf(id)});
+        db.delete("Deadlines", "deadline_id = ?", new String[]{String.valueOf(deadlineId)});
     }
 
-
+    // Quản lý note
     //    Quản lý note
     public ArrayList<Note> getAllNotes() {
         ArrayList<Note> notes = new ArrayList<>();
@@ -585,14 +543,45 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
+    public Map<String, Integer> getFacultiesMap() {
+        Map<String, Integer> faculties = new HashMap<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor cursor = db.query("khoa", new String[]{"id", "ten_khoa"}, null, null, null, null, "ten_khoa ASC")) {
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    faculties.put(cursor.getString(cursor.getColumnIndexOrThrow("ten_khoa")),
+                                  cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting faculties map", e);
+        }
+        return faculties;
+    }
+
+    public List<String> getAllCourseGroups() {
+        List<String> groups = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT DISTINCT nhom_tu_chon FROM mon_hoc WHERE nhom_tu_chon IS NOT NULL AND nhom_tu_chon != '' " +
+                       "UNION " +
+                       "SELECT DISTINCT ten_nhom FROM hoc_phan_tu_chon WHERE ten_nhom IS NOT NULL AND ten_nhom != ''";
+        try (Cursor cursor = db.rawQuery(query, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    groups.add(cursor.getString(0));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting course groups", e);
+        }
+        return groups;
+    }
 
     public List<Curriculum> getAllCoursesForCurriculum() {
-        List<Curriculum> courseList = new ArrayList<>();
-        String selectQuery = "SELECT * FROM mon_hoc ORDER BY hoc_ky, ten_hp";
+        List<Curriculum> courses = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        try {
-            cursor = db.rawQuery(selectQuery, null);
+        String query = "SELECT * FROM mon_hoc";
+        try (Cursor cursor = db.rawQuery(query, null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 do {
                     Curriculum course = new Curriculum();
@@ -605,64 +594,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     course.setHocKy(cursor.getInt(cursor.getColumnIndexOrThrow("hoc_ky")));
                     course.setLoaiHp(cursor.getString(cursor.getColumnIndexOrThrow("loai_hp")));
                     course.setKhoaId(cursor.getInt(cursor.getColumnIndexOrThrow("khoa_id")));
-                    courseList.add(course);
+                    courses.add(course);
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy dữ liệu chương trình đào tạo", e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
+            Log.e("DatabaseHelper", "Error getting all courses for curriculum", e);
         }
-        return courseList;
-    }
-
-    // --- Curriculum Filter Helpers ---
-
-    public Map<String, Integer> getFacultiesMap() {
-        Map<String, Integer> faculties = new LinkedHashMap<>(); // Use LinkedHashMap to preserve order
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        try {
-            cursor = db.query("khoa", new String[]{"id", "ten_khoa"}, null, null, null, null, "ten_khoa");
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    faculties.put(cursor.getString(cursor.getColumnIndexOrThrow("ten_khoa")), cursor.getInt(cursor.getColumnIndexOrThrow("id")));
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách Khoa", e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        return faculties;
-    }
-
-    public List<String> getAllCourseGroups() {
-        List<String> groups = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        // Query both tables and merge distinct results
-        String query = "SELECT ten_nhom FROM hoc_phan_tu_chon WHERE ten_nhom IS NOT NULL " +
-                       "UNION " +
-                       "SELECT nhom_tu_chon FROM mon_hoc WHERE nhom_tu_chon IS NOT NULL";
-        Cursor cursor = null;
-        try {
-            cursor = db.rawQuery(query, null);
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    groups.add(cursor.getString(0));
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy danh sách Nhóm học phần", e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        return groups;
+        return courses;
     }
 }
