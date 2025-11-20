@@ -236,46 +236,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         db.beginTransaction();
         try {
-            // Step 1: Thêm môn học vào bảng mon_hoc.
             long subjectRowId = db.insertWithOnConflict("mon_hoc", null, subjectValues, SQLiteDatabase.CONFLICT_REPLACE);
+
             if (subjectRowId == -1) {
-                Log.e("DatabaseHelper", "Thất bại khi ghi vào bảng mon_hoc. Mã HP: " + subject.maHp);
-                return -1; // Sẽ rollback trong khối finally
+                return -1;
             }
 
-            // Step 2: Lấy ID của học kỳ.
             int semesterId = getSemesterIdByName(subject.tenHk);
             if (semesterId == -1) {
-                Log.e("DatabaseHelper", "Không tìm thấy ID cho học kỳ: " + subject.tenHk + ". Rollback.");
-                return -1; // Sẽ rollback trong khối finally
+                return -1;
             }
 
-            // Step 3: Thêm liên kết vào bảng enrollments.
             ContentValues enrollmentValues = new ContentValues();
             enrollmentValues.put("ma_hp", subject.maHp);
             enrollmentValues.put("hoc_ky", semesterId);
 
-            // SỬA LỖI QUAN TRỌNG:
-            // Sử dụng CONFLICT_ROLLBACK. Nếu việc thêm vào bảng enrollments thất bại
-            // (ví dụ do đã tồn tại), nó sẽ ném ra Exception và rollback toàn bộ giao dịch.
-            // Điều này đảm bảo tính toàn vẹn dữ liệu.
-            db.insertWithOnConflict("enrollments", null, enrollmentValues, SQLiteDatabase.CONFLICT_ROLLBACK);
+            db.insertWithOnConflict("enrollments", null, enrollmentValues, SQLiteDatabase.CONFLICT_IGNORE);
 
-            // Nếu tất cả các bước trên thành công, đánh dấu giao dịch là thành công.
             db.setTransactionSuccessful();
             return subjectRowId;
 
         } catch (Exception e) {
-            // Bất kỳ lỗi nào xảy ra (bao gồm cả lỗi từ CONFLICT_ROLLBACK) sẽ được bắt ở đây.
-            Log.e("DatabaseHelper", "Lỗi Exception khi thực hiện giao dịch thêm môn học. Rollback.", e);
-            return -1; // Báo hiệu thất bại
+            Log.e("DatabaseHelper", "Lỗi khi thêm môn học hoặc enrollment", e);
+            return -1;
         } finally {
-            // Kết thúc giao dịch. Nếu setTransactionSuccessful() được gọi, nó sẽ commit.
-            // Nếu không, nó sẽ rollback.
             db.endTransaction();
         }
     }
-
 
     public int updateSubject(Subject subject) {
         SQLiteDatabase db = this.getWritableDatabase();
