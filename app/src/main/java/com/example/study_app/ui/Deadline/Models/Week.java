@@ -1,6 +1,7 @@
 package com.example.study_app.ui.Deadline.Models;
 
 import java.util.ArrayList;
+import com.example.study_app.ui.Deadline.Models.*;
 
 public class Week {
     private String tenTuan;
