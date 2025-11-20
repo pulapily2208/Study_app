@@ -9,16 +9,19 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.ui.Deadline.MainDeadLine;
+import com.example.study_app.ui.Notes.NotesActivity;
 
 public class MainActivity extends AppCompatActivity {
 
     Button btnDeadLine;
+    Button btnNote;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
         btnDeadLine=findViewById(R.id.btnDeadLine);
+        btnNote = findViewById(R.id.btnNote);
 
         btnDeadLine.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -26,6 +29,14 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent=new Intent(MainActivity.this, MainDeadLine.class);
                 startActivity(intent);
 //                finish();//dừng app
+            }
+        });
+
+        btnNote.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, NotesActivity.class);
+                startActivity(intent);
             }
         });
 

@@ -1,5 +1,6 @@
 package com.example.study_app.data;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -7,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import com.example.study_app.R;
+import com.example.study_app.ui.Notes.Model.Note;
 import com.example.study_app.ui.Subject.Model.Subject;
 
 import java.io.BufferedReader;
@@ -18,7 +20,7 @@ import java.util.ArrayList;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "study_app.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
 
     // Table and column names for mon_hoc
     private static final String TABLE_MON_HOC = "mon_hoc";
@@ -81,17 +83,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 if (trimmedLine.isEmpty() || trimmedLine.startsWith("--")) {
                     continue;
                 }
-                
-                // Append the line and a space to separate statements
+
                 sql.append(trimmedLine);
-                sql.append(" ");
 
                 if (trimmedLine.endsWith(";")) {
-                    // Execute the accumulated SQL statement
                     db.execSQL(sql.toString());
-                    // Reset for the next statement
                     sql.setLength(0);
+                } else {
+                    sql.append(" ");
                 }
+            }
+            // Execute any remaining SQL
+            if (sql.length() > 0) {
+                db.execSQL(sql.toString());
             }
         } catch (IOException e) {
             throw new RuntimeException("Error reading SQL file", e);
@@ -157,5 +161,82 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cursor.close();
 
         return subjectList;
+    }
+
+    @SuppressLint("Range")
+    public ArrayList<Note> getAllNotes() {
+        ArrayList<Note> notes = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT * FROM notes ORDER BY id DESC", null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Note note = new Note();
+
+                note.setId(cursor.getInt(cursor.getColumnIndex("id")));
+                note.setUser_id(cursor.getInt(cursor.getColumnIndex("user_id")));
+                note.setMa_hp(cursor.getString(cursor.getColumnIndex("ma_hp")));
+                note.setTitle(cursor.getString(cursor.getColumnIndex("title")));
+                note.setBody(cursor.getString(cursor.getColumnIndex("body")));
+                note.setPinned(cursor.getInt(cursor.getColumnIndex("pinned")));
+                note.setColor_tag(cursor.getString(cursor.getColumnIndex("color_tag")));
+                note.setCreated_at(cursor.getString(cursor.getColumnIndex("created_at")));
+                note.setUpdated_at(cursor.getString(cursor.getColumnIndex("updated_at")));
+                note.setImagePath(cursor.getString(cursor.getColumnIndex("image_path")));
+
+                notes.add(note);
+
+            } while (cursor.moveToNext());
+        }
+
+        cursor.close();
+        return notes;
+    }
+
+
+    public long insertNote(Note note, String imagePath) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+
+        values.put("user_id", note.getUser_id());
+        values.put("ma_hp", note.getMa_hp());
+        values.put("title", note.getTitle());
+        values.put("body", note.getBody());
+        values.put("pinned", note.getPinned());
+        values.put("color_tag", note.getColor_tag());
+        values.put("created_at", System.currentTimeMillis());
+        values.put("updated_at", System.currentTimeMillis());
+        values.put("image_path", note.getImagePath());
+
+
+        return db.insert("notes", null, values);
+    }
+
+    @SuppressLint("Range")
+    public Note getNoteById(int noteId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Note note = null;
+
+        Cursor cursor = db.rawQuery("SELECT * FROM notes_table WHERE id = ?",
+            new String[]{String.valueOf(noteId)});
+
+        if(cursor != null && cursor.moveToFirst()) {
+            note = new Note();
+            note.setId(cursor.getInt(cursor.getColumnIndex("id")));
+            note.setUser_id(cursor.getInt(cursor.getColumnIndex("user_id")));
+            note.setMa_hp(cursor.getString(cursor.getColumnIndex("ma_hp")));
+            note.setTitle(cursor.getString(cursor.getColumnIndex("title")));
+            note.setBody(cursor.getString(cursor.getColumnIndex("body")));
+            note.setPinned(cursor.getInt(cursor.getColumnIndex("pinned")));
+            note.setColor_tag(cursor.getString(cursor.getColumnIndex("color_tag")));
+            note.setCreated_at(cursor.getString(cursor.getColumnIndex("created_at")));
+            note.setUpdated_at(cursor.getString(cursor.getColumnIndex("updated_at")));
+            note.setImagePath(cursor.getString(cursor.getColumnIndex("image_path")));
+        }
+        if (cursor != null) cursor.close();
+
+        db.close();
+        return note;
     }
 }

@@ -23,6 +23,12 @@
         <activity
             android:name=".ui.Deadline.MainDeadLine"></activity>
         <activity
+            android:name=".ui.Notes.NotesActivity"></activity>
+        <activity
+            android:name=".ui.Notes.InputNoteActivity"></activity>
+        <activity
+            android:name=".ui.Notes.Model.NotesDetailActivity"></activity>
+        <activity
             android:name=".ui.Deadline.InputDeadlineActivity"></activity>
     </application>
 

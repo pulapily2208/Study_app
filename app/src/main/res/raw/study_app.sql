@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS notes (
     color_tag TEXT,
     created_at INTEGER,
     updated_at INTEGER,
+    image_path TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp) ON DELETE SET NULL
 );
@@ -99,7 +100,8 @@ CREATE TABLE IF NOT EXISTS notes (
 -- Attachments (generic link)
 CREATE TABLE IF NOT EXISTS attachments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    owner_type TEXT NOT NULL, -- 'note' | 'deadline' | 'timetable'
+    owner_type TEXT NOT NULL,
+    -- 'note' | 'deadline' | 'timetable'
     owner_id INTEGER NOT NULL,
     file_path TEXT,
     file_name TEXT,
