@@ -6,8 +6,10 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class Deadline implements Serializable {
+
     private int maDl; // Thêm trường maDl (ID deadline)
     private String tieuDe, noiDung;
+    private String maHp;
     private Date ngayBatDau;
     private Date ngayKetThuc;
     private boolean completed;
@@ -15,7 +17,9 @@ public class Deadline implements Serializable {
     private String reminder; // ví dụ: "Trước 5 phút"
     private String repeat;   // ví dụ: "Một lần", "Hằng tuần"
     private boolean isPinned = false;
+    private String conLai;
 
+    public Deadline(){};
     public Deadline(String tieuDe, String noiDung, Date ngayBatDau, Date ngayKetThuc, int icon) {
         this.tieuDe = tieuDe;
         this.noiDung = noiDung;
@@ -25,6 +29,9 @@ public class Deadline implements Serializable {
     }
 
     // Getter và Setter cho maDl
+    public String getMaHp() { return maHp; }
+    public void setMaHp(String maHp) { this.maHp = maHp; }
+
     public int getMaDl() { return maDl; }
     public void setMaDl(int maDl) { this.maDl = maDl; }
 
@@ -74,6 +81,7 @@ public class Deadline implements Serializable {
         long hours = TimeUnit.MILLISECONDS.toHours(diff);
         return "Còn " + hours + " giờ";
     }
+    public void setConLai(String conLai) { this.conLai = conLai; }
 
     public String getNgayText() {
         SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm");

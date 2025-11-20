@@ -8,8 +8,8 @@ import android.widget.Button;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.study_app.ui.Deadline.MainDeadLine;
-import com.example.study_app.ui.Subject.SubjectListActivity;
+import com.example.study_app.ui.Deadline.*;
+import com.example.study_app.ui.Subject.*;
 
 public class MainActivity extends AppCompatActivity {
 

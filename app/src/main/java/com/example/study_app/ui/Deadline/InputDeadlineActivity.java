@@ -6,7 +6,6 @@ import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.InputType;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
