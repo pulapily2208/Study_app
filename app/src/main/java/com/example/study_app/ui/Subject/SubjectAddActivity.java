@@ -9,13 +9,11 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.ui.Subject.Model.Subject;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,14 +30,15 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class SubjectAddActivity extends AppCompatActivity {
 
     private EditText etSubjectCode, etSubjectName, etLecturerName, etCredits, etStartDate, etEndDate, etStartTime, etEndTime, etLocation, etNotes;
     private RadioGroup rgSubjectType;
     private RadioButton rbMajor, rbGeneral;
-    private Spinner spinnerNumberOfWeeks;
-    private LinearLayout colorPickerContainer;
+    private TextView tvCalculatedWeeks;
+    private LinearLayout colorPickerContainer, layoutStartDate, layoutEndDate;
     private ImageView ivBack, ivSave;
     private TextView tvActivityTitle;
 
@@ -50,7 +50,11 @@ public class SubjectAddActivity extends AppCompatActivity {
     private String selectedColor = null;
     private final List<View> colorViews = new ArrayList<>();
     private View selectedColorView = null;
-    private ArrayAdapter<String> weeksAdapter;
+
+    // State for week calculation
+    private Calendar startDateCalendar = null;
+    private Calendar endDateCalendar = null;
+    private int calculatedWeeks = 0;
 
 
     @Override
@@ -61,9 +65,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         findViews();
         setClickListeners();
-        setupWeeksSpinner(); // Thêm hàm này
         setupColorPicker();
-
 
         if (getIntent().hasExtra("SEMESTER_NAME")) {
             currentSemesterName = getIntent().getStringExtra("SEMESTER_NAME");
@@ -75,13 +77,11 @@ public class SubjectAddActivity extends AppCompatActivity {
 
         checkForEditOrAddMode();
 
-        // Mặc định cho mode Thêm mới
         if (!isEditMode) {
             if (!colorViews.isEmpty()) {
                 colorViews.get(0).performClick();
             }
-            rbGeneral.setChecked(true); // Mặc định là môn đại cương
-            spinnerNumberOfWeeks.setSelection(0); // Mặc định là 15 tuần
+            rbGeneral.setChecked(true);
         }
     }
 
@@ -99,19 +99,25 @@ public class SubjectAddActivity extends AppCompatActivity {
         rgSubjectType = findViewById(R.id.rgSubjectType);
         rbMajor = findViewById(R.id.rbMajor);
         rbGeneral = findViewById(R.id.rbGeneral);
-        spinnerNumberOfWeeks = findViewById(R.id.spinnerNumberOfWeeks);
+        tvCalculatedWeeks = findViewById(R.id.tvCalculatedWeeks);
         colorPickerContainer = findViewById(R.id.colorPickerContainer);
         ivBack = findViewById(R.id.ivBack);
         ivSave = findViewById(R.id.ivSave);
         tvActivityTitle = findViewById(R.id.tvActivityTitle);
+        layoutStartDate = findViewById(R.id.layoutStartDate);
+        layoutEndDate = findViewById(R.id.layoutEndDate);
     }
 
     private void setClickListeners() {
         ivBack.setOnClickListener(v -> finish());
         ivSave.setOnClickListener(v -> saveSubject());
 
+        // Set OnClickListener on the whole layout for better UX
+        layoutStartDate.setOnClickListener(v -> showDatePickerDialog(etStartDate));
         etStartDate.setOnClickListener(v -> showDatePickerDialog(etStartDate));
+        layoutEndDate.setOnClickListener(v -> showDatePickerDialog(etEndDate));
         etEndDate.setOnClickListener(v -> showDatePickerDialog(etEndDate));
+
         etStartTime.setOnClickListener(v -> showTimePickerDialog(etStartTime));
         etEndTime.setOnClickListener(v -> showTimePickerDialog(etEndTime));
     }
@@ -147,27 +153,30 @@ public class SubjectAddActivity extends AppCompatActivity {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
-        if (subject.ngayBatDau != null) etStartDate.setText(dateFormat.format(subject.ngayBatDau));
-        if (subject.ngayKetThuc != null) etEndDate.setText(dateFormat.format(subject.ngayKetThuc));
+        // Populate dates and also set Calendar objects for calculation
+        if (subject.ngayBatDau != null) {
+            etStartDate.setText(dateFormat.format(subject.ngayBatDau));
+            startDateCalendar = Calendar.getInstance();
+            startDateCalendar.setTime(subject.ngayBatDau);
+        }
+        if (subject.ngayKetThuc != null) {
+            etEndDate.setText(dateFormat.format(subject.ngayKetThuc));
+            endDateCalendar = Calendar.getInstance();
+            endDateCalendar.setTime(subject.ngayKetThuc);
+        }
+
+        // After setting dates, calculate and display weeks
+        calculateAndDisplayWeeks();
+
         if (subject.gioBatDau != null) etStartTime.setText(timeFormat.format(subject.gioBatDau));
         if (subject.gioKetThuc != null) etEndTime.setText(timeFormat.format(subject.gioKetThuc));
 
-        // Sửa lỗi: chọn đúng radio button
         if (getString(R.string.subject_type_major).equals(subject.loaiMon)) {
             rbMajor.setChecked(true);
         } else {
             rbGeneral.setChecked(true);
         }
 
-        // Sửa lỗi: Hiển thị đúng số tuần đã lưu
-        if (weeksAdapter != null) {
-            int weekPosition = weeksAdapter.getPosition(String.valueOf(subject.soTuan));
-            if (weekPosition >= 0) {
-                spinnerNumberOfWeeks.setSelection(weekPosition);
-            }
-        }
-
-        // Sửa lỗi CRASH: Thêm kiểm tra null cho màu sắc
         if (subject.mauSac != null && !subject.mauSac.isEmpty()) {
             boolean colorFound = false;
             for (View colorView : colorViews) {
@@ -177,18 +186,15 @@ public class SubjectAddActivity extends AppCompatActivity {
                     break;
                 }
             }
-            // Nếu không tìm thấy màu đã lưu, chọn màu mặc định
             if (!colorFound && !colorViews.isEmpty()) {
                 colorViews.get(0).performClick();
             }
         } else if (!colorViews.isEmpty()) {
-            // Nếu môn học cũ không có màu, chọn màu mặc định
             colorViews.get(0).performClick();
         }
     }
 
     private void saveSubject() {
-        // --- Xác thực dữ liệu (giữ nguyên) ---
         String maHp = etSubjectCode.getText().toString().trim();
         if (TextUtils.isEmpty(maHp)) {
             Toast.makeText(this, R.string.subject_code_required, Toast.LENGTH_SHORT).show();
@@ -207,38 +213,36 @@ public class SubjectAddActivity extends AppCompatActivity {
             etCredits.requestFocus();
             return;
         }
-         if (TextUtils.isEmpty(etStartDate.getText().toString())) {
+        if (startDateCalendar == null || TextUtils.isEmpty(etStartDate.getText().toString())) {
             Toast.makeText(this, R.string.start_date_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
-        if (TextUtils.isEmpty(etEndDate.getText().toString())) {
+        if (endDateCalendar == null || TextUtils.isEmpty(etEndDate.getText().toString())) {
             Toast.makeText(this, R.string.end_date_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
+        if (endDateCalendar.before(startDateCalendar)) {
+            Toast.makeText(this, "Ngày kết thúc không thể trước ngày bắt đầu", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (TextUtils.isEmpty(etStartTime.getText().toString())) {
             Toast.makeText(this, R.string.start_time_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (TextUtils.isEmpty(etEndTime.getText().toString())) {
             Toast.makeText(this, R.string.end_time_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (selectedColor == null) {
             Toast.makeText(this, R.string.color_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
         int selectedRadioButtonId = rgSubjectType.getCheckedRadioButtonId();
         if (selectedRadioButtonId == -1) {
             Toast.makeText(this, R.string.subject_type_required, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // --- Xử lý dữ liệu ---
         RadioButton selectedRadioButton = findViewById(selectedRadioButtonId);
         String loaiMon = selectedRadioButton.getText().toString();
         String tenGv = etLecturerName.getText().toString().trim();
@@ -252,22 +256,10 @@ public class SubjectAddActivity extends AppCompatActivity {
             etCredits.requestFocus();
             return;
         }
-        
-        // Sửa lỗi: Lấy đúng giá trị từ Spinner
-        int soTuan = 15; // Giá trị mặc định
-        try {
-            soTuan = Integer.parseInt(spinnerNumberOfWeeks.getSelectedItem().toString());
-        } catch (Exception e) {
-            Log.e("SubjectAddActivity", "Không thể lấy số tuần", e);
-            Toast.makeText(this, "Lỗi: Không thể lấy số tuần", Toast.LENGTH_SHORT).show();
-        }
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
-        Date ngayBatDau, ngayKetThuc, gioBatDau, gioKetThuc;
+        Date gioBatDau, gioKetThuc;
         try {
-            ngayBatDau = dateFormat.parse(etStartDate.getText().toString());
-            ngayKetThuc = dateFormat.parse(etEndDate.getText().toString());
             gioBatDau = timeFormat.parse(etStartTime.getText().toString());
             gioKetThuc = timeFormat.parse(etEndTime.getText().toString());
         } catch (ParseException e) {
@@ -275,7 +267,6 @@ public class SubjectAddActivity extends AppCompatActivity {
             return;
         }
 
-        // --- Tương tác với cơ sở dữ liệu ---
         Subject subject = new Subject();
         subject.maHp = maHp;
         subject.tenHp = tenHp;
@@ -283,13 +274,13 @@ public class SubjectAddActivity extends AppCompatActivity {
         subject.soTc = soTc;
         subject.ghiChu = ghiChu;
         subject.phongHoc = phongHoc;
-        subject.ngayBatDau = ngayBatDau;
-        subject.ngayKetThuc = ngayKetThuc;
+        subject.ngayBatDau = startDateCalendar.getTime();
+        subject.ngayKetThuc = endDateCalendar.getTime();
         subject.gioBatDau = gioBatDau;
         subject.gioKetThuc = gioKetThuc;
         subject.loaiMon = loaiMon;
         subject.mauSac = selectedColor;
-        subject.soTuan = soTuan; // Sửa lỗi: lưu số tuần
+        subject.soTuan = calculatedWeeks; // Use the calculated value
         subject.tenHk = currentSemesterName;
 
         if (isEditMode) {
@@ -306,7 +297,6 @@ public class SubjectAddActivity extends AppCompatActivity {
                 Toast.makeText(this, R.string.subject_code_exists, Toast.LENGTH_SHORT).show();
                 return;
             }
-            
             long newRowId = dbHelper.addSubject(subject);
             if (newRowId != -1) {
                 Toast.makeText(this, R.string.add_subject_success, Toast.LENGTH_SHORT).show();
@@ -319,21 +309,63 @@ public class SubjectAddActivity extends AppCompatActivity {
     }
 
     private void showDatePickerDialog(final EditText editText) {
-        //... giữ nguyên
-        Calendar calendar = Calendar.getInstance();
-        int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH);
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        Calendar initialCalendar = Calendar.getInstance();
+        if (!TextUtils.isEmpty(editText.getText().toString())) {
+            try {
+                Date d = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(editText.getText().toString());
+                if (d != null) {
+                    initialCalendar.setTime(d);
+                }
+            } catch (ParseException e) {
+                // Ignore error and use current date
+            }
+        }
+
+        int year = initialCalendar.get(Calendar.YEAR);
+        int month = initialCalendar.get(Calendar.MONTH);
+        int day = initialCalendar.get(Calendar.DAY_OF_MONTH);
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, year1, monthOfYear, dayOfMonth) -> {
             String selectedDate = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, monthOfYear + 1, year1);
             editText.setText(selectedDate);
+
+            Calendar selectedCalendar = Calendar.getInstance();
+            selectedCalendar.set(year1, monthOfYear, dayOfMonth, 0, 0, 0);
+
+            if (editText.getId() == R.id.etStartDate) {
+                startDateCalendar = selectedCalendar;
+            } else if (editText.getId() == R.id.etEndDate) {
+                endDateCalendar = selectedCalendar;
+            }
+            calculateAndDisplayWeeks();
+
         }, year, month, day);
         datePickerDialog.show();
     }
 
+    private void calculateAndDisplayWeeks() {
+        if (startDateCalendar != null && endDateCalendar != null) {
+            if (endDateCalendar.before(startDateCalendar)) {
+                Toast.makeText(this, "Ngày kết thúc không thể trước ngày bắt đầu", Toast.LENGTH_SHORT).show();
+                tvCalculatedWeeks.setText("0");
+                calculatedWeeks = 0;
+                return;
+            }
+
+            long diffMillis = endDateCalendar.getTimeInMillis() - startDateCalendar.getTimeInMillis();
+            long diffInDays = TimeUnit.MILLISECONDS.toDays(diffMillis);
+
+            // Logic: 0-6 days -> 1 week, 7-13 days -> 2 weeks, etc.
+            calculatedWeeks = (int) (diffInDays / 7) + 1;
+
+            tvCalculatedWeeks.setText(String.valueOf(calculatedWeeks));
+        } else {
+            tvCalculatedWeeks.setText("0");
+            calculatedWeeks = 0;
+        }
+    }
+
     private void showTimePickerDialog(final EditText editText) {
-        //... giữ nguyên
         Calendar calendar = Calendar.getInstance();
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
@@ -344,24 +376,8 @@ public class SubjectAddActivity extends AppCompatActivity {
         }, hour, minute, true);
         timePickerDialog.show();
     }
-    
-    // Hàm mới để setup Spinner
-    private void setupWeeksSpinner() {
-        try {
-            String[] weeks = getResources().getStringArray(R.array.weeks_array);
-            weeksAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, weeks);
-            weeksAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            spinnerNumberOfWeeks.setAdapter(weeksAdapter);
-        } catch (Exception e) {
-            Toast.makeText(this, "Lỗi: không thể tải danh sách tuần.", Toast.LENGTH_SHORT).show();
-            // Cung cấp một adapter rỗng để tránh crash
-             weeksAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"15"});
-             spinnerNumberOfWeeks.setAdapter(weeksAdapter);
-        }
-    }
 
     private void setupColorPicker() {
-        //... giữ nguyên
         String[] colors;
         try {
             colors = getResources().getStringArray(R.array.subject_colors);
