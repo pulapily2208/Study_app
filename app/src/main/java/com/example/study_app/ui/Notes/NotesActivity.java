@@ -14,9 +14,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.ui.Notes.Adapters.NotesAdapter;
-import com.example.study_app.ui.Notes.InputNoteActivity;
 import com.example.study_app.ui.Notes.Model.Note;
-import com.example.study_app.ui.Notes.NotesDetailActivity;
 
 import java.util.ArrayList;
 
@@ -25,6 +23,7 @@ public class NotesActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private ImageView emptyImage;
     private Button btnAdd;
+    private ImageView btnBack;
     private NotesAdapter notesAdapter;
     private ArrayList<Note> notesList;
     private DatabaseHelper dbHelper;
@@ -38,17 +37,19 @@ public class NotesActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.notesRecyclerView);
         emptyImage = findViewById(R.id.emptyImage);
         btnAdd = findViewById(R.id.btnAdd);
+        btnBack = findViewById(R.id.btnBack);
         dbHelper = new DatabaseHelper(this);
 
         // 2. Thiết lập LayoutManager và Listener cho các nút
         recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
 
-        btnAdd.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(NotesActivity.this, InputNoteActivity.class);
-                startActivity(intent);
-            }
+        btnAdd.setOnClickListener(v -> {
+            Intent intent = new Intent(NotesActivity.this, InputNoteActivity.class);
+            startActivity(intent);
+        });
+
+        btnBack.setOnClickListener(v -> {
+            finish(); // Đóng Activity hiện tại và quay về màn hình trước đó
         });
     }
 
@@ -76,19 +77,16 @@ public class NotesActivity extends AppCompatActivity {
             notesAdapter = new NotesAdapter(notesList, this);
 
             // 8. Gán OnClickListener cho Adapter (sau khi đã được khởi tạo)
-            notesAdapter.setOnNoteClickListener(new NotesAdapter.OnNoteClickListener() {
-                @Override
-                public void onNoteClick(Note note) {
-                    Intent intent = new Intent(NotesActivity.this, NotesDetailActivity.class);
-                    intent.putExtra("noteId", note.getId());
-                    intent.putExtra("title", note.getTitle());
-                    intent.putExtra("content", note.getBody());
-                    intent.putExtra("imagePath", note.getImagePath());
-                    intent.putExtra("date", note.getCreated_at());
-                    intent.putExtra("color", note.getColor_tag());
-                    intent.putExtra("pinned", note.getPinned());
-                    startActivity(intent);
-                }
+            notesAdapter.setOnNoteClickListener(note -> {
+                Intent intent = new Intent(NotesActivity.this, NotesDetailActivity.class);
+                intent.putExtra("noteId", note.getId());
+                intent.putExtra("title", note.getTitle());
+                intent.putExtra("content", note.getBody());
+                intent.putExtra("imagePath", note.getImagePath());
+                intent.putExtra("date", note.getCreated_at());
+                intent.putExtra("color", note.getColor_tag());
+                intent.putExtra("pinned", note.getPinned());
+                startActivity(intent);
             });
 
             // 9. Gán Adapter cho RecyclerView

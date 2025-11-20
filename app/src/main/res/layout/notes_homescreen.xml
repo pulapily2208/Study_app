@@ -19,9 +19,10 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <ImageView
+            android:id="@+id/btnBack"
             android:layout_width="28dp"
             android:layout_height="28dp"
-            android:src="@drawable/note_ic_menu"
+            android:src="@drawable/note_ic_back"
             android:padding="4dp" />
 
         <View
@@ -74,7 +75,7 @@
         android:id="@+id/btnAdd"
         android:layout_width="65dp"
         android:layout_height="65dp"
-        android:background="@drawable/note_bg_circle_ic_add"
+        android:background="@drawable/bg_day_selected"
         android:backgroundTint="@null"
         app:backgroundTint="@null"
 

@@ -1,6 +1,5 @@
 package com.example.study_app.data;
 
-import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -9,8 +8,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import com.example.study_app.R;
-import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Notes.Model.Note;
+import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Subject.Model.Subject;
 
 import java.io.BufferedReader;
@@ -388,13 +387,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     deadline.setNgayBatDau(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
                     deadline.setNgayKetThuc(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
                     deadline.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
-
-                    // Tạm thời vô hiệu hóa để chờ cập nhật model Deadline
-                    // int maHpIndex = cursor.getColumnIndex("ma_hp");
-                    // if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
-                    //     deadline.setMaHp(cursor.getString(maHpIndex));
-                    // }
-
                     deadlineList.add(deadline);
                 } while (cursor.moveToNext());
             }
@@ -422,13 +414,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     deadline.setNgayBatDau(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
                     deadline.setNgayKetThuc(parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
                     deadline.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
-
-                    // Tạm thời vô hiệu hóa để chờ cập nhật model Deadline
-                    // int maHpIndex = cursor.getColumnIndex("ma_hp");
-                    // if (maHpIndex != -1 && !cursor.isNull(maHpIndex)) {
-                    //     deadline.setMaHp(cursor.getString(maHpIndex));
-                    // }
-
                     deadlineList.add(deadline);
                 } while (cursor.moveToNext());
             }
@@ -448,8 +433,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("ngay_bat_dau", formatDate(deadline.getNgayBatDau()));
         values.put("ngay_ket_thuc", formatDate(deadline.getNgayKetThuc()));
         values.put("completed", deadline.isCompleted() ? 1 : 0);
-        // Tạm thời vô hiệu hóa để chờ cập nhật model Deadline
-        // values.put("ma_hp", deadline.getMaHp());
+//        values.put("ma_hp", deadline.getMaHp());
         return db.insert("deadline", null, values);
     }
 
@@ -461,8 +445,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("ngay_bat_dau", formatDate(deadline.getNgayBatDau()));
         values.put("ngay_ket_thuc", formatDate(deadline.getNgayKetThuc()));
         values.put("completed", deadline.isCompleted() ? 1 : 0);
-        // Tạm thời vô hiệu hóa để chờ cập nhật model Deadline
-        // values.put("ma_hp", deadline.getMaHp());
+//        values.put("ma_hp", deadline.getMaHp());
 
         return db.update("deadline", values, "id = ?", new String[]{String.valueOf(deadline.getMaDl())});
     }
@@ -473,49 +456,42 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
-//    Quản lý note
-    @SuppressLint("Range")
+    //    Quản lý note
     public ArrayList<Note> getAllNotes() {
         ArrayList<Note> notes = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-
-
-        Cursor cursor = db.rawQuery("SELECT * FROM notes ORDER BY id DESC", null);
-
-
-        if (cursor.moveToFirst()) {
-            do {
-                Note note = new Note();
-
-
-                note.setId(cursor.getInt(cursor.getColumnIndex("id")));
-                note.setUser_id(cursor.getInt(cursor.getColumnIndex("user_id")));
-                note.setMa_hp(cursor.getString(cursor.getColumnIndex("ma_hp")));
-                note.setTitle(cursor.getString(cursor.getColumnIndex("title")));
-                note.setBody(cursor.getString(cursor.getColumnIndex("body")));
-                note.setPinned(cursor.getInt(cursor.getColumnIndex("pinned")));
-                note.setColor_tag(cursor.getString(cursor.getColumnIndex("color_tag")));
-                note.setCreated_at(cursor.getString(cursor.getColumnIndex("created_at")));
-                note.setUpdated_at(cursor.getString(cursor.getColumnIndex("updated_at")));
-                note.setImagePath(cursor.getString(cursor.getColumnIndex("image_path")));
-
-
-                notes.add(note);
-
-
-            } while (cursor.moveToNext());
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery("SELECT * FROM notes ORDER BY id DESC", null);
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    Note note = new Note();
+                    note.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                    note.setUser_id(cursor.getInt(cursor.getColumnIndexOrThrow("user_id")));
+                    note.setMa_hp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
+                    note.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
+                    note.setBody(cursor.getString(cursor.getColumnIndexOrThrow("body")));
+                    note.setPinned(cursor.getInt(cursor.getColumnIndexOrThrow("pinned")));
+                    note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
+                    note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
+                    note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
+                    note.setImagePath(cursor.getString(cursor.getColumnIndexOrThrow("image_path")));
+                    notes.add(note);
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy tất cả ghi chú", e);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
         }
-
-
-        cursor.close();
         return notes;
     }
 
-    public long insertNote(Note note, String imagePath) {
+    public long insertNote(Note note) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-
-
         values.put("user_id", note.getUser_id());
         values.put("ma_hp", note.getMa_hp());
         values.put("title", note.getTitle());
@@ -528,33 +504,63 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert("notes", null, values);
     }
 
-    @SuppressLint("Range")
     public Note getNoteById(int noteId) {
         SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
         Note note = null;
-
-
-        Cursor cursor = db.rawQuery("SELECT * FROM notes WHERE id = ?",
-                new String[]{String.valueOf(noteId)});
-
-
-        if (cursor != null && cursor.moveToFirst()) {
-            note = new Note();
-            note.setId(cursor.getInt(cursor.getColumnIndex("id")));
-            note.setUser_id(cursor.getInt(cursor.getColumnIndex("user_id")));
-            note.setMa_hp(cursor.getString(cursor.getColumnIndex("ma_hp")));
-            note.setTitle(cursor.getString(cursor.getColumnIndex("title")));
-            note.setBody(cursor.getString(cursor.getColumnIndex("body")));
-            note.setPinned(cursor.getInt(cursor.getColumnIndex("pinned")));
-            note.setColor_tag(cursor.getString(cursor.getColumnIndex("color_tag")));
-            note.setCreated_at(cursor.getString(cursor.getColumnIndex("created_at")));
-            note.setUpdated_at(cursor.getString(cursor.getColumnIndex("updated_at")));
-            note.setImagePath(cursor.getString(cursor.getColumnIndex("image_path")));
+        try {
+            cursor = db.rawQuery("SELECT * FROM notes WHERE id = ?",
+                    new String[]{String.valueOf(noteId)});
+            if (cursor != null && cursor.moveToFirst()) {
+                note = new Note();
+                note.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                note.setUser_id(cursor.getInt(cursor.getColumnIndexOrThrow("user_id")));
+                note.setMa_hp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
+                note.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
+                note.setBody(cursor.getString(cursor.getColumnIndexOrThrow("body")));
+                note.setPinned(cursor.getInt(cursor.getColumnIndexOrThrow("pinned")));
+                note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
+                note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
+                note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
+                note.setImagePath(cursor.getString(cursor.getColumnIndexOrThrow("image_path")));
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy ghi chú theo ID", e);
+            return null; // Trả về null nếu có lỗi
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
         }
-        if (cursor != null) cursor.close();
-
-
-        db.close();
         return note;
     }
+    public boolean updateNote(Note note) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // Tự động cập nhật thời gian
+        note.setTimestamp();
+
+        ContentValues values = new ContentValues();
+        values.put("title", note.getTitle());
+        values.put("body", note.getBody());
+        values.put("pinned", note.getPinned());
+        values.put("color_tag", note.getColor_tag());
+        values.put("created_at", note.getCreated_at());
+        values.put("updated_at", note.getUpdated_at());
+        values.put("image_path", note.getImagePath());
+        values.put("ma_hp", note.getMa_hp());
+        values.put("user_id", note.getUser_id());
+
+        int rowsAffected = db.update(
+                "notes",                    // tên bảng
+                values,                     // dữ liệu cập nhật
+                "id = ?",                   // điều kiện WHERE
+                new String[]{String.valueOf(note.getId())} // giá trị điều kiện
+        );
+
+        db.close();
+        return rowsAffected > 0;
     }
+
+
+}

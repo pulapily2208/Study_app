@@ -2,7 +2,9 @@ package com.example.study_app.ui.Notes.Adapters;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.net.Uri;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,12 +12,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
 import com.example.study_app.ui.Notes.Model.Note;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHolder> {
     private List<Note> notes;
@@ -49,8 +55,25 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
         Note note = notes.get(position);
 
         holder.tvTitle.setText(note.getTitle());
-        holder.tvContent.setText(note.getBody());
-        holder.tvDate.setText(note.getCreated_at());
+        holder.tvContent.setText(
+                Html.fromHtml(note.getBody(), Html.FROM_HTML_MODE_LEGACY)
+        );
+
+        try {
+            long timestamp = Long.parseLong(note.getCreated_at());
+            Date date = new Date(timestamp);
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            holder.tvDate.setText(sdf.format(date));
+        } catch (NumberFormatException e) {
+            holder.tvDate.setText(note.getCreated_at());
+        }
+
+        if (note.getColor_tag() != null && !note.getColor_tag().isEmpty()) {
+            try {
+                holder.cardView.setCardBackgroundColor(Color.parseColor(note.getColor_tag()));
+            } catch (IllegalArgumentException e) {
+            }
+        }
 
         holder.imageAnh.setVisibility(View.GONE);
         if (note.getImagePath() != null && !note.getImagePath().isEmpty()){
@@ -78,6 +101,7 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
     public class NoteViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvContent, tvDate;
         ImageView imageAnh;
+        CardView cardView;
 
         public NoteViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -85,7 +109,7 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
             tvContent = itemView.findViewById(R.id.tvNoiDung);
             tvDate = itemView.findViewById(R.id.tvNgay);
             imageAnh = itemView.findViewById(R.id.imgAnh);
-
+            cardView = itemView.findViewById(R.id.cardView);
         }
     }
 }
