@@ -17,7 +17,7 @@ public class Subject {
     public String loaiMon; // Loại môn (Chuyên ngành, Đại cương)
     public String mauSac; // Màu sắc (VD: #FFFFFF)
     public String tenHk; // Tên học kỳ (Khóa ngoại)
-    public int soTuanHoc; // Số tuần học
+    public int soTuan; // Số tuần học
 
 
     // Default constructor

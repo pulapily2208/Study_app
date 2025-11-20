@@ -19,7 +19,7 @@
     <string name="start_date_hint">Ngày bắt đầu</string>
     <string name="end_date_hint">Ngày kết thúc</string>
     <string name="number_of_weeks_hint">Học trong bao nhiêu tuần</string>
-    
+
     <!-- Toast messages -->
     <string name="error_no_semester_info">Lỗi: Không tìm thấy thông tin học kỳ.</string>
     <string name="error_subject_not_found">Lỗi: Không tìm thấy môn học để sửa.</string>
@@ -40,8 +40,57 @@
     <string name="update_subject_success">Cập nhật môn học thành công</string>
     <string name="update_subject_failed">Cập nhật môn học thất bại</string>
     <string name="error_color_picker">Lỗi: Không tìm thấy R.array.subject_colors</string>
-    
+
     <!-- Activity titles -->
     <string name="activity_title_add">Thêm Môn Học</string>
     <string name="activity_title_edit">Sửa Môn Học</string>
+
+    <string name="filter_by_faculty">Lọc theo khoa</string>
+    <string name="filter_by_group">Lọc theo nhóm học phần</string>
+    <string name="filter_by_course_type">Lọc theo loại học phần</string>
+
+    <!-- Curriculum Filter Options -->
+    <string name="all_faculties">Tất cả Khoa</string>
+    <string name="all_groups">Tất cả Nhóm</string>
+
+    <string-array name="weeks_array">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>12</item>
+        <item>13</item>
+        <item>14</item>
+        <item>15</item>
+    </string-array>
+
+    <string-array name="subject_colors">
+        <item>#448184</item>
+        <item>#6989df</item>
+        <item>#f9bd7a</item>
+        <item>#FFF9EB</item>
+        <item>#e46471</item>
+        <item>#EE958F</item>
+        <item>#8BC34A</item>
+        <item>#FFC6FF</item>
+    </string-array>
+
+    <string-array name="course_type_array">
+        <item>Tất cả</item>
+        <item>Bắt buộc</item>
+        <item>Tự chọn</item>
+    </string-array>
+
+    <string name="curriculum_credits">Tín chỉ: %d</string>
+    <string name="curriculum_theory">LT: %d</string>
+    <string name="curriculum_practice">TH: %d</string>
+    <string name="curriculum_semester">Học kỳ: %d</string>
+    <string name="curriculum_group">Nhóm: %s</string>
 </resources>

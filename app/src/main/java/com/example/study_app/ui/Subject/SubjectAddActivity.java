@@ -14,7 +14,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.ui.Subject.Model.Subject;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,14 +30,15 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class SubjectAddActivity extends AppCompatActivity {
 
     private EditText etSubjectCode, etSubjectName, etLecturerName, etCredits, etStartDate, etEndDate, etStartTime, etEndTime, etLocation, etNotes;
     private RadioGroup rgSubjectType;
     private RadioButton rbMajor, rbGeneral;
-    private Spinner spinnerNumberOfWeeks;
-    private LinearLayout colorPickerContainer;
+    private TextView tvCalculatedWeeks;
+    private LinearLayout colorPickerContainer, layoutStartDate, layoutEndDate;
     private ImageView ivBack, ivSave;
     private TextView tvActivityTitle;
 
@@ -46,10 +47,15 @@ public class SubjectAddActivity extends AppCompatActivity {
     private String maHpToEdit = null;
     private String currentSemesterName;
 
-    // Biến cho Color Picker
     private String selectedColor = null;
     private final List<View> colorViews = new ArrayList<>();
     private View selectedColorView = null;
+
+    // State for week calculation
+    private Calendar startDateCalendar = null;
+    private Calendar endDateCalendar = null;
+    private int calculatedWeeks = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +65,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         findViews();
         setClickListeners();
+        setupColorPicker();
 
         if (getIntent().hasExtra("SEMESTER_NAME")) {
             currentSemesterName = getIntent().getStringExtra("SEMESTER_NAME");
@@ -68,17 +75,13 @@ public class SubjectAddActivity extends AppCompatActivity {
             return;
         }
 
-        // Phải gọi trước khi kiểm tra mode Thêm/Sửa để `colorViews` được khởi tạo
-        setupColorPicker();
-
         checkForEditOrAddMode();
 
-        // Nếu là mode Thêm mới, chọn màu đầu tiên và loại môn mặc định
         if (!isEditMode) {
             if (!colorViews.isEmpty()) {
                 colorViews.get(0).performClick();
             }
-            rbGeneral.setChecked(true); // Mặc định chọn Môn chung
+            rbGeneral.setChecked(true);
         }
     }
 
@@ -96,19 +99,25 @@ public class SubjectAddActivity extends AppCompatActivity {
         rgSubjectType = findViewById(R.id.rgSubjectType);
         rbMajor = findViewById(R.id.rbMajor);
         rbGeneral = findViewById(R.id.rbGeneral);
-        spinnerNumberOfWeeks = findViewById(R.id.spinnerNumberOfWeeks);
+        tvCalculatedWeeks = findViewById(R.id.tvCalculatedWeeks);
         colorPickerContainer = findViewById(R.id.colorPickerContainer);
         ivBack = findViewById(R.id.ivBack);
         ivSave = findViewById(R.id.ivSave);
         tvActivityTitle = findViewById(R.id.tvActivityTitle);
+        layoutStartDate = findViewById(R.id.layoutStartDate);
+        layoutEndDate = findViewById(R.id.layoutEndDate);
     }
 
     private void setClickListeners() {
         ivBack.setOnClickListener(v -> finish());
         ivSave.setOnClickListener(v -> saveSubject());
 
+        // Set OnClickListener on the whole layout for better UX
+        layoutStartDate.setOnClickListener(v -> showDatePickerDialog(etStartDate));
         etStartDate.setOnClickListener(v -> showDatePickerDialog(etStartDate));
+        layoutEndDate.setOnClickListener(v -> showDatePickerDialog(etEndDate));
         etEndDate.setOnClickListener(v -> showDatePickerDialog(etEndDate));
+
         etStartTime.setOnClickListener(v -> showTimePickerDialog(etStartTime));
         etEndTime.setOnClickListener(v -> showTimePickerDialog(etEndTime));
     }
@@ -144,89 +153,101 @@ public class SubjectAddActivity extends AppCompatActivity {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
-        if (subject.ngayBatDau != null) etStartDate.setText(dateFormat.format(subject.ngayBatDau));
-        if (subject.ngayKetThuc != null) etEndDate.setText(dateFormat.format(subject.ngayKetThuc));
+        // Populate dates and also set Calendar objects for calculation
+        if (subject.ngayBatDau != null) {
+            etStartDate.setText(dateFormat.format(subject.ngayBatDau));
+            startDateCalendar = Calendar.getInstance();
+            startDateCalendar.setTime(subject.ngayBatDau);
+        }
+        if (subject.ngayKetThuc != null) {
+            etEndDate.setText(dateFormat.format(subject.ngayKetThuc));
+            endDateCalendar = Calendar.getInstance();
+            endDateCalendar.setTime(subject.ngayKetThuc);
+        }
+
+        // After setting dates, calculate and display weeks
+        calculateAndDisplayWeeks();
+
         if (subject.gioBatDau != null) etStartTime.setText(timeFormat.format(subject.gioBatDau));
         if (subject.gioKetThuc != null) etEndTime.setText(timeFormat.format(subject.gioKetThuc));
 
-        if ("Chuyên ngành".equals(subject.loaiMon)) {
+        if (getString(R.string.subject_type_major).equals(subject.loaiMon)) {
             rbMajor.setChecked(true);
         } else {
             rbGeneral.setChecked(true);
         }
 
-        // Highlight màu đã chọn trong picker
-        for (View colorView : colorViews) {
-            if (colorView.getTag() != null && colorView.getTag().toString().equalsIgnoreCase(subject.mauSac)) {
-                selectColor(colorView); // Áp dụng hiệu ứng chọn màu
-                break;
+        if (subject.mauSac != null && !subject.mauSac.isEmpty()) {
+            boolean colorFound = false;
+            for (View colorView : colorViews) {
+                if (colorView.getTag() != null && colorView.getTag().toString().equalsIgnoreCase(subject.mauSac)) {
+                    selectColor(colorView);
+                    colorFound = true;
+                    break;
+                }
             }
+            if (!colorFound && !colorViews.isEmpty()) {
+                colorViews.get(0).performClick();
+            }
+        } else if (!colorViews.isEmpty()) {
+            colorViews.get(0).performClick();
         }
     }
 
     private void saveSubject() {
-        // Xác thực dữ liệu đầu vào
         String maHp = etSubjectCode.getText().toString().trim();
         if (TextUtils.isEmpty(maHp)) {
             Toast.makeText(this, R.string.subject_code_required, Toast.LENGTH_SHORT).show();
             etSubjectCode.requestFocus();
             return;
         }
-
         String tenHp = etSubjectName.getText().toString().trim();
         if (TextUtils.isEmpty(tenHp)) {
             Toast.makeText(this, R.string.subject_name_required, Toast.LENGTH_SHORT).show();
             etSubjectName.requestFocus();
             return;
         }
-
         String soTcStr = etCredits.getText().toString().trim();
         if (TextUtils.isEmpty(soTcStr)) {
             Toast.makeText(this, R.string.credits_required, Toast.LENGTH_SHORT).show();
             etCredits.requestFocus();
             return;
         }
-
-        if (TextUtils.isEmpty(etStartDate.getText().toString())) {
+        if (startDateCalendar == null || TextUtils.isEmpty(etStartDate.getText().toString())) {
             Toast.makeText(this, R.string.start_date_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
-        if (TextUtils.isEmpty(etEndDate.getText().toString())) {
+        if (endDateCalendar == null || TextUtils.isEmpty(etEndDate.getText().toString())) {
             Toast.makeText(this, R.string.end_date_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
+        if (endDateCalendar.before(startDateCalendar)) {
+            Toast.makeText(this, "Ngày kết thúc không thể trước ngày bắt đầu", Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (TextUtils.isEmpty(etStartTime.getText().toString())) {
             Toast.makeText(this, R.string.start_time_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (TextUtils.isEmpty(etEndTime.getText().toString())) {
             Toast.makeText(this, R.string.end_time_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (selectedColor == null) {
             Toast.makeText(this, R.string.color_required, Toast.LENGTH_SHORT).show();
             return;
         }
-
         int selectedRadioButtonId = rgSubjectType.getCheckedRadioButtonId();
         if (selectedRadioButtonId == -1) {
             Toast.makeText(this, R.string.subject_type_required, Toast.LENGTH_SHORT).show();
             return;
         }
-        // Kết thúc xác thực dữ liệu
 
-        // Xử lý dữ liệu
         RadioButton selectedRadioButton = findViewById(selectedRadioButtonId);
         String loaiMon = selectedRadioButton.getText().toString();
-
         String tenGv = etLecturerName.getText().toString().trim();
         String ghiChu = etNotes.getText().toString().trim();
         String phongHoc = etLocation.getText().toString().trim();
-
         int soTc;
         try {
             soTc = Integer.parseInt(soTcStr);
@@ -236,12 +257,9 @@ public class SubjectAddActivity extends AppCompatActivity {
             return;
         }
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
-        Date ngayBatDau, ngayKetThuc, gioBatDau, gioKetThuc;
+        Date gioBatDau, gioKetThuc;
         try {
-            ngayBatDau = dateFormat.parse(etStartDate.getText().toString());
-            ngayKetThuc = dateFormat.parse(etEndDate.getText().toString());
             gioBatDau = timeFormat.parse(etStartTime.getText().toString());
             gioKetThuc = timeFormat.parse(etEndTime.getText().toString());
         } catch (ParseException e) {
@@ -249,7 +267,6 @@ public class SubjectAddActivity extends AppCompatActivity {
             return;
         }
 
-        // Tương tác với cơ sở dữ liệu
         Subject subject = new Subject();
         subject.maHp = maHp;
         subject.tenHp = tenHp;
@@ -257,12 +274,13 @@ public class SubjectAddActivity extends AppCompatActivity {
         subject.soTc = soTc;
         subject.ghiChu = ghiChu;
         subject.phongHoc = phongHoc;
-        subject.ngayBatDau = ngayBatDau;
-        subject.ngayKetThuc = ngayKetThuc;
+        subject.ngayBatDau = startDateCalendar.getTime();
+        subject.ngayKetThuc = endDateCalendar.getTime();
         subject.gioBatDau = gioBatDau;
         subject.gioKetThuc = gioKetThuc;
         subject.loaiMon = loaiMon;
         subject.mauSac = selectedColor;
+        subject.soTuan = calculatedWeeks; // Use the calculated value
         subject.tenHk = currentSemesterName;
 
         if (isEditMode) {
@@ -275,21 +293,13 @@ public class SubjectAddActivity extends AppCompatActivity {
                 Toast.makeText(this, R.string.update_subject_failed, Toast.LENGTH_SHORT).show();
             }
         } else {
-            // Chế độ thêm mới
             if (dbHelper.getSubjectByMaHp(maHp) != null) {
                 Toast.makeText(this, R.string.subject_code_exists, Toast.LENGTH_SHORT).show();
                 return;
             }
             long newRowId = dbHelper.addSubject(subject);
             if (newRowId != -1) {
-                // Enroll the subject in the current semester
-                int semesterId = dbHelper.getSemesterIdByName(currentSemesterName);
-                if (semesterId != -1) {
-                    dbHelper.enrollSubjectInSemester(maHp, semesterId);
-                } else {
-                    android.util.Log.w("SubjectAddActivity", "Could not enroll subject: semester ID not found for " + currentSemesterName);
-                }
-                Toast.makeText(this, "Thêm môn học thành công", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.add_subject_success, Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
                 finish();
             } else {
@@ -299,16 +309,60 @@ public class SubjectAddActivity extends AppCompatActivity {
     }
 
     private void showDatePickerDialog(final EditText editText) {
-        Calendar calendar = Calendar.getInstance();
-        int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH);
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        Calendar initialCalendar = Calendar.getInstance();
+        if (!TextUtils.isEmpty(editText.getText().toString())) {
+            try {
+                Date d = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(editText.getText().toString());
+                if (d != null) {
+                    initialCalendar.setTime(d);
+                }
+            } catch (ParseException e) {
+                // Ignore error and use current date
+            }
+        }
+
+        int year = initialCalendar.get(Calendar.YEAR);
+        int month = initialCalendar.get(Calendar.MONTH);
+        int day = initialCalendar.get(Calendar.DAY_OF_MONTH);
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, year1, monthOfYear, dayOfMonth) -> {
             String selectedDate = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, monthOfYear + 1, year1);
             editText.setText(selectedDate);
+
+            Calendar selectedCalendar = Calendar.getInstance();
+            selectedCalendar.set(year1, monthOfYear, dayOfMonth, 0, 0, 0);
+
+            if (editText.getId() == R.id.etStartDate) {
+                startDateCalendar = selectedCalendar;
+            } else if (editText.getId() == R.id.etEndDate) {
+                endDateCalendar = selectedCalendar;
+            }
+            calculateAndDisplayWeeks();
+
         }, year, month, day);
         datePickerDialog.show();
+    }
+
+    private void calculateAndDisplayWeeks() {
+        if (startDateCalendar != null && endDateCalendar != null) {
+            if (endDateCalendar.before(startDateCalendar)) {
+                Toast.makeText(this, "Ngày kết thúc không thể trước ngày bắt đầu", Toast.LENGTH_SHORT).show();
+                tvCalculatedWeeks.setText("0");
+                calculatedWeeks = 0;
+                return;
+            }
+
+            long diffMillis = endDateCalendar.getTimeInMillis() - startDateCalendar.getTimeInMillis();
+            long diffInDays = TimeUnit.MILLISECONDS.toDays(diffMillis);
+
+            // Logic: 0-6 days -> 1 week, 7-13 days -> 2 weeks, etc.
+            calculatedWeeks = (int) (diffInDays / 7) + 1;
+
+            tvCalculatedWeeks.setText(String.valueOf(calculatedWeeks));
+        } else {
+            tvCalculatedWeeks.setText("0");
+            calculatedWeeks = 0;
+        }
     }
 
     private void showTimePickerDialog(final EditText editText) {
@@ -329,7 +383,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             colors = getResources().getStringArray(R.array.subject_colors);
         } catch (Exception e) {
             Toast.makeText(this, R.string.error_color_picker, Toast.LENGTH_SHORT).show();
-            colors = new String[]{"#CCCCCC"}; // Màu dự phòng
+            colors = new String[]{"#CCCCCC"};
         }
 
         colorPickerContainer.removeAllViews();
@@ -344,7 +398,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             GradientDrawable background = new GradientDrawable();
             background.setShape(GradientDrawable.OVAL);
             background.setColor(Color.parseColor(colorHex));
-            background.setStroke(4, Color.TRANSPARENT); // Viền trong suốt ban đầu
+            background.setStroke(4, Color.TRANSPARENT);
             colorSwatch.setBackground(background);
 
             colorSwatch.setTag(colorHex);
@@ -358,17 +412,14 @@ public class SubjectAddActivity extends AppCompatActivity {
     private void selectColor(View view) {
         String newColor = (String) view.getTag();
 
-        // Bỏ chọn view cũ
         if (selectedColorView != null) {
             GradientDrawable oldBg = (GradientDrawable) selectedColorView.getBackground();
             oldBg.setStroke(4, Color.TRANSPARENT);
         }
 
-        // Chọn view mới
         GradientDrawable newBg = (GradientDrawable) view.getBackground();
-        newBg.setStroke(10, Color.BLACK); // Thêm viền đen 10px
+        newBg.setStroke(10, Color.BLACK);
 
-        // Cập nhật trạng thái
         selectedColor = newColor;
         selectedColorView = view;
     }

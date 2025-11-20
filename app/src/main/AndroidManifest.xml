@@ -26,6 +26,12 @@
             android:name=".ui.Deadline.InputDeadlineActivity"></activity>
         <activity android:name=".ui.Subject.SubjectListActivity"></activity>
         <activity android:name=".ui.Subject.SubjectAddActivity"></activity>
+        <activity android:name=".ui.Subject.SubjectDetailActivity"></activity>
+
+        <activity android:name=".ui.Timetable.TimetableWeek" />
+
+        <activity android:name=".ui.Curriculum.CurriculumActivity" />
+
     </application>
 
 </manifest>
