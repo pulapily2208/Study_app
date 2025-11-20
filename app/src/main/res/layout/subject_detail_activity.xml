@@ -74,6 +74,7 @@
                         <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_time"/>
                         <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_location"/>
                         <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_dates"/>
+                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_weeks"/>
                         <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_notes"/>
 
                     </LinearLayout>
