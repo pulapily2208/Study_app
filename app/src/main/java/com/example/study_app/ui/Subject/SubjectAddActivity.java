@@ -282,12 +282,14 @@ public class SubjectAddActivity extends AppCompatActivity {
         subject.mauSac = selectedColor;
         subject.soTuan = calculatedWeeks; // Use the calculated value
         subject.tenHk = currentSemesterName;
+        
+        Intent resultIntent = new Intent();
 
         if (isEditMode) {
             int rowsAffected = dbHelper.updateSubject(subject);
             if (rowsAffected > 0) {
                 Toast.makeText(this, R.string.update_subject_success, Toast.LENGTH_SHORT).show();
-                setResult(RESULT_OK);
+                setResult(RESULT_OK, resultIntent);
                 finish();
             } else {
                 Toast.makeText(this, R.string.update_subject_failed, Toast.LENGTH_SHORT).show();
@@ -300,7 +302,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             long newRowId = dbHelper.addSubject(subject);
             if (newRowId != -1) {
                 Toast.makeText(this, R.string.add_subject_success, Toast.LENGTH_SHORT).show();
-                setResult(RESULT_OK);
+                setResult(RESULT_OK, resultIntent);
                 finish();
             } else {
                 Toast.makeText(this, R.string.add_subject_failed, Toast.LENGTH_SHORT).show();

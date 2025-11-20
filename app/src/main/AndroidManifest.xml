@@ -21,15 +21,16 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.Deadline.MainDeadLine"></activity>
+            android:name=".ui.Deadline.MainDeadLine"/>
         <activity
-            android:name=".ui.Deadline.InputDeadlineActivity"></activity>
-        <activity android:name=".ui.Subject.SubjectListActivity"></activity>
-        <activity android:name=".ui.Subject.SubjectAddActivity"></activity>
-        <activity android:name=".ui.Subject.SubjectDetailActivity"></activity>
+            android:name=".ui.Deadline.InputDeadlineActivity"/>
+        <activity android:name=".ui.Subject.SubjectListActivity"/>
+        <activity android:name=".ui.Subject.SubjectAddActivity"/>
+        <activity android:name=".ui.Subject.SubjectDetailActivity"/>
         <activity android:name=".ui.Notes.NotesActivity" />
         <activity android:name=".ui.Notes.InputNoteActivity" />
         <activity android:name=".ui.Notes.NotesDetailActivity" />
+        <activity android:name=".ui.Curriculum.CurriculumActivity" />
 
 
         <activity android:name=".ui.Timetable.TimetableWeek" />
