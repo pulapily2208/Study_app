@@ -39,7 +39,10 @@ dependencies {
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
     // them thu vien week view (hien thi tkb)
-    implementation 'com.github.alamkanak:android-week-view:1.2.6'
+    implementation 'com.github.thellmund:android-week-view:1.2.6'
+
+    // Material Calendar View (lich thang)
+    implementation 'com.prolificinteractive:material-calendarview:1.4.3'
 
     // workmanager (tb trươc gio hoc)
     implementation "androidx.work:work-runtime-ktx:2.9.0"

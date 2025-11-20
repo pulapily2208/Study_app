@@ -1,5 +1,6 @@
 package com.example.study_app;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -10,10 +11,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.ui.Deadline.MainDeadLine;
 import com.example.study_app.ui.Subject.SubjectListActivity;
+import com.example.study_app.ui.Timetable.TimetableWeek;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button btnDeadLine, btnSubject;
+    Button btnDeadLine, btnSubject, btnTimetable;
+    @SuppressLint("MissingInflatedId")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
@@ -21,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
 
         btnDeadLine=findViewById(R.id.btnDeadLine);
         btnSubject = findViewById(R.id.btnSubject);
+        btnTimetable = findViewById(R.id.btnTimetable);
+
 
         btnDeadLine.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -37,5 +42,17 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        btnTimetable.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, TimetableWeek.class);
+                startActivity(intent);
+            }
+        });
+
+
+
+
     }
 }
