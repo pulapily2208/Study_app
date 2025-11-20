@@ -28,8 +28,10 @@
             android:layout_height="wrap_content"
             android:text="Note"/>
         <Button
+            android:id="@+id/btnTimetable"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="Timetable"/>
         <Button
             android:id="@+id/btnDeadLine"
             android:layout_width="wrap_content"
