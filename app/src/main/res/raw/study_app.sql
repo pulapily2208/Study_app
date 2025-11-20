@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS mon_hoc (
     gio_bat_dau TEXT,
     gio_ket_thuc TEXT,
     ghi_chu TEXT,
+    so_tuan INTEGER,
     color_tag TEXT DEFAULT '#448184',
     FOREIGN KEY (khoa_id) REFERENCES khoa(id)
 );
@@ -64,21 +65,14 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Deadline / Task
-CREATE TABLE IF NOT EXISTS deadlines (
+CREATE TABLE IF NOT EXISTS deadline (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
+    tieu_de TEXT,
+    noi_dung TEXT,
+    ngay_bat_dau TEXT,
+    ngay_ket_thuc TEXT,
+    completed INTEGER DEFAULT 0,
     ma_hp TEXT,
-    title TEXT NOT NULL,
-    description TEXT,
-    due_date INTEGER NOT NULL,
-    remind_at INTEGER,
-    priority INTEGER DEFAULT 0,
-    status TEXT DEFAULT 'todo',
-    repeat_rule TEXT,
-    created_at INTEGER,
-    updated_at INTEGER,
-    completed_at INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp) ON DELETE SET NULL
 );
 

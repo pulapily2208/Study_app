@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -105,7 +106,7 @@ public class MainDeadLine extends AppCompatActivity {
             }
         }
 
-        int totalWeeksToShow = subjectWeeks > 0 ? subjectWeeks : Math.max(1, maxWeekFound);
+        int totalWeeksToShow = subjectWeeks > 0 ? subjectWeeks : Math.max(15, maxWeekFound);
 
         // Build Weeks list
         weeks = new ArrayList<>();
@@ -140,14 +141,22 @@ public class MainDeadLine extends AppCompatActivity {
             Deadline newDl = (Deadline) data.getSerializableExtra(InputDeadlineActivity.KEY_TAI_KHOAN);
             int weekIndex = data.getIntExtra("weekIndex", lastRequestedWeekIndex);
             if (newDl != null) {
-                // Lưu vào DB (addDeadline nên trả về id)
-                long id = dbHelper.addDeadline(newDl);
-                if (id != -1) {
-                    newDl.setMaDl((int) id);
+                if (subjectMaHp != null) {
+                    newDl.setMaHp(subjectMaHp);
                 }
-                // Thêm vào adapter tuần tương ứng (AdapterWeek sẽ notify con ListView)
-                if (weekIndex >= 0 && weekIndex < weeks.size()) {
-                    adapterWeek.addDeadlineToWeek(weekIndex, newDl);
+
+                // Cố gắng lưu vào DB
+                long id = dbHelper.addDeadline(newDl);
+
+                if (id != -1) {
+                    // LƯU THÀNH CÔNG: Cập nhật ID cho đối tượng và thêm vào UI
+                    newDl.setMaDl((int) id);
+                    if (weekIndex >= 0 && weekIndex < weeks.size()) {
+                        adapterWeek.addDeadlineToWeek(weekIndex, newDl);
+                    }
+                } else {
+                    // LƯU THẤT BẠI: Thông báo cho người dùng
+                    Toast.makeText(this, "Không thể lưu. Đã xảy ra lỗi database.", Toast.LENGTH_SHORT).show();
                 }
             }
         }
