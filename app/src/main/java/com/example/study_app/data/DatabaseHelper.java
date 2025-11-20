@@ -216,6 +216,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // --- Quản lý Môn học (Subject) ---
+    // Thay thế / cập nhật phương thức addSubject hiện tại bằng đoạn sau
     public long addSubject(Subject subject) {
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -234,28 +235,57 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         subjectValues.put("color_tag", subject.mauSac);
         subjectValues.put("so_tuan", subject.soTuan);
 
+        // Lấy semesterId trước khi bắt đầu transaction
+        int semesterId = getSemesterIdByName(subject.tenHk);
+        if (semesterId == -1) {
+            Log.e("DatabaseHelper", "addSubject: Học kỳ không tồn tại: " + subject.tenHk);
+            return -1;
+        }
+
+        // Quy ước user mặc định (single-user app); nếu bạn có hệ thống đăng nhập, thay bằng currentUserId
+        final int DEFAULT_USER_ID = 1;
+
+        Log.i("DatabaseHelper", "Thêm môn: " + subject.maHp + " vào học kỳ id=" + semesterId + " values=" + subjectValues.toString());
+
         db.beginTransaction();
         try {
             long subjectRowId = db.insertWithOnConflict("mon_hoc", null, subjectValues, SQLiteDatabase.CONFLICT_REPLACE);
-
             if (subjectRowId == -1) {
-                return -1;
-            }
-
-            int semesterId = getSemesterIdByName(subject.tenHk);
-            if (semesterId == -1) {
+                Log.e("DatabaseHelper", "insert mon_hoc trả về -1 cho " + subject.maHp);
                 return -1;
             }
 
             ContentValues enrollmentValues = new ContentValues();
+            enrollmentValues.put("user_id", DEFAULT_USER_ID); // quan trọng: cung cấp user_id theo schema
             enrollmentValues.put("ma_hp", subject.maHp);
             enrollmentValues.put("hoc_ky", semesterId);
 
-            db.insertWithOnConflict("enrollments", null, enrollmentValues, SQLiteDatabase.CONFLICT_IGNORE);
+            long enrollId = db.insertWithOnConflict("enrollments", null, enrollmentValues, SQLiteDatabase.CONFLICT_IGNORE);
+            Log.i("DatabaseHelper", "enroll insert id=" + enrollId);
+
+            if (enrollId == -1) {
+                // Nếu insert bị ignore do conflict, kiểm tra xem bản ghi đã tồn tại hay chưa
+                Cursor c = null;
+                try {
+                    c = db.rawQuery("SELECT COUNT(*) FROM enrollments WHERE user_id = ? AND ma_hp = ? AND hoc_ky = ?", new String[]{
+                            String.valueOf(DEFAULT_USER_ID), subject.maHp, String.valueOf(semesterId)
+                    });
+                    if (c != null && c.moveToFirst()) {
+                        int cnt = c.getInt(0);
+                        if (cnt == 0) {
+                            Log.e("DatabaseHelper", "Enrollment không chèn được và không tồn tại: ma_hp=" + subject.maHp + " hoc_ky=" + semesterId);
+                            return -1;
+                        } else {
+                            Log.i("DatabaseHelper", "Enrollment đã tồn tại (ok): ma_hp=" + subject.maHp + " hoc_ky=" + semesterId);
+                        }
+                    }
+                } finally {
+                    if (c != null) c.close();
+                }
+            }
 
             db.setTransactionSuccessful();
             return subjectRowId;
-
         } catch (Exception e) {
             Log.e("DatabaseHelper", "Lỗi khi thêm môn học hoặc enrollment", e);
             return -1;

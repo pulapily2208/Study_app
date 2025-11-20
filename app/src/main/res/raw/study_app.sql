@@ -175,7 +175,9 @@ CREATE TABLE IF NOT EXISTS mon_hoc_tu_chon_map (
 -- =====================
 -- SEED DATA: DỮ LIỆU GỐC (ĐÃ ĐƠN GIẢN HÓA)
 -- =====================
-
+-- User
+INSERT OR IGNORE INTO users (id, email, username, password_hash, display_name, role, timezone, created_at, updated_at, is_active)
+VALUES (1, 'local@local', 'local', '', 'Local User', 'student', 'UTC', strftime('%s','now'), strftime('%s','now'), 1);
 -- Học kỳ
 INSERT OR IGNORE INTO hoc_ky (id, ten_hoc_ky, nam_hoc) VALUES
  (1,'Học kỳ 1','2024-2025'),
