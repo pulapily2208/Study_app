@@ -69,6 +69,23 @@
             android:orientation="horizontal" />
     </HorizontalScrollView>
 
+    <!-- WeekView -->
+    <FrameLayout
+        android:id="@+id/weekViewContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toBottomOf="@id/dateScroll"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomBar">
+
+        <com.alamkanak.weekview.WeekView
+            android:id="@+id/weekView"
+            android:layout_width="0dp"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+
+
     <!-- bottom bar-->
     <LinearLayout
         android:id="@+id/bottomBar"
@@ -108,23 +125,5 @@
             android:text="+"
             android:textColor="@color/white" />
     </LinearLayout>
-
-    <!-- weekview -->
-    <!-- bocj vaò framelayout đễ dễ animate   -->
-    <FrameLayout
-        android:id="@+id/weekContainer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/dateScroll"
-        app:layout_constraintBottom_toTopOf="@id/bottomBar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-        <com.alamkanak.weekview.WeekView
-            android:id="@+id/weekView"
-            android:layout_width="0dp"
-            android:layout_height="0dp" />
-
-    </FrameLayout>
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>
