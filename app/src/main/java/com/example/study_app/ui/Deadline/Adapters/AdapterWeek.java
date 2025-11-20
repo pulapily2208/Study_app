@@ -10,54 +10,71 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.study_app.R;
-import com.example.study_app.ui.Deadline.Models.*;
-//import com.example.study_app.ui.Deadline.Models.Week;
+import com.example.study_app.ui.Deadline.Models.Deadline;
+import com.example.study_app.ui.Deadline.Models.Week;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class AdapterWeek extends ArrayAdapter<Week> {
 
-    private final Context context;
-    private final int resource;
-    private final ArrayList<Week> weeks;
-
-    // --- Listeners for communication with Activity ---
+    private Context context;
+    private int resource;
+    private ArrayList<Week> weeks;
     private OnAddDeadlineListener addListener;
-    private OnDeadlineLongClickListener longClickListener;
-    private OnDeadlineStateChangeListener stateChangeListener;
+    private OnDeadlineInteractionListener deadlineListener;
+    private ArrayList<AdapterDeadline> adapters;
+    private Date subjectStartDate;
+    private int currentWeekIndex = -1;
 
-    // --- Interfaces for listeners ---
     public interface OnAddDeadlineListener {
         void onAddDeadline(int weekIndex);
     }
 
-    public interface OnDeadlineLongClickListener {
-        void onDeadlineLongClick(int weekIndex, int deadlineIndex, Deadline deadline);
-    }
-
-    public interface OnDeadlineStateChangeListener {
+    // Sửa ở đây: Thêm onStateChanged vào interface
+    public interface OnDeadlineInteractionListener {
+        void onDeadlineClick(Deadline deadline);
+        void onEditDeadline(Deadline deadline);
+        void onDeleteDeadline(Deadline deadline);
         void onStateChanged(Deadline deadline, boolean isCompleted);
     }
 
-    // --- Setters for listeners ---
     public void setOnAddDeadlineListener(OnAddDeadlineListener listener) {
         this.addListener = listener;
     }
 
-    public void setOnDeadlineLongClickListener(OnDeadlineLongClickListener listener) {
-        this.longClickListener = listener;
-    }
-    
-    public void setOnDeadlineStateChangeListener(OnDeadlineStateChangeListener listener) {
-        this.stateChangeListener = listener;
+    public void setOnDeadlineInteractionListener(OnDeadlineInteractionListener listener) {
+        this.deadlineListener = listener;
+        if (adapters != null) {
+            for (AdapterDeadline adapter : adapters) {
+                adapter.setOnDeadlineInteractionListener(listener);
+            }
+        }
     }
 
-
-    public AdapterWeek(Context context, int resource, ArrayList<Week> weeks) {
+    public AdapterWeek(Context context, int resource, ArrayList<Week> weeks, Date subjectStartDate) {
         super(context, resource, weeks);
         this.context = context;
         this.resource = resource;
         this.weeks = weeks;
+        this.subjectStartDate = subjectStartDate;
+
+        if (this.subjectStartDate != null) {
+            long diffMillis = new Date().getTime() - this.subjectStartDate.getTime();
+            if (diffMillis >= 0) {
+                this.currentWeekIndex = (int) (TimeUnit.MILLISECONDS.toDays(diffMillis) / 7);
+            }
+        }
+
+        adapters = new ArrayList<>();
+        for (Week w : weeks) {
+            AdapterDeadline deadlineAdapter = new AdapterDeadline(context, R.layout.deadline_item, w.getDeadlines());
+            adapters.add(deadlineAdapter);
+        }
     }
 
     @Override
@@ -68,6 +85,7 @@ public class AdapterWeek extends ArrayAdapter<Week> {
             convertView = LayoutInflater.from(context).inflate(resource, parent, false);
             holder = new ViewHolder();
             holder.tvTuan = convertView.findViewById(R.id.tvTuan);
+            holder.tvNgayTuan = convertView.findViewById(R.id.tvNgayTuan);
             holder.lvCongViec = convertView.findViewById(R.id.lvCongViec);
             holder.btnThem = convertView.findViewById(R.id.btnThem);
             convertView.setTag(holder);
@@ -78,61 +96,73 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         Week week = weeks.get(position);
         holder.tvTuan.setText(week.getTenTuan());
 
-        // Create a new adapter for the deadlines in this specific week
-        AdapterDeadline deadlineAdapter = new AdapterDeadline(context, R.layout.deadline_item, week.getDeadlines());
-        holder.lvCongViec.setAdapter(deadlineAdapter);
+        // Logic để hiển thị ngày của tuần
+        if (subjectStartDate != null) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(subjectStartDate);
+            calendar.add(Calendar.DAY_OF_YEAR, position * 7);
+            Date weekStart = calendar.getTime();
 
-        // --- Pass events from child adapter (Deadline) to this adapter's listeners ---
+            calendar.add(Calendar.DAY_OF_YEAR, 6);
+            Date weekEnd = calendar.getTime();
 
-        // 1. Pass Checkbox change event
-        deadlineAdapter.setOnDeadlineStateChangeListener((deadline, isCompleted) -> {
-            if (stateChangeListener != null) {
-                // Pass it up to the Activity
-                stateChangeListener.onStateChanged(deadline, isCompleted);
-            }
-        });
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM", Locale.getDefault());
+            String dateRange = sdf.format(weekStart) + " - " + sdf.format(weekEnd);
+            holder.tvNgayTuan.setText(dateRange);
+        } else {
+            holder.tvNgayTuan.setText("...");
+        }
 
-        // 2. Pass Long Click event
-        holder.lvCongViec.setOnItemLongClickListener((parentView, view, deadlinePosition, id) -> {
-            if (longClickListener != null) {
-                Deadline clickedDeadline = week.getDeadlines().get(deadlinePosition);
-                longClickListener.onDeadlineLongClick(position, deadlinePosition, clickedDeadline);
-            }
-            return true; // Consume the long click event
-        });
+        if (currentWeekIndex != -1 && position > currentWeekIndex) {
+            holder.btnThem.setVisibility(View.GONE);
+        } else {
+            holder.btnThem.setVisibility(View.VISIBLE);
+        }
+
+        AdapterDeadline currentAdapter = adapters.get(position);
+        if (holder.lvCongViec.getAdapter() == null) {
+            holder.lvCongViec.setAdapter(currentAdapter);
+        }
+
+        currentAdapter.setOnDeadlineInteractionListener(this.deadlineListener);
         
-        // 3. Handle "Add" button click
+        setListViewHeightBasedOnChildren(holder.lvCongViec);
+
         holder.btnThem.setOnClickListener(v -> {
-            if (addListener != null) {
-                addListener.onAddDeadline(position);
-            }
+            if (addListener != null) addListener.onAddDeadline(position);
         });
 
-        // Utility to adjust ListView height
-        setListViewHeightBasedOnChildren(holder.lvCongViec);
+        holder.lvCongViec.setFocusable(false);
+        holder.lvCongViec.setClickable(false);
+        holder.lvCongViec.setFocusableInTouchMode(false);
 
         return convertView;
     }
 
-    private static void setListViewHeightBasedOnChildren(ListView listView) {
+    private void setListViewHeightBasedOnChildren(ListView listView) {
         android.widget.ListAdapter adapter = listView.getAdapter();
         if (adapter == null) return;
 
         int totalHeight = 0;
         for (int i = 0; i < adapter.getCount(); i++) {
             View listItem = adapter.getView(i, null, listView);
-            listItem.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+            listItem.measure(0, 0);
             totalHeight += listItem.getMeasuredHeight();
         }
 
         ViewGroup.LayoutParams params = listView.getLayoutParams();
-        params.height = totalHeight + (listView.getDividerHeight() * (adapter.getCount() - 1));
+        if (adapter.getCount() > 0) {
+            params.height = totalHeight + (listView.getDividerHeight() * (adapter.getCount() - 1));
+        } else {
+            params.height = 0;
+        }
         listView.setLayoutParams(params);
         listView.requestLayout();
     }
 
     private static class ViewHolder {
         TextView tvTuan;
+        TextView tvNgayTuan;
         ListView lvCongViec;
         Button btnThem;
     }

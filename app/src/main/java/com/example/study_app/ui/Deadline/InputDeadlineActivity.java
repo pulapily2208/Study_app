@@ -29,8 +29,10 @@ import java.util.Locale;
 public class InputDeadlineActivity extends AppCompatActivity {
 
     // Constants for Intent Extras
+    public static final String KEY_TAI_KHOAN = "taiKhoanMoi";
     public static final String EDIT_DEADLINE = "EDIT_DEADLINE";
     public static final String SUBJECT_MA_HP = "SUBJECT_MA_HP";
+    public static final String WEEK_START_DATE = "WEEK_START_DATE";
 
     // Views
     private EditText edtTenDeadline, edtGhiChu;
@@ -44,6 +46,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
     private String subjectMaHp;
     private Deadline deadlineToEdit = null;
     private boolean isEditMode = false;
+    private int weekIndex = 0; // Thêm lại weekIndex để trả về
 
     private final Calendar calendarTu = Calendar.getInstance();
     private final Calendar calendarDen = Calendar.getInstance();
@@ -68,14 +71,11 @@ public class InputDeadlineActivity extends AppCompatActivity {
 
         dbHelper = new DatabaseHelper(this);
         findViews();
-        setupListeners();
         handleIntent();
+        setupListeners();
 
-        // Initialize UI based on mode
-        if (!isEditMode) {
-            updateDateTimeUI();
-            imgIcon.setImageResource(selectedIcon);
-        }
+        updateDateTimeUI();
+        imgIcon.setImageResource(selectedIcon);
     }
 
     private void findViews() {
@@ -87,6 +87,30 @@ public class InputDeadlineActivity extends AppCompatActivity {
         btnHuy = findViewById(R.id.btnHuy);
         btnThemDeadline = findViewById(R.id.btnThemDeadline);
         imgIcon = findViewById(R.id.imgIcon);
+    }
+
+    private void handleIntent() {
+        Intent intent = getIntent();
+        weekIndex = intent.getIntExtra("weekIndex", 0);
+        subjectMaHp = intent.getStringExtra(SUBJECT_MA_HP);
+
+        if (intent.hasExtra(EDIT_DEADLINE)) {
+            deadlineToEdit = (Deadline) intent.getSerializableExtra(EDIT_DEADLINE);
+            isEditMode = (deadlineToEdit != null);
+        }
+
+        if (isEditMode) {
+            btnThemDeadline.setText("Lưu thay đổi");
+            populateDataForEdit();
+        } else {
+            btnThemDeadline.setText("Thêm Deadline");
+            // Chỉ đặt ngày mặc định khi thêm mới
+            long weekStartDateMillis = intent.getLongExtra(WEEK_START_DATE, -1);
+            if (weekStartDateMillis != -1) {
+                calendarTu.setTimeInMillis(weekStartDateMillis);
+                calendarDen.setTimeInMillis(weekStartDateMillis);
+            }
+        }
     }
 
     private void setupListeners() {
@@ -111,34 +135,13 @@ public class InputDeadlineActivity extends AppCompatActivity {
         });
     }
 
-    private void handleIntent() {
-        Intent intent = getIntent();
-        subjectMaHp = intent.getStringExtra(SUBJECT_MA_HP);
-
-        if (intent.hasExtra(EDIT_DEADLINE)) {
-            deadlineToEdit = (Deadline) intent.getSerializableExtra(EDIT_DEADLINE);
-            isEditMode = (deadlineToEdit != null);
-        }
-
-        if (isEditMode) {
-            btnThemDeadline.setText("Lưu thay đổi");
-            populateDataForEdit();
-        } else {
-            btnThemDeadline.setText("Thêm Deadline");
-        }
-    }
-
     private void populateDataForEdit() {
         edtTenDeadline.setText(deadlineToEdit.getTieuDe());
         edtGhiChu.setText(deadlineToEdit.getNoiDung());
-
         calendarTu.setTime(deadlineToEdit.getNgayBatDau());
         calendarDen.setTime(deadlineToEdit.getNgayKetThuc());
-
         selectedIcon = deadlineToEdit.getIcon();
-        imgIcon.setImageResource(selectedIcon);
-        
-        updateDateTimeUI();
+        subjectMaHp = deadlineToEdit.getMaHp(); // Lấy mã HP từ deadline đang sửa
     }
 
     private void saveDeadline() {
@@ -148,50 +151,33 @@ public class InputDeadlineActivity extends AppCompatActivity {
             return;
         }
 
-        if (!isEditMode && (subjectMaHp == null || subjectMaHp.isEmpty())) {
-            Toast.makeText(this, "Lỗi: Không có mã môn học để thêm deadline.", Toast.LENGTH_LONG).show();
-            return;
-        }
-
         String ghiChu = edtGhiChu.getText().toString().trim();
         Date tu = calendarTu.getTime();
         Date den = calendarDen.getTime();
 
-        Deadline deadline;
+        Deadline deadlineToReturn;
         if (isEditMode) {
-            deadline = deadlineToEdit;
+            deadlineToReturn = deadlineToEdit;
         } else {
-            deadline = new Deadline(ten, ghiChu, tu, den, selectedIcon);
+            deadlineToReturn = new Deadline();
         }
 
-        // Update fields
-        deadline.setTieuDe(ten);
-        deadline.setNoiDung(ghiChu);
-        deadline.setNgayBatDau(tu);
-        deadline.setNgayKetThuc(den);
-        deadline.setIcon(selectedIcon);
-        // Set default values for fields not in UI
-        if (deadline.getRepeat() == null) {
-            deadline.setRepeat("once");
-        }
-        if (deadline.getReminder() == null) {
-            deadline.setReminder("Trước 5 phút");
-        }
+        deadlineToReturn.setTieuDe(ten);
+        deadlineToReturn.setNoiDung(ghiChu);
+        deadlineToReturn.setNgayBatDau(tu);
+        deadlineToReturn.setNgayKetThuc(den);
+        deadlineToReturn.setIcon(selectedIcon);
+        deadlineToReturn.setMaHp(subjectMaHp);
 
-        long result;
-        if (isEditMode) {
-            result = dbHelper.updateDeadline(deadline);
-        } else {
-            result = dbHelper.addDeadline(deadline, subjectMaHp);
+        // Trả về Intent
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra(KEY_TAI_KHOAN, deadlineToReturn);
+        // Trả về weekIndex để MainDeadLine có thể cuộn tới
+        if (!isEditMode) {
+            resultIntent.putExtra("weekIndex", weekIndex);
         }
-
-        if (result != -1) {
-            Toast.makeText(this, isEditMode ? "Đã cập nhật deadline" : "Đã thêm deadline", Toast.LENGTH_SHORT).show();
-            setResult(RESULT_OK, new Intent());
-            finish();
-        } else {
-            Toast.makeText(this, "Thao tác thất bại", Toast.LENGTH_SHORT).show();
-        }
+        setResult(RESULT_OK, resultIntent);
+        finish();
     }
 
     private void updateDateTimeUI() {
