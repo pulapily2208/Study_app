@@ -4,7 +4,6 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,7 +19,9 @@ import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Deadline.Models.Week;
 import com.example.study_app.ui.Subject.Model.Subject;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -31,13 +32,13 @@ public class MainDeadLine extends AppCompatActivity {
 
     private ListView lvWeeks;
     private TextView tvSubjectTitle;
-    private Button btnBack; // Sửa lỗi: Đổi từ ImageView sang Button
+    private Button btnBack;
 
     private DatabaseHelper dbHelper;
     private AdapterWeek adapterWeek;
-    private ArrayList<Week> weekList = new ArrayList<>();
 
     private String subjectMaHp;
+    private Date subjectStartDate; // Lưu ngày bắt đầu để truyền cho adapter
     private ActivityResultLauncher<Intent> deadlineLauncher;
 
     @Override
@@ -45,20 +46,16 @@ public class MainDeadLine extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.deadline_main);
 
-        // --- Khởi tạo Views và Database ---
         lvWeeks = findViewById(R.id.lvItemTuan);
         tvSubjectTitle = findViewById(R.id.tvSubjectTitle);
         btnBack = findViewById(R.id.btnQuaylai);
         dbHelper = new DatabaseHelper(this);
 
-        // --- Lấy dữ liệu từ Intent ---
         Intent intent = getIntent();
         subjectMaHp = intent.getStringExtra("SUBJECT_MA_HP");
         String subjectTenHp = intent.getStringExtra("SUBJECT_TEN_HP");
 
         if (subjectMaHp == null || subjectMaHp.isEmpty()) {
-            // Nếu không có môn học cụ thể, có thể mở màn hình deadline chung (chức năng tương lai)
-            // Hiện tại, chỉ đóng lại và thông báo
             Toast.makeText(this, "Lỗi: Không có thông tin môn học.", Toast.LENGTH_LONG).show();
             finish();
             return;
@@ -66,12 +63,12 @@ public class MainDeadLine extends AppCompatActivity {
 
         tvSubjectTitle.setText(subjectTenHp != null ? subjectTenHp : "Deadlines");
 
-        // --- Khởi tạo ActivityResultLauncher ---
+        // Khởi tạo adapter một lần duy nhất với danh sách trống
+        adapterWeek = new AdapterWeek(this, R.layout.deadline_item_tuan, new ArrayList<>(), null);
+        lvWeeks.setAdapter(adapterWeek);
+
         setupDeadlineLauncher();
-
-        // --- Tải dữ liệu và hiển thị --- 
         loadDataFromDatabase();
-
         btnBack.setOnClickListener(v -> finish());
     }
 
@@ -81,17 +78,18 @@ public class MainDeadLine extends AppCompatActivity {
             Toast.makeText(this, "Lỗi: Không thể tải thông tin môn học.", Toast.LENGTH_SHORT).show();
             return;
         }
+        subjectStartDate = subject.ngayBatDau;
 
         ArrayList<Deadline> allDeadlines = dbHelper.getDeadlinesByMaHp(subjectMaHp);
+        Map<Integer, List<Deadline>> deadlinesByWeek = groupDeadlinesIntoWeeks(allDeadlines, subjectStartDate);
 
-        Map<Integer, List<Deadline>> deadlinesByWeek = groupDeadlinesIntoWeeks(allDeadlines, subject.ngayBatDau);
-
-        weekList.clear();
-
+        ArrayList<Week> newWeekList = new ArrayList<>();
         int maxWeekFromDeadlines = 0;
-        for (Integer weekNum : deadlinesByWeek.keySet()) {
-            if (weekNum > maxWeekFromDeadlines) {
-                maxWeekFromDeadlines = weekNum;
+        if (!deadlinesByWeek.isEmpty()) {
+            for (Integer weekNum : deadlinesByWeek.keySet()) {
+                if (weekNum > maxWeekFromDeadlines) {
+                    maxWeekFromDeadlines = weekNum;
+                }
             }
         }
         int totalWeeks = Math.max(subject.soTuan > 0 ? subject.soTuan : 15, maxWeekFromDeadlines);
@@ -101,21 +99,26 @@ public class MainDeadLine extends AppCompatActivity {
             if (deadlinesByWeek.containsKey(i)) {
                 week.getDeadlines().addAll(deadlinesByWeek.get(i));
             }
-            weekList.add(week);
+            newWeekList.add(week);
         }
 
-        adapterWeek = new AdapterWeek(this, R.layout.deadline_item_tuan, weekList);
-        lvWeeks.setAdapter(adapterWeek);
+        // Sửa lỗi ở đây: Cập nhật ngày bắt đầu cho adapter
+        adapterWeek.setSubjectStartDate(subjectStartDate);
+
+        // Cập nhật dữ liệu cho adapter
+        adapterWeek.clear();
+        adapterWeek.addAll(newWeekList);
 
         setupAdapterListeners();
     }
 
-    private Map<Integer, List<Deadline>> groupDeadlinesIntoWeeks(List<Deadline> deadlines, Date subjectStartDate) {
+    private Map<Integer, List<Deadline>> groupDeadlinesIntoWeeks(List<Deadline> deadlines, Date startDate) {
         Map<Integer, List<Deadline>> map = new HashMap<>();
-        if (deadlines == null || subjectStartDate == null) return map;
+        if (deadlines == null || startDate == null) return map;
 
         for (Deadline d : deadlines) {
-            long diffMillis = d.getNgayKetThuc().getTime() - subjectStartDate.getTime();
+            if (d.getNgayKetThuc() == null) continue;
+            long diffMillis = d.getNgayKetThuc().getTime() - startDate.getTime();
             long diffDays = TimeUnit.MILLISECONDS.toDays(diffMillis);
             int weekNumber = (int) (diffDays / 7) + 1;
             if (weekNumber < 1) weekNumber = 1;
@@ -132,9 +135,26 @@ public class MainDeadLine extends AppCompatActivity {
         deadlineLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == RESULT_OK) {
-                        Toast.makeText(this, "Đã cập nhật danh sách deadline!", Toast.LENGTH_SHORT).show();
-                        loadDataFromDatabase();
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        Serializable extra = result.getData().getSerializableExtra(InputDeadlineActivity.KEY_TAI_KHOAN);
+                        if (extra instanceof Deadline) {
+                            Deadline returnedDeadline = (Deadline) extra;
+                            boolean isUpdate = returnedDeadline.getMaDl() > 0;
+
+                            long dbResult;
+                            if (isUpdate) {
+                                dbResult = dbHelper.updateDeadline(returnedDeadline);
+                            } else {
+                                dbResult = dbHelper.addDeadline(returnedDeadline, subjectMaHp);
+                            }
+
+                            if (dbResult != -1) {
+                                Toast.makeText(this, isUpdate ? "Đã cập nhật deadline" : "Đã thêm deadline", Toast.LENGTH_SHORT).show();
+                                loadDataFromDatabase();
+                            } else {
+                                Toast.makeText(this, "Thao tác với database thất bại!", Toast.LENGTH_SHORT).show();
+                            }
+                        }
                     }
                 }
         );
@@ -147,41 +167,52 @@ public class MainDeadLine extends AppCompatActivity {
             Intent intent = new Intent(MainDeadLine.this, InputDeadlineActivity.class);
             intent.putExtra("weekIndex", weekIndex);
             intent.putExtra(InputDeadlineActivity.SUBJECT_MA_HP, subjectMaHp);
+            if (subjectStartDate != null) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(subjectStartDate);
+                cal.add(Calendar.WEEK_OF_YEAR, weekIndex);
+                intent.putExtra(InputDeadlineActivity.WEEK_START_DATE, cal.getTimeInMillis());
+            }
             deadlineLauncher.launch(intent);
         });
 
-        adapterWeek.setOnDeadlineLongClickListener((weekIndex, deadlineIndex, deadline) -> {
-            CharSequence[] options = {"Sửa Deadline", "Xóa deadline"};
+        adapterWeek.setOnDeadlineInteractionListener(new AdapterWeek.OnDeadlineInteractionListener() {
+            @Override
+            public void onDeadlineClick(Deadline deadline) {
+                new AlertDialog.Builder(MainDeadLine.this)
+                        .setTitle(deadline.getTieuDe())
+                        .setMessage("Ghi chú: " + deadline.getNoiDung())
+                        .setPositiveButton("Đóng", null)
+                        .show();
+            }
 
-            new AlertDialog.Builder(MainDeadLine.this)
-                    .setTitle("Tùy chọn cho: " + deadline.getTieuDe())
-                    .setItems(options, (dialog, which) -> {
-                        if (which == 0) {
-                            Intent editIntent = new Intent(MainDeadLine.this, InputDeadlineActivity.class);
-                            editIntent.putExtra(InputDeadlineActivity.EDIT_DEADLINE, deadline);
-                            editIntent.putExtra(InputDeadlineActivity.SUBJECT_MA_HP, subjectMaHp);
-                            deadlineLauncher.launch(editIntent);
-                        } else if (which == 1) {
-                            new AlertDialog.Builder(MainDeadLine.this)
-                                    .setTitle("Xác nhận xóa")
-                                    .setMessage("Bạn có chắc chắn muốn xóa deadline này không?")
-                                    .setPositiveButton("Xóa", (d, w) -> {
-                                        dbHelper.deleteDeadline(deadline.getMaDl());
-                                        Toast.makeText(MainDeadLine.this, "Đã xóa deadline", Toast.LENGTH_SHORT).show();
-                                        loadDataFromDatabase();
-                                    })
-                                    .setNegativeButton("Hủy", null)
-                                    .show();
-                        }
-                    })
-                    .show();
-        });
+            @Override
+            public void onEditDeadline(Deadline deadline) {
+                Intent editIntent = new Intent(MainDeadLine.this, InputDeadlineActivity.class);
+                editIntent.putExtra(InputDeadlineActivity.EDIT_DEADLINE, deadline);
+                deadlineLauncher.launch(editIntent);
+            }
 
-        adapterWeek.setOnDeadlineStateChangeListener((deadline, isCompleted) -> {
-            deadline.setCompleted(isCompleted);
-            dbHelper.updateDeadline(deadline);
-            loadDataFromDatabase(); 
-            Toast.makeText(MainDeadLine.this, "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
+            @Override
+            public void onDeleteDeadline(Deadline deadline) {
+                new AlertDialog.Builder(MainDeadLine.this)
+                        .setTitle("Xác nhận xóa")
+                        .setMessage("Bạn có chắc muốn xóa deadline này?")
+                        .setPositiveButton("Xóa", (d, w) -> {
+                            dbHelper.deleteDeadline(deadline.getMaDl());
+                            Toast.makeText(MainDeadLine.this, "Đã xóa deadline", Toast.LENGTH_SHORT).show();
+                            loadDataFromDatabase();
+                        })
+                        .setNegativeButton("Hủy", null)
+                        .show();
+            }
+
+            @Override
+            public void onStateChanged(Deadline deadline, boolean isCompleted) {
+                deadline.setCompleted(isCompleted);
+                dbHelper.updateDeadline(deadline);
+                Toast.makeText(MainDeadLine.this, "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 }
