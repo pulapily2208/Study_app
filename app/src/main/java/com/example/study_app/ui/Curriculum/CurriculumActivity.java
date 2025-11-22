@@ -53,7 +53,7 @@ public class CurriculumActivity extends AppCompatActivity {
 
     private void setupFilters() {
         // Load dynamic data from DB
-//        facultiesMap = dbHelper.getFacultiesMap();
+        facultiesMap = dbHelper.getFacultiesMap();
         facultyNames = new ArrayList<>(facultiesMap.keySet());
         List<String> groupNames = dbHelper.getAllCourseGroups();
 
