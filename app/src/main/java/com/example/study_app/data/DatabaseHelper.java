@@ -137,6 +137,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+
+//    SUBJECT
     public ArrayList<String> getAllSemesterNames() {
         ArrayList<String> semesterNames = new ArrayList<>();
         String selectQuery = "SELECT ten_hoc_ky FROM hoc_ky ORDER BY nam_hoc, id";
@@ -335,6 +337,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.delete("mon_hoc", "ma_hp = ?", new String[]{maHp});
     }
 
+
+
+
+
+
+//    DEADLINE
     public ArrayList<Deadline> getDeadlinesByMaHp(String maHp) {
         ArrayList<Deadline> deadlineList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -404,7 +412,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.delete("deadline", "id = ?", new String[]{String.valueOf(deadlineId)});
     }
 
-    // Quản lý note
+
+
+
+
+
+
+    // NOTE
     public ArrayList<Note> getAllNotes() {
         ArrayList<Note> notes = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -509,6 +523,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
 
+
+
+
+
+
+
+//    CHƯƠNG TRÌNH ĐÀO TẠO
     public Map<String, Integer> getFacultiesMap() {
         Map<String, Integer> faculties = new HashMap<>();
         SQLiteDatabase db = this.getReadableDatabase();

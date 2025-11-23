@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
         btnCurriculum = findViewById(R.id.btnCurriculum);
         btnTimetable = findViewById(R.id.btnTimetable);
 
+//        DEADLINE
         btnDeadLine.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -34,6 +35,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+
+//        SUBJECT
         btnSubject.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -42,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+//      NOTE
         btnNote.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -50,6 +56,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+
+//        CURRICULUM
         btnCurriculum.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -58,6 +67,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+
+//        TIMETABLE
         btnTimetable.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
