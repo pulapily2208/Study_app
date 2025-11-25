@@ -3,10 +3,13 @@ package com.example.study_app.ui.Notes.Adapters;
 import android.content.Context;
 import android.net.Uri;
 import android.text.Html;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,6 +20,7 @@ import com.bumptech.glide.Glide;
 import com.example.study_app.R;
 import com.example.study_app.ui.Notes.Model.Note;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -26,19 +30,33 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
     private final List<Note> notes;
     private final Context context;
+
+    // Click để mở nội dung
     private OnNoteClickListener onNoteClickListener;
+
+    // Click menu sửa/xoá
+    private OnNoteMenuClickListener menuClickListener;
 
     public interface OnNoteClickListener {
         void onNoteClick(Note note);
+    }
+
+    public interface OnNoteMenuClickListener {
+        void onEdit(Note note);
+        void onDelete(Note note);
+    }
+
+    public NotesAdapter(List<Note> notes, Context context) {
+        this.notes = notes;
+        this.context = context;
     }
 
     public void setOnNoteClickListener(OnNoteClickListener listener) {
         this.onNoteClickListener = listener;
     }
 
-    public NotesAdapter(List<Note> notes, Context context) {
-        this.notes = notes;
-        this.context = context;
+    public void setOnNoteMenuClickListener(OnNoteMenuClickListener listener) {
+        this.menuClickListener = listener;
     }
 
     @NonNull
@@ -50,7 +68,31 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
     @Override
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
+
         Note note = notes.get(position);
+        Log.d("NotesAdapter", "ImagePath: " + note.getImagePaths());
+
+
+        holder.btnMore.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(context, holder.btnMore);
+            popup.inflate(R.menu.note_item_menu);
+
+            popup.setOnMenuItemClickListener(menuItem -> {
+                if (menuClickListener == null) return false;
+
+                if (menuItem.getItemId() == R.id.menu_edit) {
+                    menuClickListener.onEdit(note);
+                    return true;
+
+                } else if (menuItem.getItemId() == R.id.menu_delete) {
+                    menuClickListener.onDelete(note);
+                    return true;
+                }
+                return false;
+            });
+
+            popup.show();
+        });
 
         holder.tvTitle.setText(note.getTitle());
         holder.tvContent.setText(Html.fromHtml(note.getBody(), Html.FROM_HTML_MODE_LEGACY));
@@ -66,18 +108,21 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
         if (note.getColor_tag() != null && !note.getColor_tag().isEmpty()) {
             try {
                 holder.cardView.setCardBackgroundColor(android.graphics.Color.parseColor(note.getColor_tag()));
-            } catch (IllegalArgumentException ignored) {}
+            } catch (Exception ignored) {}
         }
 
-        // Hiển thị ảnh nếu có
-        if (note.getImagePath() != null && !note.getImagePath().isEmpty()) {
+        if (note.getImagePaths() != null && !note.getImagePaths().isEmpty()) {
+            holder.imageAnh.setVisibility(View.VISIBLE);
+
             holder.imageAnh.setVisibility(View.VISIBLE);
             Glide.with(context)
-                    .load(Uri.parse(note.getImagePath()))
+                    .load(Uri.fromFile(new File(note.getImagePaths().get(0)))) // load ảnh đầu tiên
                     .into(holder.imageAnh);
+
         } else {
             holder.imageAnh.setVisibility(View.GONE);
         }
+
 
         holder.itemView.setOnClickListener(v -> {
             if (onNoteClickListener != null) {
@@ -94,18 +139,23 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
         return notes.size();
     }
 
+
     public static class NoteViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvContent, tvDate;
-        ImageView imageAnh;
+        ImageView imageAnh, btnMore;
         CardView cardView;
 
         public NoteViewHolder(@NonNull View itemView) {
             super(itemView);
+
             tvTitle = itemView.findViewById(R.id.tvTieuDe);
             tvContent = itemView.findViewById(R.id.tvNoiDung);
             tvDate = itemView.findViewById(R.id.tvNgay);
             imageAnh = itemView.findViewById(R.id.imgAnh);
             cardView = itemView.findViewById(R.id.cardView);
+
+            // 🔥 thêm nút menu
+            btnMore = itemView.findViewById(R.id.btnMenu);
         }
     }
 }

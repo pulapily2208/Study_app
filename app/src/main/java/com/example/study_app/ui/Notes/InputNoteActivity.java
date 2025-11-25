@@ -10,8 +10,10 @@ import android.text.Editable;
 import android.text.Html;
 import android.text.Layout;
 import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.text.style.AlignmentSpan;
 import android.text.style.BackgroundColorSpan;
+import android.text.style.ClickableSpan;
 import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.Button;
@@ -26,6 +28,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import androidx.core.text.HtmlCompat;
 
 import com.bumptech.glide.Glide;
 import com.example.study_app.R;
@@ -38,12 +41,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
 
 public class InputNoteActivity extends AppCompatActivity {
 
     private EditText edtTitle, edtContent;
     private Button btnSave, btnBack;
-    private ImageView btnUndo, btnRedo, btnText, btnAttach, btnShowColorPalette, btnChooseFromGallery, btnTakePhoto;
+    private ImageView btnUndo, btnRedo, btnText, btnAttach, btnShowColorPalette, btnChooseFromGallery, btnTakePhoto, btnChecklist;
 
     private LinearLayout textFormattingToolbar, imageSourceChooserLayout, imageContainer;
     private ImageView btnBold, btnItalic, btnHighlight, btnAlignLeft, btnAlignCenter, btnAlignRight;
@@ -57,7 +62,11 @@ public class InputNoteActivity extends AppCompatActivity {
     private ActivityResultLauncher<Uri> takePhoto;
     private ActivityResultLauncher<PickVisualMediaRequest> pickMultiple;
 
-    private ArrayList<String> imagePaths = new ArrayList<>();
+    private List<String> imagePaths = new ArrayList<>();
+
+    private final Stack<String> undoStack = new Stack<>();
+    private final Stack<String> redoStack = new Stack<>();
+    private boolean isUndoingOrRedoing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,13 +85,38 @@ public class InputNoteActivity extends AppCompatActivity {
             loadNoteData(noteId);
         } else {
             currentNote = new Note();
+            undoStack.push(Html.toHtml(edtContent.getText(), Html.FROM_HTML_MODE_LEGACY));
         }
+
+        edtContent.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (isUndoingOrRedoing) return;
+
+                makeCheckboxesClickable();
+
+                String currentHtml = Html.toHtml(s, Html.FROM_HTML_MODE_LEGACY);
+                if (undoStack.isEmpty() || !undoStack.peek().equals(currentHtml)) {
+                    undoStack.push(currentHtml);
+                }
+                redoStack.clear();
+            }
+        });
     }
 
     @SuppressLint("WrongViewCast")
     private void setupViews() {
         edtTitle = findViewById(R.id.edtTitle);
         edtContent = findViewById(R.id.edtContent);
+        edtContent.setHorizontallyScrolling(false);
+        edtContent.setMaxLines(Integer.MAX_VALUE);
+
         btnSave = findViewById(R.id.btnSave);
         btnBack = findViewById(R.id.btnBack);
         btnUndo = findViewById(R.id.btnUndo);
@@ -90,6 +124,7 @@ public class InputNoteActivity extends AppCompatActivity {
         btnText = findViewById(R.id.btnText);
         btnAttach = findViewById(R.id.btnAttach);
         btnShowColorPalette = findViewById(R.id.btnShowColorPalette);
+        btnChecklist = findViewById(R.id.btnChecklist);
 
         imageContainer = findViewById(R.id.imageContainer);
         imageSourceChooserLayout = findViewById(R.id.imageSourceChooserLayout);
@@ -113,7 +148,6 @@ public class InputNoteActivity extends AppCompatActivity {
     }
 
     private void setupPhotoPicker() {
-        // PICK MULTIPLE IMAGES
         pickMultiple = registerForActivityResult(
                 new ActivityResultContracts.PickMultipleVisualMedia(10), uris -> {
                     if (!uris.isEmpty()) {
@@ -127,7 +161,6 @@ public class InputNoteActivity extends AppCompatActivity {
                     }
                 });
 
-        // CAMERA
         takePhoto = registerForActivityResult(new ActivityResultContracts.TakePicture(), result -> {
             if (result) {
                 Uri savedUri = saveImageToAppFolder(cameraImageUri);
@@ -181,7 +214,6 @@ public class InputNoteActivity extends AppCompatActivity {
     }
 
     private void setUpClickListener() {
-
         btnBack.setOnClickListener(v -> finish());
         btnSave.setOnClickListener(v -> saveNote());
 
@@ -195,9 +227,10 @@ public class InputNoteActivity extends AppCompatActivity {
             colorPalette.setVisibility(toggle(colorPalette));
         });
 
-        btnAttach.setOnClickListener(v -> {
-            imageSourceChooserLayout.setVisibility(toggle(imageSourceChooserLayout));
-        });
+        btnAttach.setOnClickListener(v -> imageSourceChooserLayout.setVisibility(toggle(imageSourceChooserLayout)));
+
+        btnUndo.setOnClickListener(v -> performUndo());
+        btnRedo.setOnClickListener(v -> performRedo());
 
         btnBold.setOnClickListener(v -> toggleStyle(Typeface.BOLD));
         btnItalic.setOnClickListener(v -> toggleStyle(Typeface.ITALIC));
@@ -220,6 +253,21 @@ public class InputNoteActivity extends AppCompatActivity {
         );
 
         btnTakePhoto.setOnClickListener(v -> openCamera());
+
+        btnChecklist.setOnClickListener(v -> insertCheckboxAtCurrentLine());
+    }
+
+    private void insertCheckboxAtCurrentLine() {
+        int start = Math.max(edtContent.getSelectionStart(), 0);
+        Editable editable = edtContent.getText();
+        String text = editable.toString();
+        int lineStart = start;
+        while (lineStart > 0 && text.charAt(lineStart - 1) != '\n') lineStart--;
+
+        // Chỉ thêm checkbox nếu dòng chưa có
+        if (!text.startsWith("☐", lineStart) && !text.startsWith("☑", lineStart)) {
+            editable.insert(lineStart, "☐ ");
+        }
     }
 
     private int toggle(View v) {
@@ -246,7 +294,18 @@ public class InputNoteActivity extends AppCompatActivity {
         int s = edtContent.getSelectionStart();
         int e = edtContent.getSelectionEnd();
         if (s >= e) return;
-        edtContent.getText().setSpan(new StyleSpan(style), s, e, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+
+        StyleSpan[] spans = edtContent.getText().getSpans(s, e, StyleSpan.class);
+        boolean exists = false;
+        for (StyleSpan span : spans) {
+            if (span.getStyle() == style) {
+                edtContent.getText().removeSpan(span);
+                exists = true;
+            }
+        }
+        if (!exists) {
+            edtContent.getText().setSpan(new StyleSpan(style), s, e, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+        }
     }
 
     private void toggleHighlight() {
@@ -263,6 +322,69 @@ public class InputNoteActivity extends AppCompatActivity {
         edtContent.getText().setSpan(new AlignmentSpan.Standard(alignment), s, e, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
     }
 
+    private void makeCheckboxesClickable() {
+        Editable editable = edtContent.getText();
+        ClickableSpan[] oldSpans = editable.getSpans(0, editable.length(), ClickableSpan.class);
+        for (ClickableSpan span : oldSpans) editable.removeSpan(span);
+
+        String text = editable.toString();
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if ((c == '☐' || c == '☑') && (i == 0 || text.charAt(i - 1) == '\n')) {
+                final int index = i;
+                editable.setSpan(new ClickableSpan() {
+                    @Override
+                    public void onClick(@NonNull View widget) {
+                        Editable e = edtContent.getText();
+                        if (index < e.length()) {
+                            char current = e.charAt(index);
+                            if (current == '☐') e.replace(index, index + 1, "☑");
+                            else if (current == '☑') e.replace(index, index + 1, "☐");
+                        }
+                    }
+                    @Override
+                    public void updateDrawState(@NonNull android.text.TextPaint ds) {
+                        ds.setColor(ds.linkColor); // giữ màu text mặc định
+                        ds.setUnderlineText(false); // bỏ gạch chân
+                    }
+                }, i, i + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        }
+
+        if (!(edtContent.getMovementMethod() instanceof LinkMovementMethod)) {
+            edtContent.setMovementMethod(LinkMovementMethod.getInstance());
+        }
+    }
+
+    private void performUndo() {
+        if (undoStack.size() > 1) {
+            isUndoingOrRedoing = true;
+            String currentState = undoStack.pop();
+            redoStack.push(currentState);
+
+            String prevState = undoStack.peek();
+            edtContent.setText(HtmlCompat.fromHtml(prevState, HtmlCompat.FROM_HTML_MODE_COMPACT));
+            edtContent.setSelection(edtContent.length());
+
+            makeCheckboxesClickable();
+            isUndoingOrRedoing = false;
+        }
+    }
+
+    private void performRedo() {
+        if (!redoStack.isEmpty()) {
+            isUndoingOrRedoing = true;
+            String nextState = redoStack.pop();
+            undoStack.push(nextState);
+
+            edtContent.setText(HtmlCompat.fromHtml(nextState, HtmlCompat.FROM_HTML_MODE_COMPACT));
+            edtContent.setSelection(edtContent.length());
+
+            makeCheckboxesClickable();
+            isUndoingOrRedoing = false;
+        }
+    }
+
     private void saveNote() {
         String title = edtTitle.getText().toString().trim();
         String content = Html.toHtml(edtContent.getText(), Html.FROM_HTML_MODE_LEGACY);
@@ -276,11 +398,7 @@ public class InputNoteActivity extends AppCompatActivity {
         currentNote.setBody(content);
         currentNote.setTimestamp();
 
-        try {
-            currentNote.setImagePath(new JSONArray(imagePaths).toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        currentNote.setImagePaths(new ArrayList<>(imagePaths));
 
         if (currentNote.getId() == 0) {
             dbHelper.insertNote(currentNote);
@@ -294,9 +412,11 @@ public class InputNoteActivity extends AppCompatActivity {
     }
 
     private void loadNoteData(int noteId) {
+
         currentNote = dbHelper.getNoteById(noteId);
+
         if (currentNote == null) {
-            Toast.makeText(this, "Error loading note.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lỗi tải ghi chú", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -304,16 +424,20 @@ public class InputNoteActivity extends AppCompatActivity {
         edtTitle.setText(currentNote.getTitle());
         edtContent.setText(Html.fromHtml(currentNote.getBody(), Html.FROM_HTML_MODE_LEGACY));
 
-        try {
-            JSONArray array = new JSONArray(currentNote.getImagePath());
-            for (int i = 0; i < array.length(); i++) {
-                String path = array.getString(i);
+        undoStack.push(Html.toHtml(edtContent.getText(), Html.FROM_HTML_MODE_LEGACY));
+
+        // Load danh sách ảnh
+        if (currentNote.getImagePaths() != null) {
+            for (String path : currentNote.getImagePaths()) {
                 File file = new File(path);
                 if (file.exists()) {
                     imagePaths.add(path);
                     addImageToContainer(Uri.fromFile(file));
                 }
             }
-        } catch (Exception ignored) {}
+        }
+
+
+        makeCheckboxesClickable();
     }
 }

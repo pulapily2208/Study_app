@@ -1,5 +1,6 @@
 package com.example.study_app.ui.Notes;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -7,6 +8,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -72,6 +74,39 @@ public class NotesActivity extends AppCompatActivity {
                 // Truyền object Note bằng Parcelable
                 intent.putExtra("note", note);
                 startActivity(intent);
+            });
+
+            notesAdapter.setOnNoteMenuClickListener(new NotesAdapter.OnNoteMenuClickListener() {
+                @Override
+                public void onEdit(Note note) {
+                    Intent intent = new Intent(NotesActivity.this, InputNoteActivity.class);
+                    intent.putExtra("note_id", note.getId());
+                    startActivity(intent);
+                }
+
+                @Override
+                public void onDelete(Note note) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(NotesActivity.this);
+                    builder.setTitle("Xóa ghi chú");
+                    builder.setMessage("Bạn có chắc chắn muốn xóa ghi chú này?");
+                    builder.setPositiveButton("XÓA", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dbHelper.deleteNote(note.getId());
+                            notesList.clear();
+                            notesList.addAll(dbHelper.getAllNotes());
+                            notesAdapter.notifyDataSetChanged();
+                            setupNotesList();
+                        }
+                    });
+                    builder.setNegativeButton("HỦY", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    });
+                    builder.create().show();
+                }
             });
 
             recyclerView.setAdapter(notesAdapter);
