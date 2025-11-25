@@ -2,10 +2,11 @@ package com.example.study_app.ui.Notes.Model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.text.Spanned;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.Locale;
 
 public class Note implements Parcelable {
@@ -18,14 +19,16 @@ public class Note implements Parcelable {
     private String color_tag;
     private String created_at;
     private String updated_at;
-    private String imagePath;
 
-    // Empty constructor
-    public Note() {
-    }
+    // NEW: danh sách nhiều ảnh
+    private List<String> imagePaths = new ArrayList<>();
 
-    // Full constructor
-    public Note(int id, int user_id, String ma_hp, String title, String body, int pinned, String color_tag, String created_at, String updated_at, String imagePath) {
+    public Note() {}
+
+    // Constructor đầy đủ
+    public Note(int id, int user_id, String ma_hp, String title, String body, int pinned,
+                String color_tag, String created_at, String updated_at, List<String> imagePaths) {
+
         this.id = id;
         this.user_id = user_id;
         this.ma_hp = ma_hp;
@@ -35,9 +38,10 @@ public class Note implements Parcelable {
         this.color_tag = color_tag;
         this.created_at = created_at;
         this.updated_at = updated_at;
-        this.imagePath = imagePath;
+        this.imagePaths = imagePaths;
     }
 
+    // Constructor Parcel
     protected Note(Parcel in) {
         id = in.readInt();
         user_id = in.readInt();
@@ -48,7 +52,10 @@ public class Note implements Parcelable {
         color_tag = in.readString();
         created_at = in.readString();
         updated_at = in.readString();
-        imagePath = in.readString();
+
+        // NEW: đọc danh sách ảnh
+        imagePaths = new ArrayList<>();
+        in.readStringList(imagePaths);
     }
 
     public static final Creator<Note> CREATOR = new Creator<Note>() {
@@ -63,98 +70,50 @@ public class Note implements Parcelable {
         }
     };
 
-    public int getId() {
-        return id;
+    // ===================== Getter / Setter ==========================
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public int getUser_id() { return user_id; }
+    public void setUser_id(int user_id) { this.user_id = user_id; }
+
+    public String getMa_hp() { return ma_hp; }
+    public void setMa_hp(String ma_hp) { this.ma_hp = ma_hp; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getBody() { return body; }
+    public void setBody(String body) { this.body = body; }
+
+    public int getPinned() { return pinned; }
+    public void setPinned(int pinned) { this.pinned = pinned; }
+
+    public String getColor_tag() { return color_tag; }
+    public void setColor_tag(String color_tag) { this.color_tag = color_tag; }
+
+    public String getCreated_at() { return created_at; }
+    public void setCreated_at(String created_at) { this.created_at = created_at; }
+
+    public String getUpdated_at() { return updated_at; }
+    public void setUpdated_at(String updated_at) { this.updated_at = updated_at; }
+
+    // NEW: nhiều ảnh
+    public List<String> getImagePaths() {
+        return imagePaths;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setImagePaths(List<String> imagePaths) {
+        this.imagePaths = imagePaths;
     }
 
-    public int getUser_id() {
-        return user_id;
+    public void addImagePath(String imagePath) {
+        if (this.imagePaths == null) this.imagePaths = new ArrayList<>();
+        this.imagePaths.add(imagePath);
     }
 
-    public void setUser_id(int user_id) {
-        this.user_id = user_id;
-    }
-
-    public String getMa_hp() {
-        return ma_hp;
-    }
-
-    public void setMa_hp(String ma_hp) {
-        this.ma_hp = ma_hp;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
-    public void setBody(String body) {
-        this.body = body;
-    }
-
-    public int getPinned() {
-        return pinned;
-    }
-
-    public void setPinned(int pinned) {
-        this.pinned = pinned;
-    }
-
-    public String getColor_tag() {
-        return color_tag;
-    }
-
-    public void setColor_tag(String color_tag) {
-        this.color_tag = color_tag;
-    }
-
-    public String getCreated_at() {
-        return created_at;
-    }
-
-    public void setCreated_at(String created_at) {
-        this.created_at = created_at;
-    }
-
-    public String getUpdated_at() {
-        return updated_at;
-    }
-
-    public void setUpdated_at(String updated_at) {
-        this.updated_at = updated_at;
-    }
-
-    public String getImagePath() {
-        return imagePath;
-    }
-
-    public void setImagePath(String imagePath) {
-        this.imagePath = imagePath;
-    }
-
-    public String getContent() {
-        return body;
-    }
-
-    public void setContent(String content) {
-        this.body = content;
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
+    // ====================== Parcelable ==========================
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
@@ -167,29 +126,34 @@ public class Note implements Parcelable {
         dest.writeString(color_tag);
         dest.writeString(created_at);
         dest.writeString(updated_at);
-        dest.writeString(imagePath);
+
+        // NEW: ghi danh sách ảnh
+        dest.writeStringList(imagePaths);
     }
-    
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    // ====================== Khác ===============================
+
     @Override
     public String toString() {
         return "Note{" +
                 "id=" + id +
-                ", title='" + title + "'" +
+                ", title='" + title + '\'' +
                 ", pinned=" + pinned +
                 '}';
     }
 
     public void setTimestamp() {
-        // Lấy thời gian hiện tại theo định dạng yyyy-MM-dd HH:mm:ss
         String currentTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 .format(new Date());
 
-        // Nếu created_at chưa set (note mới), gán luôn
         if (this.created_at == null || this.created_at.isEmpty()) {
             this.created_at = currentTime;
         }
-
-        // updated_at luôn cập nhật
         this.updated_at = currentTime;
     }
 }
