@@ -17,6 +17,7 @@ import com.example.study_app.ui.Notes.Model.Note;
 
 import org.json.JSONArray;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -70,15 +71,13 @@ public class NotesDetailActivity extends AppCompatActivity {
 
         // Hiển thị ảnh
         imageContainer.removeAllViews();
-        String imagePath = note.getImagePath();
-        if (imagePath != null && !imagePath.isEmpty()) {
-            try {
-                JSONArray array = new JSONArray(imagePath);
-                for (int i = 0; i < array.length(); i++) {
-                    addImageToContainer(Uri.parse(array.getString(i)));
+        if (note.getImagePaths() != null && !note.getImagePaths().isEmpty()) {
+
+            for (String path : note.getImagePaths()) {
+
+                if (path != null && !path.isEmpty()) {
+                    addImageToContainer(Uri.fromFile(new File(path)));
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
     }

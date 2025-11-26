@@ -289,6 +289,7 @@
             android:backgroundTint="#2D332F"/>
 
         <ImageView
+            android:id="@+id/btnChecklist"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_marginLeft="24dp"

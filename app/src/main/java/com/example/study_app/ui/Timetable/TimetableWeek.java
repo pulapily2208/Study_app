@@ -19,9 +19,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.alamkanak.weekview.WeekView;
 import com.alamkanak.weekview.WeekViewEvent;
-import com.example.study_app.MainActivity;
 import com.example.study_app.R;
-import com.example.study_app.ui.Subject.SubjectListActivity;
+import com.example.study_app.ui.Subject.SubjectAddActivity;
 import com.google.android.material.chip.Chip;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
@@ -159,7 +158,7 @@ public class TimetableWeek extends AppCompatActivity {
         btnAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(TimetableWeek.this, SubjectListActivity.class);
+                Intent intent = new Intent(TimetableWeek.this, SubjectAddActivity.class);
                 startActivity(intent);
             }
         });

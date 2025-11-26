@@ -437,7 +437,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
                     note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
                     note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
-                    //note.setImagePath(cursor.getString(cursor.getColumnIndexOrThrow("image_path")));
+                    note.setImagePaths(getNoteImages(note.getId()));
                     notes.add(note);
                 } while (cursor.moveToNext());
             }
@@ -462,8 +462,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("color_tag", note.getColor_tag());
         values.put("created_at", System.currentTimeMillis());
         values.put("updated_at", System.currentTimeMillis());
-        //values.put("image_path", note.getImagePath());
-        return db.insert("notes", null, values);
+        long noteId =  db.insert("notes", null, values);
+        if (note.getImagePaths() != null) {
+            for (String path : note.getImagePaths()){
+                ContentValues imgValue = new ContentValues();
+                imgValue.put("note_id", noteId);
+                imgValue.put("image_path", path);
+                db.insert("note_images", null, imgValue);
+
+            }
+        }
+
+        return noteId;
     }
     public Note getNoteById(int noteId) {
         SQLiteDatabase db = this.getReadableDatabase();
@@ -483,7 +493,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
                 note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
                 note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
-                //note.setImagePath(cursor.getString(cursor.getColumnIndexOrThrow("image_path")));
+                note.setImagePaths(getNoteImages(noteId));
             }
         } catch (Exception e) {
             Log.e("DatabaseHelper", "Lỗi khi lấy ghi chú theo ID", e);
@@ -508,18 +518,46 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("color_tag", note.getColor_tag());
         values.put("created_at", note.getCreated_at());
         values.put("updated_at", note.getUpdated_at());
-        //values.put("image_path", note.getImagePath());
         values.put("ma_hp", note.getMa_hp());
         values.put("user_id", note.getUser_id());
+        int rows = db.update("notes", values, "id=?", new String[]{String.valueOf(note.getId())});
 
-        int rowsAffected = db.update(
-                "notes",                    // tên bảng
-                values,                     // dữ liệu cập nhật
-                "id = ?",                   // điều kiện WHERE
-                new String[]{String.valueOf(note.getId())} // giá trị điều kiện
-        );
+        // XÓA ảnh cũ
+        db.delete("note_images", "note_id=?", new String[]{String.valueOf(note.getId())});
 
-        return rowsAffected > 0;
+        // THÊM ảnh mới
+        if (note.getImagePaths() != null) {
+            for (String path : note.getImagePaths()) {
+                ContentValues img = new ContentValues();
+                img.put("note_id", note.getId());
+                img.put("image_path", path);
+                img.put("created_at", System.currentTimeMillis());
+                db.insert("note_images", null, img);
+            }
+        }
+
+        return rows > 0;
+    }
+    public boolean deleteNote(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        int rowsDeleted = db.delete("notes", "id = ?", new String[]{String.valueOf(id)});
+        return rowsDeleted > 0;
+    }
+
+    public List<String> getNoteImages(int noteId) {
+        List<String> images = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT image_path FROM note_images WHERE note_id=?",
+                new String[]{String.valueOf(noteId)});
+
+        if (cursor.moveToFirst()) {
+            do {
+                images.add(cursor.getString(0));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return images;
     }
 
 
@@ -529,7 +567,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
 
 
-//    CHƯƠNG TRÌNH ĐÀO TẠO
+
+
+    //    CHƯƠNG TRÌNH ĐÀO TẠO
     public Map<String, Integer> getFacultiesMap() {
         Map<String, Integer> faculties = new HashMap<>();
         SQLiteDatabase db = this.getReadableDatabase();
