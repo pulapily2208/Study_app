@@ -61,8 +61,33 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
         } else {
             holder.tvNhomTuChon.setVisibility(View.GONE);
         }
-    }
 
+        // (NEW) Badge trạng thái
+        String status = currentCourse.getStatus();
+        if (status == null) {
+            holder.tvStatusBadge.setVisibility(View.GONE);
+        } else {
+            holder.tvStatusBadge.setVisibility(View.VISIBLE);
+            switch (status) {
+                case com.example.study_app.data.DatabaseHelper.STATUS_IN_PROGRESS:
+                    holder.tvStatusBadge.setText("Đang học");
+                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD54F)); // vàng
+                    holder.tvStatusBadge.setTextColor(0xFF000000);
+                    break;
+                case com.example.study_app.data.DatabaseHelper.STATUS_COMPLETED:
+                    holder.tvStatusBadge.setText("Đã học");
+                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50)); // xanh lá
+                    holder.tvStatusBadge.setTextColor(0xFFFFFFFF);
+                    break;
+                case com.example.study_app.data.DatabaseHelper.STATUS_NOT_ENROLLED:
+                default:
+                    holder.tvStatusBadge.setText("Chưa học");
+                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE53935)); // đỏ
+                    holder.tvStatusBadge.setTextColor(0xFFFFFFFF);
+                    break;
+            }
+        }
+    }
     @Override
     public int getItemCount() {
         return courseListDisplayed.size();
@@ -128,6 +153,7 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
 
     static class CurriculumViewHolder extends RecyclerView.ViewHolder {
         final TextView tvMaHp, tvTenHp, tvSoTinChi, tvSoTietLyThuyet, tvSoTietThucHanh, tvHocKy, tvLoaiHp, tvNhomTuChon;
+        final TextView tvStatusBadge; // NEW
 
         public CurriculumViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -139,6 +165,7 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
             tvHocKy = itemView.findViewById(R.id.tvHocKy);
             tvLoaiHp = itemView.findViewById(R.id.tvLoaiHp);
             tvNhomTuChon = itemView.findViewById(R.id.tvNhomTuChon);
+            tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge); // NEW
         }
     }
 }

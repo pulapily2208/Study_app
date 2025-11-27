@@ -18,6 +18,25 @@
         android:layout_height="wrap_content"
         android:padding="12dp">
 
+        <!-- BADGE TRẠNG THÁI (NEW) -->
+        <TextView
+            android:id="@+id/tvStatusBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:text="Đang học"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_status_badge"
+            android:textColor="@android:color/white"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="0dp"
+            android:layout_marginEnd="0dp"
+            tools:visibility="visible"/>
+
         <TextView
             android:id="@+id/tvMaHp"
             android:layout_width="0dp"
@@ -70,6 +89,8 @@
             android:id="@+id/tvHocKy"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="0dp"
+            android:layout_marginEnd="72dp"
             android:textStyle="italic"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
