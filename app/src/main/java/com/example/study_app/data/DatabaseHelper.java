@@ -29,7 +29,7 @@ import java.util.Map;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "study_app.db";
-    private static final int DB_VERSION = 10; // Incremented version
+    private static final int DB_VERSION = 11; // Incremented version
 
     private final Context context;
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
@@ -586,16 +586,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return faculties;
     }
 
+    // 1. Lấy danh sách tên các nhóm để hiển thị lên Header/Menu
     public List<String> getAllCourseGroups() {
         List<String> groups = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        String query = "SELECT DISTINCT nhom_tu_chon FROM mon_hoc WHERE nhom_tu_chon IS NOT NULL AND nhom_tu_chon != '' " +
-                       "UNION " +
-                       "SELECT DISTINCT ten_nhom FROM hoc_phan_tu_chon WHERE ten_nhom IS NOT NULL AND ten_nhom != ''";
+
+        // Lấy trực tiếp từ bảng định nghĩa nhóm (hoc_phan_tu_chon)
+        // Sắp xếp theo ID để thứ tự hiển thị logic (Đại cương -> Chuyên ngành -> Tốt nghiệp)
+        String query = "SELECT ten_nhom FROM hoc_phan_tu_chon ORDER BY id ASC";
+
         try (Cursor cursor = db.rawQuery(query, null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 do {
-                    groups.add(cursor.getString(0));
+                    String groupName = cursor.getString(0);
+                    if (groupName != null && !groupName.isEmpty()) {
+                        groups.add(groupName);
+                    }
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
@@ -604,23 +610,53 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return groups;
     }
 
+    // 2. Lấy danh sách môn học kèm theo Tên Nhóm (Thay vì số ID)
     public List<Curriculum> getAllCoursesForCurriculum() {
         List<Curriculum> courses = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        String query = "SELECT * FROM mon_hoc";
+
+        // CÂU TRUY VẤN QUAN TRỌNG:
+        // Kết nối bảng mon_hoc (m) với bảng hoc_phan_tu_chon (h)
+        // Nếu m.nhom_tu_chon khớp với h.id, ta lấy h.ten_nhom
+        String query = "SELECT m.*, h.ten_nhom AS ten_nhom_day_du " +
+                "FROM mon_hoc m " +
+                "LEFT JOIN hoc_phan_tu_chon h ON m.nhom_tu_chon = h.id " +
+                "ORDER BY m.hoc_ky ASC, m.ma_hp ASC";
+
         try (Cursor cursor = db.rawQuery(query, null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 do {
                     Curriculum course = new Curriculum();
+
+                    // Các trường cơ bản
                     course.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
                     course.setTenHp(cursor.getString(cursor.getColumnIndexOrThrow("ten_hp")));
                     course.setSoTinChi(cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi")));
                     course.setSoTietLyThuyet(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_ly_thuyet")));
                     course.setSoTietThucHanh(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_thuc_hanh")));
-                    course.setNhomTuChon(cursor.getString(cursor.getColumnIndexOrThrow("nhom_tu_chon")));
                     course.setHocKy(cursor.getInt(cursor.getColumnIndexOrThrow("hoc_ky")));
                     course.setLoaiHp(cursor.getString(cursor.getColumnIndexOrThrow("loai_hp")));
                     course.setKhoaId(cursor.getInt(cursor.getColumnIndexOrThrow("khoa_id")));
+
+                    // XỬ LÝ NHÓM TỰ CHỌN (LOGIC QUAN TRỌNG)
+                    // Lấy tên nhóm từ bảng JOIN (cột ten_nhom_day_du)
+                    int nameIndex = cursor.getColumnIndex("ten_nhom_day_du");
+                    String realGroupName = "";
+
+                    if (nameIndex != -1) {
+                        realGroupName = cursor.getString(nameIndex);
+                    }
+
+                    // Nếu lấy được tên nhóm từ bảng join thì set vào
+                    if (realGroupName != null && !realGroupName.isEmpty()) {
+                        course.setNhomTuChon(realGroupName);
+                    } else {
+                        // Trường hợp môn bắt buộc (nhóm là NULL) hoặc không khớp ID
+                        // Ta lấy giá trị gốc, hoặc để trống nếu null
+                        String originalValue = cursor.getString(cursor.getColumnIndexOrThrow("nhom_tu_chon"));
+                        course.setNhomTuChon(originalValue != null ? originalValue : "");
+                    }
+
                     courses.add(course);
                 } while (cursor.moveToNext());
             }
