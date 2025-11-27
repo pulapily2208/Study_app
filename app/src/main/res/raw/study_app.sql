@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS deadline (
 -- Notes
 CREATE TABLE IF NOT EXISTS notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+
     user_id INTEGER NOT NULL,
     ma_hp TEXT,
     title TEXT,

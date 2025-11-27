@@ -46,16 +46,6 @@
             android:textColor="#000000"
             android:layout_below="@id/tvTieuDe"/>
 
-        <TextView
-            android:id="@+id/tvNgay"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ngày"
-            android:layout_marginTop="8dp"
-            android:textSize="12sp"
-            android:textColor="#000000"
-            android:layout_below="@id/tvNoiDung" />
-
         <ImageView
             android:id="@+id/imgAnh"
             android:layout_width="match_parent"
@@ -64,7 +54,19 @@
             android:adjustViewBounds="true"
             android:scaleType="fitCenter"
             android:visibility="gone"
-            android:layout_below="@id/tvNgay"/>
+            android:layout_below="@id/tvNoiDung"/>
+
+        <TextView
+            android:id="@+id/tvNgay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ngày"
+            android:layout_marginTop="8dp"
+            android:textSize="12sp"
+            android:textColor="#000000"
+            android:layout_below="@id/imgAnh" />
+
+
 
     </RelativeLayout>
 </androidx.cardview.widget.CardView>
