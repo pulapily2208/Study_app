@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
@@ -71,19 +72,19 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
             switch (status) {
                 case com.example.study_app.data.DatabaseHelper.STATUS_IN_PROGRESS:
                     holder.tvStatusBadge.setText("Đang học");
-                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFD54F)); // vàng
-                    holder.tvStatusBadge.setTextColor(0xFF000000);
+                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(context.getColor(R.color.yellow)));
+                    holder.tvStatusBadge.setTextColor(context.getColor(R.color.white));
                     break;
                 case com.example.study_app.data.DatabaseHelper.STATUS_COMPLETED:
                     holder.tvStatusBadge.setText("Đã học");
-                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF4CAF50)); // xanh lá
-                    holder.tvStatusBadge.setTextColor(0xFFFFFFFF);
+                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(context.getColor(R.color.green)));
+                    holder.tvStatusBadge.setTextColor(context.getColor(R.color.white));
                     break;
                 case com.example.study_app.data.DatabaseHelper.STATUS_NOT_ENROLLED:
                 default:
                     holder.tvStatusBadge.setText("Chưa học");
-                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE53935)); // đỏ
-                    holder.tvStatusBadge.setTextColor(0xFFFFFFFF);
+                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(context.getColor(R.color.red)));
+                    holder.tvStatusBadge.setTextColor(context.getColor(R.color.white));
                     break;
             }
         }

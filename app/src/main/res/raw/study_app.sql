@@ -190,10 +190,10 @@ INSERT OR IGNORE INTO hoc_ky (id, ten_hoc_ky, nam_hoc) VALUES
  (6, 'Học kỳ 6', '2025-2026'),
  (7, 'Học kỳ 7', '2026-2027'),
  (8, 'Học kỳ 8', '2026-2027 '),
- (9, 'Học kỳ hè năm 1', '2023-2024');
- (10, 'Học kỳ hè năm 2', '2024-2025');
- (11, 'Học kỳ hè năm 3', '2025-2026');
- (12, 'Học kỳ hè năm 4', '2026-2027');
+ (9, 'Học kỳ hè năm 1', '2023-2024'),
+ (10, 'Học kỳ hè năm 2', '2024-2025'),
+ (11, 'Học kỳ hè năm 3', '2025-2026'),
+ (12, 'Học kỳ hè năm 4', '2026-2027'),
 
 -- 2. BẢNG KHOA / BỘ MÔN
 INSERT OR IGNORE INTO khoa (id, ten_khoa, dia_chi) VALUES

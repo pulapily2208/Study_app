@@ -144,7 +144,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // SUBJECT
     public ArrayList<String> getAllSemesterNames() {
         ArrayList<String> semesterNames = new ArrayList<>();
-        String selectQuery = "SELECT ten_hoc_ky FROM hoc_ky ORDER BY nam_hoc, id";
+        String selectQuery = "SELECT ten_hoc_ky FROM hoc_ky ORDER BY nam_hoc DESC, id DESC";
         SQLiteDatabase db = this.getReadableDatabase();
         try (Cursor cursor = db.rawQuery(selectQuery, null)) {
             if (cursor != null && cursor.moveToFirst()) {
