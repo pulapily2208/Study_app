@@ -173,7 +173,7 @@ public class CurriculumActivity extends AppCompatActivity {
     }
 
     private void loadCurriculumData() {
-        List<Curriculum> allCourses = dbHelper.getAllCoursesForCurriculum();
+        List<Curriculum> allCourses = dbHelper.getAllCoursesForCurriculumWithStatus(1);
         adapter = new CurriculumAdapter(allCourses);
         recyclerViewCurriculum.setAdapter(adapter);
         applyAllFilters();
