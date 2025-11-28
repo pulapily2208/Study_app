@@ -70,9 +70,10 @@ public class InputDeadlineActivity extends AppCompatActivity {
             R.drawable.d, R.drawable.f, R.drawable.g
     };
     private final String[] LAP_LAI_OPTIONS = {
-            "Sự kiện một lần",
-            "Hàng ngày",
-            "Hàng tuần",
+            Deadline.REPEAT_TYPE_NONE,
+            Deadline.REPEAT_TYPE_DAILY,
+            Deadline.REPEAT_TYPE_WEEKDAYS,
+            Deadline.REPEAT_TYPE_WEEKLY,
     };
 
     private final String[] NHAC_NHO_OPTIONS = {
@@ -84,7 +85,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
             "Trước sự kiện 1 ngày"
     };
 
-    private String selectedLapLai = "Sự kiện một lần";
+    private String selectedLapLai = Deadline.REPEAT_TYPE_NONE;
     private String selectedNhacNho = "Trước sự kiện 5 phút";
 
 
@@ -217,7 +218,6 @@ public class InputDeadlineActivity extends AppCompatActivity {
         int finalWeekIndex = calculateWeekIndex(tu);
         resultIntent.putExtra("weekIndex", finalWeekIndex);
         if(isEditMode) {
-            // also include original week index to refresh the old week if the week changes
             resultIntent.putExtra("originalWeekIndex", this.weekIndex);
         }
 

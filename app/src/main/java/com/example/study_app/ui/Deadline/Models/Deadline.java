@@ -2,12 +2,20 @@ package com.example.study_app.ui.Deadline.Models;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class Deadline implements Serializable {
 
-    private int id; // ID duy nhất
+    // Constants for repeat types
+    public static final String REPEAT_TYPE_NONE = "Sự kiện một lần";
+    public static final String REPEAT_TYPE_DAILY = "Hàng ngày";
+    public static final String REPEAT_TYPE_WEEKLY = "Hàng tuần";
+    public static final String REPEAT_TYPE_WEEKDAYS = "Hàng ngày trong tuần";
+
+    private int id;
     private String tieuDe, noiDung;
     private String maHp;
     private Date ngayBatDau;
@@ -16,10 +24,9 @@ public class Deadline implements Serializable {
     private int icon;
     private String reminder;
     private String repeat;
-    private boolean isPinned = false;
-    private long duration;
     private String note;
     private int weekIndex;
+    private long duration; // Kept for compatibility
 
     public Deadline() {}
 
@@ -29,25 +36,7 @@ public class Deadline implements Serializable {
         this.ngayBatDau = ngayBatDau;
         this.ngayKetThuc = ngayKetThuc;
         this.icon = icon;
-    }
-
-    public Deadline(int id, String tieuDe, String moTa, Date ngayBatDau, Date ngayKetThuc,
-                    boolean completed, String repeatText, String reminderText,
-                    long duration, int icon, String note, int weekIndex, String maHp) {
-
-        this.id = id;
-        this.tieuDe = tieuDe;
-        this.noiDung = moTa;
-        this.ngayBatDau = ngayBatDau;
-        this.ngayKetThuc = ngayKetThuc;
-        this.completed = completed;
-        this.repeat = repeatText;
-        this.reminder = reminderText;
-        this.duration = duration;
-        this.icon = icon;
-        this.note = note;
-        this.weekIndex = weekIndex;
-        this.maHp = maHp;
+        this.repeat = REPEAT_TYPE_NONE;
     }
 
     // ---------- GETTER & SETTER ----------
@@ -79,10 +68,10 @@ public class Deadline implements Serializable {
     public int getIcon() { return icon; }
     public void setIcon(int icon) { this.icon = icon; }
 
-    public String getReminderText() { return reminder != null ? reminder : "Không có"; }
+    public String getReminderText() { return reminder != null ? reminder : "Không nhắc nhở"; }
     public void setReminder(String reminder) { this.reminder = reminder; }
 
-    public String getRepeatText() { return repeat != null ? repeat : "Sự kiện một lần"; }
+    public String getRepeatText() { return repeat != null ? repeat : REPEAT_TYPE_NONE; }
     public void setRepeat(String repeat) { this.repeat = repeat; }
 
     public long getDuration() { return duration; }
@@ -90,20 +79,36 @@ public class Deadline implements Serializable {
 
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
-    public String getConLai() {
-        long diff = ngayKetThuc.getTime() - new Date().getTime();
-        if (diff <= 0) return "Hết hạn";
 
-        long days = TimeUnit.MILLISECONDS.toDays(diff);
-        if (days >= 1) return "Còn " + days + " ngày";
-
-        long hours = TimeUnit.MILLISECONDS.toHours(diff);
-        return "Còn " + hours + " giờ";
-    }
     public String getNgayText() {
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm");
+        if (ngayBatDau == null || ngayKetThuc == null) return "";
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm", Locale.getDefault());
         return sdf.format(ngayBatDau) + " - " + sdf.format(ngayKetThuc);
     }
 
+    public String getConLai() {
+        if (ngayKetThuc == null) return "Không có ngày hết hạn";
 
+        long diff = ngayKetThuc.getTime() - new Date().getTime();
+
+        if (diff <= 0) {
+            return "Đã hết hạn";
+        }
+
+        long days = TimeUnit.MILLISECONDS.toDays(diff);
+        if (days > 0) {
+            return "Còn " + days + " ngày";
+        }
+
+        long hours = TimeUnit.MILLISECONDS.toHours(diff);
+        if (hours > 0) {
+            return "Còn " + hours + " giờ";
+        }
+
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(diff);
+        if (minutes < 1) {
+            return "Sắp tới hạn";
+        }
+        return "Còn " + minutes + " phút";
+    }
 }
