@@ -313,10 +313,10 @@
         <ImageView
             android:id="@+id/btnAttach"
             android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_height="wrap_content"
             android:layout_marginLeft="24dp"
-            android:src="@drawable/note_ic_image"
-            android:backgroundTint="#2D332F"/>
+            android:backgroundTint="#2D332F"
+            android:src="@drawable/note_ic_image" />
 
 
         <ImageView
