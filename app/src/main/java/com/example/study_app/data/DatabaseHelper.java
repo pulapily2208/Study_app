@@ -875,4 +875,65 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         return curriculum;
     }
+    /**
+     * Retrieves the list of prerequisite course codes for a given subject.
+     * @param maHp The course code to check.
+     * @return A list of prerequisite course codes.
+     */
+    public List<String> getPrerequisites(String maHp) {
+        List<String> prerequisites = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT ma_hp_tien_quyet FROM hoc_phan_tien_quyet WHERE ma_hp = ?";
+        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int preReqIndex = cursor.getColumnIndexOrThrow("ma_hp_tien_quyet");
+                do {
+                    prerequisites.add(cursor.getString(preReqIndex));
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting prerequisites for " + maHp, e);
+        }
+        return prerequisites;
+    }
+
+    /**
+     * Checks if all prerequisites for a given course have been COMPLETED (status = STATUS_COMPLETED).
+     * @param maHp The course code to check.
+     * @param userId The ID of the user (currently hardcoded as 1 in usage).
+     * @return True if all prerequisites are completed or if there are no prerequisites. False otherwise.
+     */
+    public boolean checkPrerequisiteStatus(String maHp, int userId) {
+        List<String> prerequisites = getPrerequisites(maHp);
+        if (prerequisites.isEmpty()) {
+            return true; // No prerequisites, so condition is met.
+        }
+
+        // Lấy danh sách các môn đã đăng ký của user (bao gồm cả end date)
+        Map<String, Integer> enrolledMap = getEnrolledSubjectsMap(userId);
+
+        for (String preReqMaHp : prerequisites) {
+            if (!enrolledMap.containsKey(preReqMaHp)) {
+                // Môn tiên quyết chưa từng được đăng ký/học
+                return false;
+            }
+
+            // Môn tiên quyết đã đăng ký, kiểm tra trạng thái hoàn thành
+            Subject preReqSubject = getSubjectByMaHp(preReqMaHp);
+
+            // Nếu không tìm thấy môn học hoặc ngày kết thúc chưa có, coi như chưa hoàn thành
+            if (preReqSubject == null || preReqSubject.ngayKetThuc == null) {
+                return false;
+            }
+
+            // Kiểm tra trạng thái: chỉ cần là STATUS_COMPLETED mới được chấp nhận
+            String status = computeSubjectStatus(true, preReqSubject.ngayKetThuc);
+            if (!status.equals(STATUS_COMPLETED)) {
+                Log.d("DatabaseHelper", "Prerequisite " + preReqMaHp + " is not completed. Status: " + status);
+                return false;
+            }
+        }
+
+        return true; // Tất cả các môn tiên quyết đều đã hoàn thành.
+    }
 }

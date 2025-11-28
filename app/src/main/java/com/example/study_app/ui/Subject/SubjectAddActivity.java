@@ -306,6 +306,21 @@ public class SubjectAddActivity extends AppCompatActivity {
             etSubjectCode.requestFocus();
             return;
         }
+        // check tiên quyết
+        Curriculum subjectCurriculumDetails = dbHelper.getCurriculumDetailsByMaHp(maHp);
+
+        // Chỉ kiểm tra khi là chế độ Thêm mới VÀ môn học có trong CSDL Chương trình Đào tạo
+        if (!isEditMode && subjectCurriculumDetails != null) {
+            final int CURRENT_USER_ID = 1; // User ID hardcoded is 1
+            boolean isPrerequisiteMet = dbHelper.checkPrerequisiteStatus(maHp, CURRENT_USER_ID);
+
+            if (!isPrerequisiteMet) {
+                // Hiển thị thông báo lỗi và ngăn việc lưu
+                Toast.makeText(this, "Chưa đạt điều kiện tiên quyết để thêm môn!", Toast.LENGTH_LONG).show();
+                etSubjectCode.requestFocus();
+                return;
+            }
+        }
         if (!isEditMode && dbHelper.getCurriculumDetailsByMaHp(maHp) == null) {
             Toast.makeText(this, "Mã môn không tồn tại trong chương trình đào tạo!", Toast.LENGTH_SHORT).show();
             return;
