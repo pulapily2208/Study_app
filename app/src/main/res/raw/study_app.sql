@@ -67,14 +67,19 @@ CREATE TABLE IF NOT EXISTS users (
 -- Deadline / Task
 CREATE TABLE IF NOT EXISTS deadline (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tieu_de TEXT,
-    noi_dung TEXT,
-    ngay_bat_dau TEXT,
-    ngay_ket_thuc TEXT,
-    completed INTEGER DEFAULT 0,
-    ma_hp TEXT,
+    tieu_de TEXT NOT NULL,             -- Tiêu đề deadline
+    noi_dung TEXT,                     -- Nội dung chi tiết
+    ngay_bat_dau TEXT,                 -- Ngày bắt đầu
+    ngay_ket_thuc TEXT,                -- Ngày kết thúc
+    completed INTEGER DEFAULT 0,       -- Trạng thái hoàn thành: 0 = chưa, 1 = đã
+    ma_hp TEXT,                        -- Môn học liên quan
+    repeat_type TEXT,                  -- Kiểu lặp lại: "Hằng tuần", "Hằng tháng", "Không"
+    reminder_time INTEGER,             -- Thời gian nhắc nhở (timestamp)
+    icon INTEGER,                      -- Resource ID icon minh họa
+    notes TEXT,                        -- Ghi chú chi tiết (nếu cần)
     FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp) ON DELETE SET NULL
 );
+
 
 -- Notes
 CREATE TABLE IF NOT EXISTS notes (
@@ -183,15 +188,18 @@ VALUES (1, 'local@local', 'local', '', 'Local User', 'student', 'UTC', strftime(
 
 -- 1. BẢNG HỌC KỲ
 INSERT OR IGNORE INTO hoc_ky (id, ten_hoc_ky, nam_hoc) VALUES
- (1, 'Học kỳ 1', '2024-2025'),
- (2, 'Học kỳ 2', '2024-2025'),
- (3, 'Học kỳ 3', '2025-2026'),
- (4, 'Học kỳ 4', '2025-2026'),
- (5, 'Học kỳ 5', '2026-2027'),
- (6, 'Học kỳ 6', '2026-2027'),
- (7, 'Học kỳ 7', '2027-2028'),
- (8, 'Học kỳ 8', '2027-2028'),
- (9, 'Học kỳ hè', '2025-2026');
+ (1, 'Học kỳ 1', '2023-2024'),
+ (2, 'Học kỳ 2', '2023-2024'),
+ (3, 'Học kỳ 3', '2024-2025'),
+ (4, 'Học kỳ 4', '2024-2025'),
+ (5, 'Học kỳ 5', '2025-2026'),
+ (6, 'Học kỳ 6', '2025-2026'),
+ (7, 'Học kỳ 7', '2026-2027'),
+ (8, 'Học kỳ 8', '2026-2027 '),
+ (9, 'Học kỳ hè năm 1', '2023-2024'),
+ (10, 'Học kỳ hè năm 2', '2024-2025'),
+ (11, 'Học kỳ hè năm 3', '2025-2026'),
+ (12, 'Học kỳ hè năm 4', '2026-2027');
 
 -- 2. BẢNG KHOA / BỘ MÔN
 INSERT OR IGNORE INTO khoa (id, ten_khoa, dia_chi) VALUES

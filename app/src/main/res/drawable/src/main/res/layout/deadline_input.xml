@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#FFFFFF">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+
+        <!-- Ảnh avatar -->
+        <ImageView
+            android:id="@+id/imgIcon"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerInParent="true"
+            android:src="@mipmap/ic_avatar"
+            android:scaleType="centerCrop"
+            android:padding="5dp" />
+
+        <!-- Nút Edit hình tròn -->
+        <FrameLayout
+            android:id="@+id/btnEdit"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignBottom="@id/imgIcon"
+            android:layout_alignRight="@id/imgIcon"
+            android:layout_marginBottom="0dp"
+            android:layout_marginRight="0dp"
+            android:background="@drawable/deadline_edit_bg"
+            android:elevation="6dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:src="@drawable/note_ic_add"
+                />
+        </FrameLayout>
+
+    </RelativeLayout>
+
+
+    <!-- Icon -->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/layoutIcon"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="55dp"-->
+<!--        android:gravity="center_vertical"-->
+<!--        android:orientation="horizontal">-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_weight="1"-->
+<!--            android:text="Icon"-->
+<!--            android:textSize="16sp" />-->
+
+<!--        <ImageView-->
+<!--            android:id="@+id/imgIcon"-->
+<!--            android:layout_width="24dp"-->
+<!--            android:layout_height="24dp"-->
+<!--            android:src="@mipmap/ic_avatar"-->
+<!--            android:layout_marginEnd="10dp"/>-->
+
+
+<!--    </LinearLayout>-->
+
+    <!-- Tên sự kiện -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Tên sự kiện"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:background="@android:color/transparent" />
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Tên sự kiện"
+        app:endIconMode="clear_text"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edtTenDeadline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"
+            android:imeOptions="actionNext"
+            android:importantForAutofill="yes" />
+    </com.google.android.material.textfield.TextInputLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0/30"/>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Chi tiết"
+        android:textSize="15sp"
+        android:background="@android:color/transparent" />
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilEmail"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ghi chú deadline này"
+        app:endIconMode="clear_text"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edtGhiChu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"
+            android:imeOptions="actionNext"
+            android:importantForAutofill="yes" />
+    </com.google.android.material.textfield.TextInputLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0/100"/>
+    </LinearLayout>
+
+
+
+
+
+    <!-- Dòng Cả ngày -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="4dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Cả ngày"
+            android:textSize="16sp" />
+
+        <Switch
+            android:id="@+id/switchCaNgay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <!-- Từ -->
+    <LinearLayout
+        android:id="@+id/layoutTu"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/txtTu"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Từ"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtNgayGioTu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CN, 9 thg 11, 2025 22:30"
+            android:textSize="16sp"
+            android:textColor="#555555" />
+
+
+    </LinearLayout>
+
+    <!-- Đến -->
+    <LinearLayout
+        android:id="@+id/layoutDen"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/txtDen"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Đến"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtNgayGioDen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CN, 9 thg 11, 2025 23:30"
+            android:textSize="16sp"
+            android:textColor="#555555"/>
+
+
+    </LinearLayout>
+
+    <!-- Lặp lại -->
+    <LinearLayout
+        android:id="@+id/layoutLapLai"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Lặp lại"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtLapLai"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sự kiện một lần"
+            android:textSize="16sp"
+            android:textColor="#555555"/>
+
+
+    </LinearLayout>
+
+    <!-- Nhắc nhở -->
+    <LinearLayout
+        android:id="@+id/layoutNhacNho"
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Nhắc nhở"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/txtNhacNho"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Trước sự kiện 5 phút"
+            android:textSize="16sp"
+            android:textColor="#555555"/>
+
+
+    </LinearLayout>
+
+
+
+
+
+
+    <!-- Nút -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="25dp">
+
+        <Button
+            android:id="@+id/btnHuy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hủy" />
+
+        <Button
+            android:id="@+id/btnThemDeadline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Thêm"
+            android:layout_marginStart="20dp"/>
+    </LinearLayout>
+
+</LinearLayout>

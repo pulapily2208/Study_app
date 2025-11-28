@@ -82,12 +82,13 @@
                         android:text="@string/subject_code_hint"
                         android:textStyle="bold" />
 
-                    <EditText
+                    <AutoCompleteTextView
                         android:id="@+id/etSubjectCode"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:hint="Mã môn"
+                        android:completionThreshold="1"
                         android:importantForAutofill="no"
                         android:inputType="text" />
                 </LinearLayout>
@@ -166,19 +167,30 @@
                 android:orientation="horizontal">
 
                 <RadioButton
-                    android:id="@+id/rbMajor"
+                    android:id="@+id/rb_compulsory"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/subject_type_major" />
+                    android:text="Bắt buộc" />
 
                 <RadioButton
-                    android:id="@+id/rbGeneral"
+                    android:id="@+id/rb_elective"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/subject_type_general" />
+                    android:text="Tự chọn" />
             </RadioGroup>
+            
+            <TextView
+                android:id="@+id/tvChoiceGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@android:color/holo_blue_dark"
+                android:textStyle="italic"
+                android:visibility="gone"
+                tools:text="Nhóm: Kiến thức đại cương tự chọn"
+                tools:visibility="visible"/>
 
             <!-- Ngày bắt đầu và kết thúc -->
             <LinearLayout

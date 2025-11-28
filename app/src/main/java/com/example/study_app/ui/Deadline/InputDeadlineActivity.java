@@ -1,16 +1,20 @@
 package com.example.study_app.ui.Deadline;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Switch;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,9 +26,11 @@ import com.example.study_app.ui.Deadline.Adapters.IconAdapter;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class InputDeadlineActivity extends AppCompatActivity {
 
@@ -33,12 +39,13 @@ public class InputDeadlineActivity extends AppCompatActivity {
     public static final String EDIT_DEADLINE = "EDIT_DEADLINE";
     public static final String SUBJECT_MA_HP = "SUBJECT_MA_HP";
     public static final String WEEK_START_DATE = "WEEK_START_DATE";
+    public static final String SUBJECT_START_DATE = "SUBJECT_START_DATE"; // For week calculation
 
     // Views
     private EditText edtTenDeadline, edtGhiChu;
-    private TextView txtNgayGioTu, txtNgayGioDen;
+    private TextView txtNgayGioTu, txtNgayGioDen, txtLapLai, txtNhacNho;
     private Button btnHuy, btnThemDeadline;
-    private Switch switchCaNgay;
+    private SwitchMaterial switchCaNgay;
     private ImageView imgIcon;
 
     // Data & Helpers
@@ -46,23 +53,41 @@ public class InputDeadlineActivity extends AppCompatActivity {
     private String subjectMaHp;
     private Deadline deadlineToEdit = null;
     private boolean isEditMode = false;
-    private int weekIndex = 0; // Thêm lại weekIndex để trả về
+    private int weekIndex = 0;
+    private long subjectStartDateMillis = -1;
 
     private final Calendar calendarTu = Calendar.getInstance();
     private final Calendar calendarDen = Calendar.getInstance();
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
 
-    private int selectedIcon = R.drawable.tasks; // Default icon
+    private int selectedIcon = R.drawable.tasks;
     private final int[] ICON_LIST = {
-            R.drawable.brain,
-            R.drawable.calendar,
-            R.drawable.code,
-            R.drawable.exam,
-            R.drawable.library,
-            R.drawable.note,
-            R.drawable.tasks,
-            R.drawable.teacher
+            R.drawable.brain, R.drawable.calendar, R.drawable.code, R.drawable.exam,
+            R.drawable.library, R.drawable.note, R.drawable.tasks, R.drawable.teacher,
+            R.drawable.q, R.drawable.w, R.drawable.e, R.drawable.r,
+            R.drawable.t, R.drawable.y, R.drawable.u, R.drawable.i,
+            R.drawable.o, R.drawable.p, R.drawable.a, R.drawable.s,
+            R.drawable.d, R.drawable.f, R.drawable.g
     };
+    private final String[] LAP_LAI_OPTIONS = {
+            Deadline.REPEAT_TYPE_NONE,
+            Deadline.REPEAT_TYPE_DAILY,
+            Deadline.REPEAT_TYPE_WEEKDAYS,
+            Deadline.REPEAT_TYPE_WEEKLY,
+    };
+
+    private final String[] NHAC_NHO_OPTIONS = {
+            "Không nhắc nhở",
+            "Trước sự kiện 5 phút",
+            "Trước sự kiện 15 phút",
+            "Trước sự kiện 30 phút",
+            "Trước sự kiện 1 giờ",
+            "Trước sự kiện 1 ngày"
+    };
+
+    private String selectedLapLai = Deadline.REPEAT_TYPE_NONE;
+    private String selectedNhacNho = "Trước sự kiện 5 phút";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +108,8 @@ public class InputDeadlineActivity extends AppCompatActivity {
         edtGhiChu = findViewById(R.id.edtGhiChu);
         txtNgayGioTu = findViewById(R.id.txtNgayGioTu);
         txtNgayGioDen = findViewById(R.id.txtNgayGioDen);
+        txtLapLai = findViewById(R.id.txtLapLai);
+        txtNhacNho = findViewById(R.id.txtNhacNho);
         switchCaNgay = findViewById(R.id.switchCaNgay);
         btnHuy = findViewById(R.id.btnHuy);
         btnThemDeadline = findViewById(R.id.btnThemDeadline);
@@ -93,6 +120,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
         Intent intent = getIntent();
         weekIndex = intent.getIntExtra("weekIndex", 0);
         subjectMaHp = intent.getStringExtra(SUBJECT_MA_HP);
+        subjectStartDateMillis = intent.getLongExtra(SUBJECT_START_DATE, -1);
 
         if (intent.hasExtra(EDIT_DEADLINE)) {
             deadlineToEdit = (Deadline) intent.getSerializableExtra(EDIT_DEADLINE);
@@ -104,7 +132,8 @@ public class InputDeadlineActivity extends AppCompatActivity {
             populateDataForEdit();
         } else {
             btnThemDeadline.setText("Thêm Deadline");
-            // Chỉ đặt ngày mặc định khi thêm mới
+            txtLapLai.setText(selectedLapLai);
+            txtNhacNho.setText(selectedNhacNho);
             long weekStartDateMillis = intent.getLongExtra(WEEK_START_DATE, -1);
             if (weekStartDateMillis != -1) {
                 calendarTu.setTimeInMillis(weekStartDateMillis);
@@ -117,11 +146,25 @@ public class InputDeadlineActivity extends AppCompatActivity {
         btnHuy.setOnClickListener(v -> finish());
         btnThemDeadline.setOnClickListener(v -> saveDeadline());
 
-        LinearLayout layoutIcon = findViewById(R.id.layoutIcon);
-        layoutIcon.setOnClickListener(v -> openIconDialog());
+        findViewById(R.id.btnEdit).setOnClickListener(v -> openIconDialog());
+        findViewById(R.id.layoutTu).setOnClickListener(v -> pickDateTime(calendarTu));
+        findViewById(R.id.layoutDen).setOnClickListener(v -> pickDateTime(calendarDen));
 
-        txtNgayGioTu.setOnClickListener(v -> pickDateTime(calendarTu));
-        txtNgayGioDen.setOnClickListener(v -> pickDateTime(calendarDen));
+        TextView txtTenDeadlineCount = findViewById(R.id.txtTenDeadlineCount);
+        TextView txtGhiChuCount = findViewById(R.id.txtGhiChuCount);
+
+        edtTenDeadline.addTextChangedListener(createCounterWatcher(txtTenDeadlineCount, 30));
+        edtGhiChu.addTextChangedListener(createCounterWatcher(txtGhiChuCount, 100));
+
+        findViewById(R.id.layoutLapLai).setOnClickListener(v -> showSingleChoiceDialog("Chọn lặp lại", LAP_LAI_OPTIONS, selectedLapLai, (newValue) -> {
+            selectedLapLai = newValue;
+            txtLapLai.setText(newValue);
+        }));
+
+        findViewById(R.id.layoutNhacNho).setOnClickListener(v -> showSingleChoiceDialog("Chọn nhắc nhở", NHAC_NHO_OPTIONS, selectedNhacNho, (newValue) -> {
+            selectedNhacNho = newValue;
+            txtNhacNho.setText(newValue);
+        }));
 
         switchCaNgay.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
@@ -140,8 +183,14 @@ public class InputDeadlineActivity extends AppCompatActivity {
         edtGhiChu.setText(deadlineToEdit.getNoiDung());
         calendarTu.setTime(deadlineToEdit.getNgayBatDau());
         calendarDen.setTime(deadlineToEdit.getNgayKetThuc());
+        subjectMaHp = deadlineToEdit.getMaHp();
+        selectedLapLai = deadlineToEdit.getRepeatText();
+        selectedNhacNho = deadlineToEdit.getReminderText();
         selectedIcon = deadlineToEdit.getIcon();
-        subjectMaHp = deadlineToEdit.getMaHp(); // Lấy mã HP từ deadline đang sửa
+
+        txtLapLai.setText(selectedLapLai);
+        txtNhacNho.setText(selectedNhacNho);
+        imgIcon.setImageResource(selectedIcon);
     }
 
     private void saveDeadline() {
@@ -151,33 +200,57 @@ public class InputDeadlineActivity extends AppCompatActivity {
             return;
         }
 
-        String ghiChu = edtGhiChu.getText().toString().trim();
         Date tu = calendarTu.getTime();
-        Date den = calendarDen.getTime();
-
-        Deadline deadlineToReturn;
-        if (isEditMode) {
-            deadlineToReturn = deadlineToEdit;
-        } else {
-            deadlineToReturn = new Deadline();
-        }
+        Deadline deadlineToReturn = isEditMode ? deadlineToEdit : new Deadline();
 
         deadlineToReturn.setTieuDe(ten);
-        deadlineToReturn.setNoiDung(ghiChu);
+        deadlineToReturn.setNoiDung(edtGhiChu.getText().toString().trim());
         deadlineToReturn.setNgayBatDau(tu);
-        deadlineToReturn.setNgayKetThuc(den);
-        deadlineToReturn.setIcon(selectedIcon);
+        deadlineToReturn.setNgayKetThuc(calendarDen.getTime());
         deadlineToReturn.setMaHp(subjectMaHp);
+        deadlineToReturn.setIcon(selectedIcon);
+        deadlineToReturn.setRepeat(selectedLapLai);
+        deadlineToReturn.setReminder(selectedNhacNho);
 
-        // Trả về Intent
         Intent resultIntent = new Intent();
         resultIntent.putExtra(KEY_TAI_KHOAN, deadlineToReturn);
-        // Trả về weekIndex để MainDeadLine có thể cuộn tới
-        if (!isEditMode) {
-            resultIntent.putExtra("weekIndex", weekIndex);
+
+        int finalWeekIndex = calculateWeekIndex(tu);
+        resultIntent.putExtra("weekIndex", finalWeekIndex);
+        if(isEditMode) {
+            resultIntent.putExtra("originalWeekIndex", this.weekIndex);
         }
+
         setResult(RESULT_OK, resultIntent);
         finish();
+    }
+
+    private int calculateWeekIndex(Date deadlineDate) {
+        if (subjectStartDateMillis != -1) {
+            Calendar subjectStartCal = Calendar.getInstance();
+            subjectStartCal.setTimeInMillis(subjectStartDateMillis);
+            subjectStartCal.set(Calendar.HOUR_OF_DAY, 0);
+            subjectStartCal.set(Calendar.MINUTE, 0);
+            subjectStartCal.set(Calendar.SECOND, 0);
+            subjectStartCal.set(Calendar.MILLISECOND, 0);
+            long normalizedSubjectStartMillis = subjectStartCal.getTimeInMillis();
+
+            Calendar deadlineCal = Calendar.getInstance();
+            deadlineCal.setTime(deadlineDate);
+            deadlineCal.set(Calendar.HOUR_OF_DAY, 0);
+            deadlineCal.set(Calendar.MINUTE, 0);
+            deadlineCal.set(Calendar.SECOND, 0);
+            deadlineCal.set(Calendar.MILLISECOND, 0);
+            long normalizedDeadlineMillis = deadlineCal.getTimeInMillis();
+
+            long diffMillis = normalizedDeadlineMillis - normalizedSubjectStartMillis;
+            if (diffMillis >= 0) {
+                long days = TimeUnit.MILLISECONDS.toDays(diffMillis);
+                return (int) (days / 7);
+            }
+            return 0; // Deadline is before the course starts
+        }
+        return this.weekIndex; // Fallback to the clicked week index
     }
 
     private void updateDateTimeUI() {
@@ -190,13 +263,11 @@ public class InputDeadlineActivity extends AppCompatActivity {
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, month);
             calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-
             new TimePickerDialog(this, (timePicker, hourOfDay, minute) -> {
                 calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                 calendar.set(Calendar.MINUTE, minute);
                 updateDateTimeUI();
             }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show();
-
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
 
@@ -212,5 +283,26 @@ public class InputDeadlineActivity extends AppCompatActivity {
             dialog.dismiss();
         });
         dialog.show();
+    }
+
+    private TextWatcher createCounterWatcher(TextView counterView, int maxLength) {
+        return new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                counterView.setText(String.format(Locale.getDefault(), "%d/%d", s.length(), maxLength));
+            }
+            @Override public void afterTextChanged(Editable s) { }
+        };
+    }
+
+    private interface SingleChoiceCallback { void onSelection(String newValue); }
+    private void showSingleChoiceDialog(String title, final String[] options, String currentSelection, SingleChoiceCallback callback) {
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setSingleChoiceItems(options, Arrays.asList(options).indexOf(currentSelection), (dialog, which) -> {
+                    callback.onSelection(options[which]);
+                    dialog.dismiss();
+                })
+                .show();
     }
 }

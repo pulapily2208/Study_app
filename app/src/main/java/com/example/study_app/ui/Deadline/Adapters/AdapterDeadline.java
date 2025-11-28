@@ -2,32 +2,32 @@ package com.example.study_app.ui.Deadline.Adapters;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class AdapterDeadline extends ArrayAdapter<Deadline> {
+public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHolder> {
 
     private Context context;
-    private int resource;
-    private ArrayList<Deadline> deadlines;
+    private List<Deadline> deadlines;
     private AdapterWeek.OnDeadlineInteractionListener deadlineListener;
 
-    public AdapterDeadline(Context context, int resource, ArrayList<Deadline> deadlines) {
-        super(context, resource, deadlines);
+    public AdapterDeadline(Context context, ArrayList<Deadline> deadlines) {
         this.context = context;
-        this.resource = resource;
         this.deadlines = deadlines;
     }
 
@@ -35,85 +35,65 @@ public class AdapterDeadline extends ArrayAdapter<Deadline> {
         this.deadlineListener = listener;
     }
 
+    @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder;
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(context).inflate(R.layout.deadline_item, parent, false);
+        return new ViewHolder(view);
+    }
 
-        if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(resource, parent, false);
-            holder = new ViewHolder();
-            holder.icon = convertView.findViewById(R.id.ivAnh);
-            holder.tieuDe = convertView.findViewById(R.id.tvTieuDe);
-            holder.thoiGian = convertView.findViewById(R.id.tvKetQua);
-            holder.checkBox = convertView.findViewById(R.id.cbXacNhan); // Thêm CheckBox vào ViewHolder
-            convertView.setTag(holder);
-        } else {
-            holder = (ViewHolder) convertView.getTag();
-        }
-
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Deadline deadline = deadlines.get(position);
+        if (deadline == null) return;
 
         holder.icon.setImageResource(deadline.getIcon());
         holder.tieuDe.setText(deadline.getTieuDe());
 
-        // Logic hiển thị trạng thái dựa trên CheckBox và ngày
-        if (deadline.isCompleted()) {
-            holder.checkBox.setChecked(true);
-            Date now = new Date();
-            long diff = now.getTime() - deadline.getNgayKetThuc().getTime();
-
-            if (diff > 0) { // Hoàn thành trễ
-                long daysLate = TimeUnit.MILLISECONDS.toDays(diff);
-                holder.thoiGian.setText("Hoàn thành trễ " + daysLate + " ngày");
-            } else { // Hoàn thành đúng hạn
-                holder.thoiGian.setText("Đã hoàn thành");
-            }
+        if (!deadline.isCompleted() && deadline.getNgayKetThuc() != null) {
+            long diff = deadline.getNgayKetThuc().getTime() - new Date().getTime();
+            holder.tieuDe.setTextColor(diff <= 3600_000 ? Color.RED : Color.BLACK);
         } else {
-            holder.checkBox.setChecked(false);
+             holder.tieuDe.setTextColor(Color.BLACK);
+        }
+
+        holder.checkBox.setOnCheckedChangeListener(null);
+        holder.checkBox.setChecked(deadline.isCompleted());
+
+        if (deadline.isCompleted()) {
+            holder.thoiGian.setText("Đã hoàn thành");
+        } else {
             holder.thoiGian.setText(deadline.getConLai());
         }
 
-        // Loại bỏ listener cũ để tránh gọi lại nhiều lần khi view được tái sử dụng
-        holder.checkBox.setOnCheckedChangeListener(null);
-
-        // Thiết lập listener mới
         holder.checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (deadlineListener != null) {
                 deadlineListener.onStateChanged(deadline, isChecked);
             }
-            // Cập nhật lại UI ngay lập tức để người dùng thấy thay đổi
-            if (isChecked) {
-                Date now = new Date();
-                long diff = now.getTime() - deadline.getNgayKetThuc().getTime();
-                if (diff > 0) {
-                    long daysLate = TimeUnit.MILLISECONDS.toDays(diff);
-                    holder.thoiGian.setText("Hoàn thành trễ " + daysLate + " ngày");
-                } else {
-                    holder.thoiGian.setText("Đã hoàn thành");
-                }
-            } else {
-                holder.thoiGian.setText(deadline.getConLai());
-            }
+            notifyItemChanged(holder.getAdapterPosition()); // Refresh the item view
         });
 
-        convertView.setOnClickListener(v -> {
+        holder.itemView.setOnClickListener(v -> {
             if (deadlineListener != null) {
                 deadlineListener.onDeadlineClick(deadline);
             }
         });
 
-        convertView.setOnLongClickListener(v -> {
+        holder.itemView.setOnLongClickListener(v -> {
             if (deadlineListener != null) {
-                showOptionsDialog(deadline);
+                showOptionsDialog(deadline, holder.getAdapterPosition());
                 return true;
             }
             return false;
         });
-
-        return convertView;
     }
 
-    private void showOptionsDialog(final Deadline deadline) {
+    @Override
+    public int getItemCount() {
+        return deadlines != null ? deadlines.size() : 0;
+    }
+
+    private void showOptionsDialog(final Deadline deadline, final int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setItems(new CharSequence[]{"Sửa", "Xóa"}, (dialog, which) -> {
             if (deadlineListener == null) return;
@@ -125,7 +105,14 @@ public class AdapterDeadline extends ArrayAdapter<Deadline> {
                     new AlertDialog.Builder(context)
                             .setTitle("Xác nhận xóa")
                             .setMessage("Bạn có chắc muốn xóa deadline này?")
-                            .setPositiveButton("Xóa", (d, w) -> deadlineListener.onDeleteDeadline(deadline))
+                            .setPositiveButton("Xóa", (d, w) -> {
+                                if (deadlineListener != null) {
+                                    deadlineListener.onDeleteDeadline(deadline);
+                                    deadlines.remove(position);
+                                    notifyItemRemoved(position);
+                                    notifyItemRangeChanged(position, deadlines.size());
+                                }
+                            })
                             .setNegativeButton("Hủy", null)
                             .show();
                     break;
@@ -134,10 +121,18 @@ public class AdapterDeadline extends ArrayAdapter<Deadline> {
         builder.create().show();
     }
 
-    private static class ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView icon;
         TextView tieuDe;
         TextView thoiGian;
-        CheckBox checkBox; // Thêm CheckBox
+        CheckBox checkBox;
+
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            icon = itemView.findViewById(R.id.ivAnh);
+            tieuDe = itemView.findViewById(R.id.tvTieuDe);
+            thoiGian = itemView.findViewById(R.id.tvKetQua);
+            checkBox = itemView.findViewById(R.id.cbXacNhan);
+        }
     }
 }

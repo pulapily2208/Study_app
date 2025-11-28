@@ -10,13 +10,12 @@ public class Curriculum {
     private int hocKy;
     private String loaiHp;
     private int khoaId;
+    private String status; // NOT_ENROLLED / IN_PROGRESS / COMPLETED
 
-    // Constructors, Getters, and Setters
+    public Curriculum() {}
 
-    public Curriculum() {
-    }
-
-    public Curriculum(String maHp, String tenHp, int soTinChi, int soTietLyThuyet, int soTietThucHanh, String nhomTuChon, int hocKy, String loaiHp, int khoaId) {
+    public Curriculum(String maHp, String tenHp, int soTinChi, int soTietLyThuyet, int soTietThucHanh,
+                      String nhomTuChon, int hocKy, String loaiHp, int khoaId) {
         this.maHp = maHp;
         this.tenHp = tenHp;
         this.soTinChi = soTinChi;
@@ -28,75 +27,34 @@ public class Curriculum {
         this.khoaId = khoaId;
     }
 
-    public String getMaHp() {
-        return maHp;
-    }
+    public String getMaHp() { return maHp; }
+    public void setMaHp(String maHp) { this.maHp = maHp; }
 
-    public void setMaHp(String maHp) {
-        this.maHp = maHp;
-    }
+    public String getTenHp() { return tenHp; }
+    public void setTenHp(String tenHp) { this.tenHp = tenHp; }
 
-    public String getTenHp() {
-        return tenHp;
-    }
+    public int getSoTinChi() { return soTinChi; }
+    public void setSoTinChi(int soTinChi) { this.soTinChi = soTinChi; }
 
-    public void setTenHp(String tenHp) {
-        this.tenHp = tenHp;
-    }
+    public int getSoTietLyThuyet() { return soTietLyThuyet; }
+    public void setSoTietLyThuyet(int soTietLyThuyet) { this.soTietLyThuyet = soTietLyThuyet; }
 
-    public int getSoTinChi() {
-        return soTinChi;
-    }
+    public int getSoTietThucHanh() { return soTietThucHanh; }
+    public void setSoTietThucHanh(int soTietThucHanh) { this.soTietThucHanh = soTietThucHanh; }
 
-    public void setSoTinChi(int soTinChi) {
-        this.soTinChi = soTinChi;
-    }
+    public String getNhomTuChon() { return nhomTuChon; }
+    public void setNhomTuChon(String nhomTuChon) { this.nhomTuChon = nhomTuChon; }
 
-    public int getSoTietLyThuyet() {
-        return soTietLyThuyet;
-    }
+    public int getHocKy() { return hocKy; }
+    public void setHocKy(int hocKy) { this.hocKy = hocKy; }
 
-    public void setSoTietLyThuyet(int soTietLyThuyet) {
-        this.soTietLyThuyet = soTietLyThuyet;
-    }
+    public String getLoaiHp() { return loaiHp; }
+    public void setLoaiHp(String loaiHp) { this.loaiHp = loaiHp; }
 
-    public int getSoTietThucHanh() {
-        return soTietThucHanh;
-    }
+    public int getKhoaId() { return khoaId; }
+    public void setKhoaId(int khoaId) { this.khoaId = khoaId; }
 
-    public void setSoTietThucHanh(int soTietThucHanh) {
-        this.soTietThucHanh = soTietThucHanh;
-    }
-
-    public String getNhomTuChon() {
-        return nhomTuChon;
-    }
-
-    public void setNhomTuChon(String nhomTuChon) {
-        this.nhomTuChon = nhomTuChon;
-    }
-
-    public int getHocKy() {
-        return hocKy;
-    }
-
-    public void setHocKy(int hocKy) {
-        this.hocKy = hocKy;
-    }
-
-    public String getLoaiHp() {
-        return loaiHp;
-    }
-
-    public void setLoaiHp(String loaiHp) {
-        this.loaiHp = loaiHp;
-    }
-
-    public int getKhoaId() {
-        return khoaId;
-    }
-
-    public void setKhoaId(int khoaId) {
-        this.khoaId = khoaId;
-    }
+    // NEW
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
