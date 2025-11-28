@@ -14,4 +14,6 @@ public class Week {
 
     public String getTenTuan() { return tenTuan; }
     public ArrayList<Deadline> getDeadlines() { return deadlines; }
+    public void setDeadlines(ArrayList<Deadline> deadlines) { this.deadlines = deadlines; }
+
 }

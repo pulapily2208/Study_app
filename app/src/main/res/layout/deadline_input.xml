@@ -5,259 +5,269 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#FFFFFF">
+    android:padding="16dp">
 
-    <!-- Tên sự kiện -->
-    <EditText
-        android:id="@+id/edtTenDeadline"
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        android:hint="Tên sự kiện"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:padding="12dp"
-        android:background="@android:color/transparent" />
+        app:cardCornerRadius="12dp"
+        app:cardElevation="4dp">
 
-    <EditText
-        android:id="@+id/edtGhiChu"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Ghi chú deadline này"
-        android:textSize="15sp"
-        android:padding="12dp"
-        android:background="@android:color/transparent" />
-
-    <!-- Dòng Cả ngày -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="4dp">
-
-        <TextView
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Cả ngày"
-            android:textSize="16sp" />
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <Switch
-            android:id="@+id/switchCaNgay"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
 
-    <!-- Từ -->
-    <LinearLayout
-        android:id="@+id/layoutTu"
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+                <ImageView
+                    android:id="@+id/imgIcon"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:layout_centerInParent="true"
+                    android:scaleType="centerCrop"
+                    android:src="@mipmap/ic_avatar" />
 
-        <TextView
-            android:id="@+id/txtTu"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Từ"
-            android:textSize="16sp" />
+                <FrameLayout
+                    android:id="@+id/btnEdit"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_alignEnd="@id/imgIcon"
+                    android:layout_alignBottom="@id/imgIcon"
+                    android:background="@drawable/edit_icon_background"
+                    android:elevation="6dp">
 
-        <TextView
-            android:id="@+id/txtNgayGioTu"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="CN, 9 thg 11, 2025 22:30"
-            android:textSize="16sp"
-            android:textColor="#555555" />
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/note_ic_add"
+                        app:tint="@android:color/white" />
+                </FrameLayout>
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_more"
-            android:layout_marginStart="10dp"
-            app:tint="#999999"
-            tools:ignore="UseAppTint" />
-    </LinearLayout>
+            </RelativeLayout>
 
-    <!-- Đến -->
-    <LinearLayout
-        android:id="@+id/layoutDen"
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:hint="Tên sự kiện">
 
-        <TextView
-            android:id="@+id/txtDen"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Đến"
-            android:textSize="16sp" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edtTenDeadline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionNext"
+                    android:inputType="text"
+                    android:maxLength="30" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
-            android:id="@+id/txtNgayGioDen"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="CN, 9 thg 11, 2025 23:30"
-            android:textSize="16sp"
-            android:textColor="#555555"/>
+            <TextView
+                android:id="@+id/txtTenDeadlineCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:gravity="end"
+                android:text="0/30"
+                android:textColor="?android:attr/textColorSecondary" />
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_more"
-            android:tint="#999999"
-            android:layout_marginStart="10dp"
-            tools:ignore="UseAppTint" />
-    </LinearLayout>
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:hint="Ghi chú deadline này">
 
-    <!-- Lặp lại -->
-    <LinearLayout
-        android:id="@+id/layoutLapLai"
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/edtGhiChu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:imeOptions="actionDone"
+                    android:inputType="textMultiLine"
+                    android:lines="3"
+                    android:maxLength="100" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Lặp lại"
-            android:textSize="16sp" />
+            <TextView
+                android:id="@+id/txtGhiChuCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:gravity="end"
+                android:text="0/100"
+                android:textColor="?android:attr/textColorSecondary" />
 
-        <TextView
-            android:id="@+id/txtLapLai"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Sự kiện một lần"
-            android:textSize="16sp"
-            android:textColor="#555555"/>
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp" />
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_more"
-            android:tint="#999999"
-            android:layout_marginStart="10dp"
-            tools:ignore="UseAppTint" />
-    </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
 
-    <!-- Nhắc nhở -->
-    <LinearLayout
-        android:id="@+id/layoutNhacNho"
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Cả ngày"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Nhắc nhở"
-            android:textSize="16sp" />
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchCaNgay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
 
-        <TextView
-            android:id="@+id/txtNhacNho"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Trước sự kiện 5 phút"
-            android:textSize="16sp"
-            android:textColor="#555555"/>
+            <LinearLayout
+                android:id="@+id/layoutTu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_more"
-            android:tint="#999999"
-            android:layout_marginStart="10dp"
-            tools:ignore="UseAppTint" />
-    </LinearLayout>
+                <TextView
+                    android:id="@+id/txtTu"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Từ"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-    <!-- Icon -->
-    <LinearLayout
-        android:id="@+id/layoutIcon"
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/txtNgayGioTu"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="CN, 9 thg 11, 2025 22:30" />
+            </LinearLayout>
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Icon"
-            android:textSize="16sp" />
+            <LinearLayout
+                android:id="@+id/layoutDen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
 
-        <ImageView
-            android:id="@+id/imgIcon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@mipmap/ic_avatar"
-            android:layout_marginEnd="10dp"/>
+                <TextView
+                    android:id="@+id/txtDen"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Đến"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_more"
-            app:tint="#999999"
-            tools:ignore="UseAppTint" />
-    </LinearLayout>
+                <TextView
+                    android:id="@+id/txtNgayGioDen"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="CN, 9 thg 11, 2025 23:30" />
+            </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/layoutMauSac"
-        android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+            <LinearLayout
+                android:id="@+id/layoutLapLai"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Màu sắc"
-            android:textSize="16sp" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Lặp lại"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
 
+                <TextView
+                    android:id="@+id/txtLapLai"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="Sự kiện một lần" />
+            </LinearLayout>
 
+            <LinearLayout
+                android:id="@+id/layoutNhacNho"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp">
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_more"
-            android:tint="#999999"
-            android:layout_marginStart="10dp"
-            tools:ignore="UseAppTint" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Nhắc nhở"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
 
+                <TextView
+                    android:id="@+id/txtNhacNho"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="Trước sự kiện 5 phút" />
+            </LinearLayout>
 
         </LinearLayout>
 
+    </com.google.android.material.card.MaterialCardView>
 
-    <!-- Nút -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_marginTop="16dp"
         android:gravity="end"
-        android:layout_marginTop="25dp">
+        android:orientation="horizontal">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnHuy"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
             android:text="Hủy" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnThemDeadline"
+            style="@style/Widget.Material3.Button.ElevatedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Thêm"
-            android:layout_marginStart="20dp"/>
+            android:text="Thêm" />
     </LinearLayout>
 
 </LinearLayout>

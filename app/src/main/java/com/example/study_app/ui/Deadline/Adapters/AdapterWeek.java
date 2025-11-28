@@ -4,12 +4,15 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.study_app.R;
+import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Deadline.Models.Week;
 
@@ -20,10 +23,11 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-public class AdapterWeek extends ArrayAdapter<Week> {
+public class AdapterWeek extends RecyclerView.Adapter<AdapterWeek.ViewHolder> {
 
     private Context context;
-    private int resource;
+    private ArrayList<Week> weeks;
+    private String maHp;
     private OnAddDeadlineListener addListener;
     private OnDeadlineInteractionListener deadlineListener;
     private Date subjectStartDate;
@@ -40,6 +44,18 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         void onStateChanged(Deadline deadline, boolean isCompleted);
     }
 
+    public AdapterWeek(Context context, ArrayList<Week> weeks, String maHp, Date subjectStartDate) {
+        this.context = context;
+        this.weeks = weeks;
+        this.maHp = maHp;
+        setSubjectStartDate(subjectStartDate);
+    }
+
+    public void setWeeks(ArrayList<Week> weeks) {
+        this.weeks = weeks;
+        notifyDataSetChanged();
+    }
+
     public void setOnAddDeadlineListener(OnAddDeadlineListener listener) {
         this.addListener = listener;
     }
@@ -48,116 +64,104 @@ public class AdapterWeek extends ArrayAdapter<Week> {
         this.deadlineListener = listener;
     }
 
-    public void setSubjectStartDate(Date subjectStartDate) {
+    private void setSubjectStartDate(Date subjectStartDate) {
         this.subjectStartDate = subjectStartDate;
         if (this.subjectStartDate != null) {
             long diffMillis = new Date().getTime() - this.subjectStartDate.getTime();
-            if (diffMillis >= 0) {
-                this.currentWeekIndex = (int) (TimeUnit.MILLISECONDS.toDays(diffMillis) / 7);
-            } else {
-                this.currentWeekIndex = -1; // Subject starts in the future
-            }
+            this.currentWeekIndex = diffMillis >= 0 ? (int) (TimeUnit.MILLISECONDS.toDays(diffMillis) / 7) : -1;
         } else {
             this.currentWeekIndex = -1;
         }
     }
 
-    public AdapterWeek(Context context, int resource, ArrayList<Week> weeks, Date subjectStartDate) {
-        super(context, resource, weeks);
-        this.context = context;
-        this.resource = resource;
-        setSubjectStartDate(subjectStartDate);
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(context).inflate(R.layout.deadline_item_tuan, parent, false);
+        return new ViewHolder(view);
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder;
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Week week = weeks.get(position);
+        if (week == null) return;
 
-        if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(resource, parent, false);
-            holder = new ViewHolder();
-            holder.tvTuan = convertView.findViewById(R.id.tvTuan);
-            holder.tvNgayTuan = convertView.findViewById(R.id.tvNgayTuan);
-            holder.lvCongViec = convertView.findViewById(R.id.lvCongViec);
-            holder.btnThem = convertView.findViewById(R.id.btnThem);
-            convertView.setTag(holder);
-        } else {
-            holder = (ViewHolder) convertView.getTag();
-        }
+        DatabaseHelper db = new DatabaseHelper(context);
+        ArrayList<Deadline> deadlines = db.getDeadlinesByWeek(this.maHp, this.subjectStartDate, position);
 
-        Week week = getItem(position);
-        if (week == null) return convertView;
+        AdapterDeadline adapterDeadline = new AdapterDeadline(context, deadlines);
+        adapterDeadline.setOnDeadlineInteractionListener(new AdapterWeek.OnDeadlineInteractionListener() {
+            @Override
+            public void onDeadlineClick(Deadline deadline) {
+                if (deadlineListener != null) deadlineListener.onDeadlineClick(deadline);
+            }
+
+            @Override
+            public void onEditDeadline(Deadline deadline) {
+                if (deadlineListener != null) deadlineListener.onEditDeadline(deadline);
+            }
+
+            @Override
+            public void onDeleteDeadline(Deadline deadline) {
+                db.deleteDeadline(deadline.getId());
+                if (deadlineListener != null) {
+                    deadlineListener.onDeleteDeadline(deadline);
+                }
+            }
+
+            @Override
+            public void onStateChanged(Deadline deadline, boolean isCompleted) {
+                deadline.setCompleted(isCompleted);
+                db.updateDeadline(deadline);
+                if (deadlineListener != null) {
+                    deadlineListener.onStateChanged(deadline, isCompleted);
+                }
+            }
+        });
+
+        holder.rvCongViec.setAdapter(adapterDeadline);
 
         holder.tvTuan.setText(week.getTenTuan());
 
         if (subjectStartDate != null) {
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(subjectStartDate);
-            calendar.add(Calendar.DAY_OF_YEAR, position * 7);
+            calendar.add(Calendar.WEEK_OF_YEAR, position);
             Date weekStart = calendar.getTime();
-
             calendar.add(Calendar.DAY_OF_YEAR, 6);
             Date weekEnd = calendar.getTime();
-
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM", Locale.getDefault());
-            String dateRange = sdf.format(weekStart) + " - " + sdf.format(weekEnd);
-            holder.tvNgayTuan.setText(dateRange);
+            holder.tvNgayTuan.setText(sdf.format(weekStart) + " - " + sdf.format(weekEnd));
             holder.tvNgayTuan.setVisibility(View.VISIBLE);
         } else {
-            holder.tvNgayTuan.setText("");
             holder.tvNgayTuan.setVisibility(View.GONE);
         }
 
-        // Sửa lại logic ở đây: Ẩn nút Thêm cho các tuần trong quá khứ
-        if (currentWeekIndex != -1 && position < currentWeekIndex) {
-            holder.btnThem.setVisibility(View.GONE);
-        } else {
-            holder.btnThem.setVisibility(View.VISIBLE);
-        }
-
-        AdapterDeadline deadlineAdapter = new AdapterDeadline(context, R.layout.deadline_item, week.getDeadlines());
-        deadlineAdapter.setOnDeadlineInteractionListener(this.deadlineListener);
-        holder.lvCongViec.setAdapter(deadlineAdapter);
-
-        setListViewHeightBasedOnChildren(holder.lvCongViec);
-
+        holder.btnThem.setVisibility((currentWeekIndex != -1 && position < currentWeekIndex) ? View.GONE : View.VISIBLE);
         holder.btnThem.setOnClickListener(v -> {
-            if (addListener != null) addListener.onAddDeadline(position);
+            if (addListener != null) addListener.onAddDeadline(holder.getAdapterPosition());
         });
-
-        holder.lvCongViec.setFocusable(false);
-        holder.lvCongViec.setClickable(false);
-        holder.lvCongViec.setFocusableInTouchMode(false);
-
-        return convertView;
     }
 
-    private void setListViewHeightBasedOnChildren(ListView listView) {
-        android.widget.ListAdapter adapter = listView.getAdapter();
-        if (adapter == null || adapter.getCount() == 0) {
-            ViewGroup.LayoutParams params = listView.getLayoutParams();
-            params.height = 0;
-            listView.setLayoutParams(params);
-            return;
-        }
-
-        int totalHeight = 0;
-        for (int i = 0; i < adapter.getCount(); i++) {
-            View listItem = adapter.getView(i, null, listView);
-            listItem.measure(0, 0);
-            totalHeight += listItem.getMeasuredHeight();
-        }
-
-        ViewGroup.LayoutParams params = listView.getLayoutParams();
-        params.height = totalHeight + (listView.getDividerHeight() * (adapter.getCount() - 1));
-        listView.setLayoutParams(params);
-        listView.requestLayout();
+    @Override
+    public int getItemCount() {
+        return weeks != null ? weeks.size() : 0;
     }
 
-    private static class ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvTuan;
         TextView tvNgayTuan;
-        ListView lvCongViec;
+        RecyclerView rvCongViec;
         Button btnThem;
+
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            tvTuan = itemView.findViewById(R.id.tvTuan);
+            tvNgayTuan = itemView.findViewById(R.id.tvNgayTuan);
+            rvCongViec = itemView.findViewById(R.id.lvCongViec);
+            rvCongViec.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
+            btnThem = itemView.findViewById(R.id.btnThem);
+        }
     }
 }

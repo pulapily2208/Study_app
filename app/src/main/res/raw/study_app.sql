@@ -67,14 +67,19 @@ CREATE TABLE IF NOT EXISTS users (
 -- Deadline / Task
 CREATE TABLE IF NOT EXISTS deadline (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    tieu_de TEXT,
-    noi_dung TEXT,
-    ngay_bat_dau TEXT,
-    ngay_ket_thuc TEXT,
-    completed INTEGER DEFAULT 0,
-    ma_hp TEXT,
+    tieu_de TEXT NOT NULL,             -- Tiêu đề deadline
+    noi_dung TEXT,                     -- Nội dung chi tiết
+    ngay_bat_dau TEXT,                 -- Ngày bắt đầu
+    ngay_ket_thuc TEXT,                -- Ngày kết thúc
+    completed INTEGER DEFAULT 0,       -- Trạng thái hoàn thành: 0 = chưa, 1 = đã
+    ma_hp TEXT,                        -- Môn học liên quan
+    repeat_type TEXT,                  -- Kiểu lặp lại: "Hằng tuần", "Hằng tháng", "Không"
+    reminder_time INTEGER,             -- Thời gian nhắc nhở (timestamp)
+    icon INTEGER,                      -- Resource ID icon minh họa
+    notes TEXT,                        -- Ghi chú chi tiết (nếu cần)
     FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp) ON DELETE SET NULL
 );
+
 
 -- Notes
 CREATE TABLE IF NOT EXISTS notes (
