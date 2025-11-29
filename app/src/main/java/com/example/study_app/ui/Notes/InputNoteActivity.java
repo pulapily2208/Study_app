@@ -45,7 +45,7 @@ import androidx.core.text.HtmlCompat;
 
 import com.bumptech.glide.Glide;
 import com.example.study_app.R;
-import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.NotesDao;
 import com.example.study_app.ui.Notes.Model.Note;
 
 import org.json.JSONArray;
@@ -71,7 +71,7 @@ public class InputNoteActivity extends AppCompatActivity {
     private LinearLayout colorPalette, voiceContainer;
     private ImageView color1, color2, color3, color4, color5;
 
-    private DatabaseHelper dbHelper;
+    private NotesDao dbHelper;
     private Note currentNote;
     private Uri cameraImageUri;
 
@@ -105,7 +105,7 @@ public class InputNoteActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.note_add);
 
-        dbHelper = new DatabaseHelper(this);
+        dbHelper = new NotesDao(this);
 
         setupViews();
         setupPhotoPicker();
