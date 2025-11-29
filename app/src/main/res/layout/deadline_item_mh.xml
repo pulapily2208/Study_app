@@ -4,74 +4,82 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
+    android:layout_marginHorizontal="8dp"
     android:layout_marginVertical="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="2dp"
-    android:background="@color/blue">
+    app:cardElevation="2dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:animateLayoutChanges="true"
         android:background="@color/yellow">
-<!--FFF9CE-->
+
         <TextView
-            android:id="@+id/tvTuan"
+            android:id="@+id/tvTenMonHoc"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:textAppearance="?attr/textAppearanceTitleLarge"
             android:textStyle="bold"
-            app:layout_constraintEnd_toStartOf="@+id/btnThem"
+            app:layout_constraintEnd_toStartOf="@+id/btnExpandCollapse"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="Tuần 1" />
+            tools:text="Tên Môn Học" />
 
         <TextView
-            android:id="@+id/tvNgayTuan"
+            android:id="@+id/tvDeadlineCount"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="?android:attr/textColorSecondary"
-            app:layout_constraintEnd_toEndOf="@+id/tvTuan"
-            app:layout_constraintStart_toStartOf="@+id/tvTuan"
-            app:layout_constraintTop_toBottomOf="@+id/tvTuan"
-            tools:text="Từ - Đến" />
+            app:layout_constraintEnd_toEndOf="@+id/tvTenMonHoc"
+            app:layout_constraintStart_toStartOf="@+id/tvTenMonHoc"
+            app:layout_constraintTop_toBottomOf="@+id/tvTenMonHoc"
+            tools:text="3 deadlines" />
 
         <Button
-            android:id="@+id/btnThem"
+            android:id="@+id/btnExpandCollapse"
             style="@style/Widget.Material3.Button.IconButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:contentDescription="Thêm công việc"
-            app:icon="@drawable/note_ic_add"
-            app:layout_constraintBottom_toBottomOf="@+id/tvNgayTuan"
+            android:contentDescription="Mở rộng/Thu gọn"
+            android:rotation="180"
+            app:icon="@drawable/note_ic_back"
+            app:layout_constraintBottom_toBottomOf="@+id/tvDeadlineCount"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/tvTuan" />
+            app:layout_constraintTop_toTopOf="@+id/tvTenMonHoc" />
 
         <com.google.android.material.divider.MaterialDivider
             android:id="@+id/divider"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvNgayTuan" />
+            app:layout_constraintTop_toBottomOf="@+id/tvDeadlineCount"
+            tools:visibility="visible" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/lvCongViec"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:nestedScrollingEnabled="false"
+            android:paddingTop="8dp"
+            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/divider"
+            app:layout_constraintVertical_bias="1.0"
             tools:itemCount="2"
-            tools:listitem="@layout/deadline_item" />
+            tools:listitem="@layout/deadline_item"
+            tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

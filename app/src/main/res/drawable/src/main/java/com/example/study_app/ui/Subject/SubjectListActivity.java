@@ -17,7 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
-import com.example.study_app.ui.Deadline.MainDeadLine;
+import com.example.study_app.ui.Deadline.MainDeadLineMonHoc;
 import com.example.study_app.ui.Subject.Adapter.SubjectAdapter;
 import com.example.study_app.ui.Subject.Model.Subject;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -175,7 +175,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
 
     @Override
     public void onViewDeadlines(Subject subject) {
-        Intent intent = new Intent(this, MainDeadLine.class);
+        Intent intent = new Intent(this, MainDeadLineMonHoc.class);
         intent.putExtra("SUBJECT_MA_HP", subject.maHp);
         intent.putExtra("SUBJECT_TEN_HP", subject.tenHp);
         // Gửi số tuần vào màn hình deadline

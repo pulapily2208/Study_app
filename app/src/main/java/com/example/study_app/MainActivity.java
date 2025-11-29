@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.ui.Curriculum.CurriculumActivity;
 import com.example.study_app.ui.Deadline.MainDeadLine;
+import com.example.study_app.ui.Deadline.MainDeadLineMonHoc;
 import com.example.study_app.ui.Notes.NotesActivity;
 import com.example.study_app.ui.Subject.SubjectListActivity;
 import com.example.study_app.ui.Timetable.TimetableWeek;

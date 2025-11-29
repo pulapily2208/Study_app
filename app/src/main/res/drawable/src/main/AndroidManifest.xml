@@ -21,7 +21,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.Deadline.MainDeadLine"/>
+            android:name=".ui.Deadline.MainDeadLineMonHoc"/>
         <activity
             android:name=".ui.Deadline.InputDeadlineActivity"/>
         <activity android:name=".ui.Subject.SubjectListActivity"/>

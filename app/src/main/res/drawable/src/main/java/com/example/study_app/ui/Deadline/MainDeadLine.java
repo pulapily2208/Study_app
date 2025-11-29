@@ -44,7 +44,7 @@ public class MainDeadLine extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.deadline_main);
+        setContentView(R.layout.deadline_main_mon_hoc);
 
         lvWeeks = findViewById(R.id.lvItemTuan);
         tvSubjectTitle = findViewById(R.id.tvSubjectTitle);
@@ -164,7 +164,7 @@ public class MainDeadLine extends AppCompatActivity {
         if (adapterWeek == null) return;
 
         adapterWeek.setOnAddDeadlineListener(weekIndex -> {
-            Intent intent = new Intent(MainDeadLine.this, InputDeadlineActivity.class);
+            Intent intent = new Intent(MainDeadLineMonHoc.this, InputDeadlineActivity.class);
             intent.putExtra("weekIndex", weekIndex);
             intent.putExtra(InputDeadlineActivity.SUBJECT_MA_HP, subjectMaHp);
             if (subjectStartDate != null) {
@@ -179,7 +179,7 @@ public class MainDeadLine extends AppCompatActivity {
         adapterWeek.setOnDeadlineInteractionListener(new AdapterWeek.OnDeadlineInteractionListener() {
             @Override
             public void onDeadlineClick(Deadline deadline) {
-                new AlertDialog.Builder(MainDeadLine.this)
+                new AlertDialog.Builder(MainDeadLineMonHoc.this)
                         .setTitle(deadline.getTieuDe())
                         .setMessage("Ghi chú: " + deadline.getNoiDung())
                         .setPositiveButton("Đóng", null)
@@ -188,19 +188,19 @@ public class MainDeadLine extends AppCompatActivity {
 
             @Override
             public void onEditDeadline(Deadline deadline) {
-                Intent editIntent = new Intent(MainDeadLine.this, InputDeadlineActivity.class);
+                Intent editIntent = new Intent(MainDeadLineMonHoc.this, InputDeadlineActivity.class);
                 editIntent.putExtra(InputDeadlineActivity.EDIT_DEADLINE, deadline);
                 deadlineLauncher.launch(editIntent);
             }
 
             @Override
             public void onDeleteDeadline(Deadline deadline) {
-                new AlertDialog.Builder(MainDeadLine.this)
+                new AlertDialog.Builder(MainDeadLineMonHoc.this)
                         .setTitle("Xác nhận xóa")
                         .setMessage("Bạn có chắc muốn xóa deadline này?")
                         .setPositiveButton("Xóa", (d, w) -> {
                             dbHelper.deleteDeadline(deadline.getId());
-                            Toast.makeText(MainDeadLine.this, "Đã xóa deadline", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainDeadLineMonHoc.this, "Đã xóa deadline", Toast.LENGTH_SHORT).show();
                             loadDataFromDatabase();
                         })
                         .setNegativeButton("Hủy", null)
@@ -211,7 +211,7 @@ public class MainDeadLine extends AppCompatActivity {
             public void onStateChanged(Deadline deadline, boolean isCompleted) {
                 deadline.setCompleted(isCompleted);
                 dbHelper.updateDeadline(deadline);
-                Toast.makeText(MainDeadLine.this, "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainDeadLineMonHoc.this, "Đã cập nhật trạng thái", Toast.LENGTH_SHORT).show();
             }
         });
     }

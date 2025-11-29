@@ -1,295 +1,132 @@
 package com.example.study_app.ui.Deadline;
 
-import android.app.AlertDialog;
-import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
-import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.DeadlineDao;
+import com.example.study_app.ui.Deadline.Adapters.AdapterDeadline;
+import com.example.study_app.ui.Deadline.Adapters.AdapterMonHoc;
 import com.example.study_app.ui.Deadline.Adapters.AdapterWeek;
 import com.example.study_app.ui.Deadline.Models.Deadline;
-import com.example.study_app.ui.Deadline.Models.Week;
 import com.example.study_app.ui.Subject.Model.Subject;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 public class MainDeadLine extends AppCompatActivity {
 
-    private RecyclerView lvWeeks;
+    private RecyclerView rvToday, rvAll;
     private Toolbar toolbar;
-    private FloatingActionButton fabAddDeadline;
+    private TextView tvTodayEmpty, tvAllEmpty;
+    private DeadlineDao dbHelper;
 
-    private DatabaseHelper dbHelper;
-    private AdapterWeek adapterWeek;
-
-    private String subjectMaHp;
-    private Subject currentSubject;
-
-    private ActivityResultLauncher<Intent> deadlineLauncher;
+    private AdapterDeadline todayAdapter;
+    private AdapterMonHoc allAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.deadline_main);
 
+        // --- Init Views ---
         toolbar = findViewById(R.id.toolbar);
-        lvWeeks = findViewById(R.id.lvItemTuan);
-        fabAddDeadline = findViewById(R.id.fab_add_deadline);
-        dbHelper = new DatabaseHelper(this);
+        rvToday = findViewById(R.id.rvTodayDeadlines);
+        rvAll = findViewById(R.id.rvAllDeadlines);
+        tvTodayEmpty = findViewById(R.id.tvTodayEmpty);
+        tvAllEmpty = findViewById(R.id.tvAllEmpty);
 
-        Intent intent = getIntent();
-        subjectMaHp = intent.getStringExtra("SUBJECT_MA_HP");
+        dbHelper = new DeadlineDao(this);
 
-        if (subjectMaHp == null || subjectMaHp.isEmpty()) {
-            Toast.makeText(this, "Lỗi: Không có thông tin môn học.", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-
-        currentSubject = dbHelper.getSubjectByMaHp(subjectMaHp);
-        if (currentSubject == null || currentSubject.ngayBatDau == null || currentSubject.ngayKetThuc == null) {
-            Toast.makeText(this, "Lỗi: Không thể tải thông tin môn học.", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
-        toolbar.setTitle(currentSubject.tenHp != null ? currentSubject.tenHp : "Deadlines");
+        // --- Toolbar Setup ---
+        toolbar.setTitle("Tổng quan Deadline");
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        lvWeeks.setLayoutManager(new LinearLayoutManager(this));
+        // --- RecyclerViews Setup ---
+        rvToday.setLayoutManager(new LinearLayoutManager(this));
+        rvAll.setLayoutManager(new LinearLayoutManager(this));
 
-        adapterWeek = new AdapterWeek(this, new ArrayList<>(), subjectMaHp, currentSubject.ngayBatDau);
-        lvWeeks.setAdapter(adapterWeek);
-
-        setupDeadlineLauncher();
-        loadAndDisplayWeeks();
-        setupAdapterListeners();
-
-        fabAddDeadline.setOnClickListener(v -> {
-            int currentWeek = getCurrentWeekIndex();
-            onAddDeadline(currentWeek);
-        });
+        // --- Setup Adapters & Load Data ---
+        setupAdapters();
+        loadData();
     }
 
-    private void loadAndDisplayWeeks() {
-        if (currentSubject == null) return;
-
-        ArrayList<Week> weekList = new ArrayList<>();
-        for (int i = 0; i < currentSubject.soTuan; i++) {
-            weekList.add(new Week("Tuần " + (i + 1)));
-        }
-
-        adapterWeek.setWeeks(weekList);
-
-        int currentWeek = getCurrentWeekIndex();
-        if (currentWeek >= 0 && currentWeek < adapterWeek.getItemCount()) {
-            lvWeeks.post(() -> lvWeeks.smoothScrollToPosition(currentWeek));
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadData();
     }
 
-    private void setupDeadlineLauncher() {
-        deadlineLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        Serializable extra = result.getData().getSerializableExtra(InputDeadlineActivity.KEY_TAI_KHOAN);
-                        if (extra instanceof Deadline) {
-                            Deadline returnedDeadline = (Deadline) extra;
-                            if (returnedDeadline.getId() > 0) { // Is an update
-                                handleUpdateDeadline(returnedDeadline, result.getData());
-                            } else { // Is a new deadline
-                                handleAddDeadline(returnedDeadline, result.getData());
-                            }
-                        }
-                    }
-                }
-        );
-    }
-
-    private void handleUpdateDeadline(Deadline deadline, Intent data) {
-        long dbResult = dbHelper.updateDeadline(deadline);
-        if (dbResult != -1) {
-            Toast.makeText(this, "Đã cập nhật deadline", Toast.LENGTH_SHORT).show();
-            
-            int affectedWeek = data.getIntExtra("weekIndex", -1);
-            int originalWeek = data.getIntExtra("originalWeekIndex", -1);
-
-            if (affectedWeek != -1) adapterWeek.notifyItemChanged(affectedWeek);
-            if (originalWeek != -1 && originalWeek != affectedWeek) adapterWeek.notifyItemChanged(originalWeek);
-
-        } else {
-            Toast.makeText(this, "Cập nhật thất bại!", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void handleAddDeadline(Deadline deadline, Intent data) {
-        String repeatType = deadline.getRepeatText();
-
-        if (Deadline.REPEAT_TYPE_WEEKLY.equals(repeatType)) {
-            createRepeatingDeadlines(deadline, 7);
-        } else if (Deadline.REPEAT_TYPE_DAILY.equals(repeatType)){
-            createRepeatingDeadlines(deadline, 1);
-        } else if (Deadline.REPEAT_TYPE_WEEKDAYS.equals(repeatType)) {
-            createWeekdaysInOneWeek(deadline);
-        } else {
-             if (dbHelper.addDeadline(deadline, subjectMaHp) == -1) {
-                 Toast.makeText(this, "Thêm mới thất bại!", Toast.LENGTH_SHORT).show();
-                 return;
-            }
-        }
-
-        Toast.makeText(this, "Đã thêm deadline", Toast.LENGTH_SHORT).show();
-        adapterWeek.notifyDataSetChanged();
-        int weekToScroll = data.getIntExtra("weekIndex", -1);
-        if (weekToScroll != -1) {
-            lvWeeks.post(() -> lvWeeks.smoothScrollToPosition(weekToScroll));
-        }
-    }
-
-    private void createWeekdaysInOneWeek(Deadline baseDeadline) {
-        long duration = baseDeadline.getNgayKetThuc().getTime() - baseDeadline.getNgayBatDau().getTime();
-
-        Calendar startCal = Calendar.getInstance();
-        startCal.setTime(baseDeadline.getNgayBatDau());
-
-        int hour = startCal.get(Calendar.HOUR_OF_DAY);
-        int minute = startCal.get(Calendar.MINUTE);
-
-        startCal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-
-        for (int i = 0; i < 5; i++) { 
-            startCal.set(Calendar.HOUR_OF_DAY, hour);
-            startCal.set(Calendar.MINUTE, minute);
-
-            Deadline instance = new Deadline();
-            instance.setTieuDe(baseDeadline.getTieuDe());
-            instance.setNoiDung(baseDeadline.getNoiDung());
-            instance.setMaHp(subjectMaHp);
-            instance.setIcon(baseDeadline.getIcon());
-            instance.setReminder(baseDeadline.getReminderText());
-            instance.setRepeat(Deadline.REPEAT_TYPE_NONE);
-
-            Date startDate = startCal.getTime();
-            Date endDate = new Date(startDate.getTime() + duration);
-
-            instance.setNgayBatDau(startDate);
-            instance.setNgayKetThuc(endDate);
-
-            dbHelper.addDeadline(instance, subjectMaHp);
-
-            startCal.add(Calendar.DATE, 1);
-        }
-    }
-
-    private void createRepeatingDeadlines(Deadline baseDeadline, int intervalInDays) {
-        long duration = baseDeadline.getNgayKetThuc().getTime() - baseDeadline.getNgayBatDau().getTime();
-
-        Calendar startCal = Calendar.getInstance();
-        startCal.setTime(baseDeadline.getNgayBatDau());
-
-        while(startCal.getTime().before(currentSubject.ngayKetThuc)){
-            Deadline instance = new Deadline();
-            instance.setTieuDe(baseDeadline.getTieuDe());
-            instance.setNoiDung(baseDeadline.getNoiDung());
-            instance.setMaHp(subjectMaHp);
-            instance.setIcon(baseDeadline.getIcon());
-            instance.setReminder(baseDeadline.getReminderText());
-            instance.setRepeat(Deadline.REPEAT_TYPE_NONE);
-
-            Date startDate = startCal.getTime();
-            Date endDate = new Date(startDate.getTime() + duration);
-
-            instance.setNgayBatDau(startDate);
-            instance.setNgayKetThuc(endDate);
-            
-            dbHelper.addDeadline(instance, subjectMaHp);
-
-            startCal.add(Calendar.DATE, intervalInDays);
-        }
-    }
-
-
-    private void setupAdapterListeners() {
-        adapterWeek.setOnAddDeadlineListener(this::onAddDeadline);
-
-        adapterWeek.setOnDeadlineInteractionListener(new AdapterWeek.OnDeadlineInteractionListener() {
+    private void setupAdapters() {
+        AdapterWeek.OnDeadlineInteractionListener listener = new AdapterWeek.OnDeadlineInteractionListener() {
             @Override
             public void onDeadlineClick(Deadline deadline) {
-                new AlertDialog.Builder(MainDeadLine.this)
-                        .setTitle(deadline.getTieuDe())
-                        .setMessage("Ghi chú: " + deadline.getNoiDung())
-                        .setPositiveButton("Đóng", null)
-                        .show();
+                // Not implemented for this overview screen
             }
 
             @Override
             public void onEditDeadline(Deadline deadline) {
-                Intent editIntent = new Intent(MainDeadLine.this, InputDeadlineActivity.class);
-                int weekIndex = -1;
-                if(currentSubject.ngayBatDau != null){
-                     long diffMillis = deadline.getNgayBatDau().getTime() - currentSubject.ngayBatDau.getTime();
-                     long days = TimeUnit.MILLISECONDS.toDays(diffMillis);
-                     weekIndex = (int) (days/7);
-                }
-
-                editIntent.putExtra("weekIndex", weekIndex);
-                editIntent.putExtra(InputDeadlineActivity.EDIT_DEADLINE, deadline);
-                editIntent.putExtra(InputDeadlineActivity.SUBJECT_MA_HP, subjectMaHp);
-                if (currentSubject != null) {
-                    editIntent.putExtra(InputDeadlineActivity.SUBJECT_START_DATE, currentSubject.ngayBatDau.getTime());
-                }
-                deadlineLauncher.launch(editIntent);
+                // Not implemented for this overview screen
             }
 
             @Override
             public void onDeleteDeadline(Deadline deadline) {
+                dbHelper.deleteDeadline(deadline.getId());
+                loadData();
                 Toast.makeText(MainDeadLine.this, "Đã xóa deadline", Toast.LENGTH_SHORT).show();
-                adapterWeek.notifyDataSetChanged();
             }
 
             @Override
             public void onStateChanged(Deadline deadline, boolean isCompleted) {
-                 adapterWeek.notifyDataSetChanged();
+                deadline.setCompleted(isCompleted);
+                dbHelper.updateDeadline(deadline);
+                loadData();
             }
-        });
+        };
+
+        todayAdapter = new AdapterDeadline(this, new ArrayList<>());
+        todayAdapter.setOnDeadlineInteractionListener(listener);
+        rvToday.setAdapter(todayAdapter);
+
+        allAdapter = new AdapterMonHoc(this, new ArrayList<>());
+        allAdapter.setOnDeadlineInteractionListener(listener);
+        rvAll.setAdapter(allAdapter);
     }
 
-    private void onAddDeadline(int weekIndex) {
-        Intent intent = new Intent(MainDeadLine.this, InputDeadlineActivity.class);
-        intent.putExtra("weekIndex", weekIndex);
-        intent.putExtra(InputDeadlineActivity.SUBJECT_MA_HP, subjectMaHp);
-        if (currentSubject != null && currentSubject.ngayBatDau != null) {
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(currentSubject.ngayBatDau);
-            cal.add(Calendar.WEEK_OF_YEAR, weekIndex);
-            intent.putExtra(InputDeadlineActivity.WEEK_START_DATE, cal.getTimeInMillis());
-            intent.putExtra(InputDeadlineActivity.SUBJECT_START_DATE, currentSubject.ngayBatDau.getTime());
+    private void loadData() {
+        // Load and display today's deadlines
+        ArrayList<Deadline> todayDeadlines = dbHelper.getTodaysDeadlines();
+        if (todayDeadlines.isEmpty()) {
+            rvToday.setVisibility(View.GONE);
+            tvTodayEmpty.setVisibility(View.VISIBLE);
+        } else {
+            rvToday.setVisibility(View.VISIBLE);
+            tvTodayEmpty.setVisibility(View.GONE);
+            for (Deadline d : todayDeadlines) {
+                Subject subject = dbHelper.getSubjectByMaHp(d.getMaHp());
+                if (subject != null) {
+                    d.setTenMon(subject.tenHp);
+                }
+            }
+            todayAdapter.updateData(todayDeadlines);
         }
-        deadlineLauncher.launch(intent);
-    }
 
-    private int getCurrentWeekIndex() {
-        if (currentSubject == null || currentSubject.ngayBatDau == null) {
-            return 0;
+        // Load and display all subjects that have deadlines
+        List<Subject> subjectsWithDeadlines = dbHelper.getSubjectsWithDeadlines();
+        if (subjectsWithDeadlines.isEmpty()) {
+            rvAll.setVisibility(View.GONE);
+            tvAllEmpty.setVisibility(View.VISIBLE);
+        } else {
+            rvAll.setVisibility(View.VISIBLE);
+            tvAllEmpty.setVisibility(View.GONE);
+            allAdapter.updateData(subjectsWithDeadlines);
         }
-        long diffMillis = new Date().getTime() - currentSubject.ngayBatDau.getTime();
-        if (diffMillis < 0) {
-            return 0; // Course hasn't started
-        }
-        long diffDays = TimeUnit.MILLISECONDS.toDays(diffMillis);
-        return (int) (diffDays / 7);
     }
 }
