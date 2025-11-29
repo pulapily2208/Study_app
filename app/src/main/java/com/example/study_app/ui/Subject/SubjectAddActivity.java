@@ -23,7 +23,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.R;
+import com.example.study_app.data.CurriculumDao;
 import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.SubjectDao;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.example.study_app.ui.Subject.Model.Subject;
 
@@ -41,7 +43,6 @@ public class SubjectAddActivity extends AppCompatActivity {
     private AutoCompleteTextView etSubjectCode;
     private EditText etSubjectName, etLecturerName, etCredits, etStartDate, etEndDate, etStartTime, etEndTime, etLocation, etNotes;
     private RadioGroup rgSubjectType;
-    // CORRECTED: Renamed variables to match new IDs
     private RadioButton rbCompulsory, rbElective;
     private TextView tvCalculatedWeeks, tvChoiceGroup;
     private LinearLayout colorPickerContainer, layoutStartDate, layoutEndDate;
@@ -49,6 +50,8 @@ public class SubjectAddActivity extends AppCompatActivity {
     private TextView tvActivityTitle;
 
     private DatabaseHelper dbHelper;
+    private SubjectDao subjectDao;
+    private CurriculumDao curriculumDao;
     private boolean isEditMode = false;
     private String maHpToEdit = null;
     private String currentSemesterName;
@@ -68,6 +71,8 @@ public class SubjectAddActivity extends AppCompatActivity {
         setContentView(R.layout.subject_add);
 
         dbHelper = new DatabaseHelper(this);
+        subjectDao = new SubjectDao(dbHelper);
+        curriculumDao = new CurriculumDao(dbHelper);
         findViews();
         setupAutoComplete();
         setClickListeners();
@@ -89,7 +94,6 @@ public class SubjectAddActivity extends AppCompatActivity {
             if (!colorViews.isEmpty()) {
                 colorViews.get(0).performClick();
             }
-            // Default to "Bắt buộc"
             rbCompulsory.setChecked(true);
         }
     }
@@ -134,7 +138,7 @@ public class SubjectAddActivity extends AppCompatActivity {
                 if (etSubjectCode.isPerformingCompletion()) {
                     return;
                 }
-                List<String> suggestions = dbHelper.searchSubjectCodes(s.toString());
+                List<String> suggestions = curriculumDao.searchSubjectCodes(s.toString());
                 subjectCodeAdapter.clear();
                 subjectCodeAdapter.addAll(suggestions);
                 subjectCodeAdapter.notifyDataSetChanged();
@@ -144,7 +148,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         etSubjectCode.setOnItemClickListener((parent, view, position, id) -> {
             String selectedMaHp = subjectCodeAdapter.getItem(position);
             if (selectedMaHp != null) {
-                Curriculum curriculum = dbHelper.getCurriculumDetailsByMaHp(selectedMaHp);
+                Curriculum curriculum = curriculumDao.getCurriculumDetailsByMaHp(selectedMaHp);
                 if (curriculum != null) {
                     autoFillSubjectDetails(curriculum);
                 }
@@ -155,7 +159,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             if (!hasFocus) {
                 String currentCode = etSubjectCode.getText().toString().trim();
                 if (!TextUtils.isEmpty(currentCode)) {
-                    Curriculum curriculum = dbHelper.getCurriculumDetailsByMaHp(currentCode);
+                    Curriculum curriculum = curriculumDao.getCurriculumDetailsByMaHp(currentCode);
                     if (curriculum == null) {
                         Toast.makeText(SubjectAddActivity.this, "Mã môn không tồn tại trong chương trình đào tạo!", Toast.LENGTH_SHORT).show();
                     }
@@ -168,7 +172,6 @@ public class SubjectAddActivity extends AppCompatActivity {
         etSubjectName.setText(curriculum.getTenHp());
         etCredits.setText(String.valueOf(curriculum.getSoTinChi()));
 
-        // CORRECTED: Logic uses new variable names
         if (curriculum.getLoaiHp() != null) {
             if ("Tự chọn".equals(curriculum.getLoaiHp())) {
                 rbElective.setChecked(true);
@@ -232,7 +235,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             tvActivityTitle.setText(R.string.activity_title_edit);
             etSubjectCode.setEnabled(false);
 
-            Subject subject = dbHelper.getSubjectByMaHp(maHpToEdit);
+            Subject subject = subjectDao.getSubjectByMaHp(maHpToEdit);
             if (subject != null) {
                 populateUI(subject);
             } else {
@@ -273,8 +276,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         if (subject.gioBatDau != null) etStartTime.setText(timeFormat.format(subject.gioBatDau));
         if (subject.gioKetThuc != null) etEndTime.setText(timeFormat.format(subject.gioKetThuc));
 
-        // CORRECTED: Logic uses new variable names
-        Curriculum curriculum = dbHelper.getCurriculumDetailsByMaHp(subject.maHp);
+        Curriculum curriculum = curriculumDao.getCurriculumDetailsByMaHp(subject.maHp);
         if ("Tự chọn".equals(subject.loaiMon)) {
             rbElective.setChecked(true);
             if (curriculum != null && curriculum.getNhomTuChon() != null && !curriculum.getNhomTuChon().isEmpty()) {
@@ -306,22 +308,19 @@ public class SubjectAddActivity extends AppCompatActivity {
             etSubjectCode.requestFocus();
             return;
         }
-        // check tiên quyết
-        Curriculum subjectCurriculumDetails = dbHelper.getCurriculumDetailsByMaHp(maHp);
+        Curriculum subjectCurriculumDetails = curriculumDao.getCurriculumDetailsByMaHp(maHp);
 
-        // Chỉ kiểm tra khi là chế độ Thêm mới VÀ môn học có trong CSDL Chương trình Đào tạo
         if (!isEditMode && subjectCurriculumDetails != null) {
-            final int CURRENT_USER_ID = 1; // User ID hardcoded is 1
-            boolean isPrerequisiteMet = dbHelper.checkPrerequisiteStatus(maHp, CURRENT_USER_ID);
+            final int CURRENT_USER_ID = 1;
+            boolean isPrerequisiteMet = curriculumDao.checkPrerequisiteStatus(maHp, CURRENT_USER_ID, subjectDao);
 
             if (!isPrerequisiteMet) {
-                // Hiển thị thông báo lỗi và ngăn việc lưu
                 Toast.makeText(this, "Chưa đạt điều kiện tiên quyết để thêm môn!", Toast.LENGTH_LONG).show();
                 etSubjectCode.requestFocus();
                 return;
             }
         }
-        if (!isEditMode && dbHelper.getCurriculumDetailsByMaHp(maHp) == null) {
+        if (!isEditMode && subjectCurriculumDetails == null) {
             Toast.makeText(this, "Mã môn không tồn tại trong chương trình đào tạo!", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -411,7 +410,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         Intent resultIntent = new Intent();
 
         if (isEditMode) {
-            int rowsAffected = dbHelper.updateSubject(subject);
+            int rowsAffected = subjectDao.updateSubject(subject);
             if (rowsAffected > 0) {
                 Toast.makeText(this, R.string.update_subject_success, Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK, resultIntent);
@@ -420,7 +419,7 @@ public class SubjectAddActivity extends AppCompatActivity {
                 Toast.makeText(this, R.string.update_subject_failed, Toast.LENGTH_SHORT).show();
             }
         } else {
-            long newRowId = dbHelper.addOrEnrollSubject(subject);
+            long newRowId = subjectDao.addOrEnrollSubject(subject);
             if (newRowId != -1) {
                 Toast.makeText(this, R.string.add_subject_success, Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK, resultIntent);

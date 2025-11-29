@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.SubjectDao;
 import com.example.study_app.ui.Deadline.MainDeadLineMonHoc;
 import com.example.study_app.ui.Subject.Adapter.SubjectAdapter;
 import com.example.study_app.ui.Subject.Model.Subject;
@@ -30,6 +31,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
     private RecyclerView recyclerViewSubjects;
     private SubjectAdapter subjectAdapter;
     private DatabaseHelper dbHelper;
+    private SubjectDao subjectDao;
     private ArrayList<Subject> subjectList;
     private Spinner spinnerSemesters;
     private TextView tvEmptyList;
@@ -50,6 +52,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
         tvEmptyList = findViewById(R.id.tvEmptyList);
 
         dbHelper = new DatabaseHelper(this);
+        subjectDao = new SubjectDao(dbHelper);
         subjectList = new ArrayList<>();
 
         subjectAdapter = new SubjectAdapter(subjectList, this);
@@ -86,14 +89,11 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
         loadSemesters();
     }
 
-    // This method is called when an activity started with startActivityForResult completes.
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        // Check if the result is from adding or editing a subject and if it was successful.
         if ((requestCode == ADD_SUBJECT_REQUEST || requestCode == EDIT_SUBJECT_REQUEST) && resultCode == RESULT_OK) {
-            // The data was changed, so reload the subjects for the currently selected semester.
             Toast.makeText(this, "Danh sách môn học đã được cập nhật.", Toast.LENGTH_SHORT).show();
             loadSubjectsForSelectedSemester();
         }
@@ -101,14 +101,12 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
 
 
     private void loadSemesters() {
-        // Save current selection
         String previouslySelected = selectedSemesterName;
-        ArrayList<String> semesterNames = dbHelper.getAllSemesterNames();
+        ArrayList<String> semesterNames = subjectDao.getAllSemesterNames();
         ArrayAdapter<String> semesterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, semesterNames);
         semesterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSemesters.setAdapter(semesterAdapter);
 
-        // Restore previous selection if it still exists
         if (previouslySelected != null && semesterNames.contains(previouslySelected)) {
             int spinnerPosition = semesterAdapter.getPosition(previouslySelected);
             spinnerSemesters.setSelection(spinnerPosition);
@@ -125,13 +123,12 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
 
     private void loadSubjectsForSelectedSemester() {
         if (selectedSemesterName != null) {
-            ArrayList<Subject> updatedSubjects = dbHelper.getSubjectsBySemester(selectedSemesterName);
+            ArrayList<Subject> updatedSubjects = subjectDao.getSubjectsBySemester(selectedSemesterName);
             subjectList.clear();
             subjectList.addAll(updatedSubjects);
             subjectAdapter.notifyDataSetChanged();
             checkEmptyState();
         } else {
-            // Handle case where no semester is selected (e.g., all are deleted)
             subjectList.clear();
             subjectAdapter.notifyDataSetChanged();
             checkEmptyState();
@@ -151,12 +148,11 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
     @Override
     public void onEdit(Subject subject) {
         Intent intent = new Intent(this, SubjectAddActivity.class);
-        // Ensure the correct key "SUBJECT_ID" is used, which SubjectAddActivity expects.
         intent.putExtra("SUBJECT_ID", subject.maHp);
         if (selectedSemesterName != null && !selectedSemesterName.isEmpty()) {
             intent.putExtra("SEMESTER_NAME", selectedSemesterName);
         }
-        startActivityForResult(intent, EDIT_SUBJECT_REQUEST); // Use forResult
+        startActivityForResult(intent, EDIT_SUBJECT_REQUEST);
     }
 
     @Override
@@ -165,9 +161,9 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
                 .setTitle("Xác nhận xóa")
                 .setMessage("Bạn có chắc chắn muốn xóa môn học '" + subject.tenHp + "'?")
                 .setPositiveButton("Xóa", (dialog, which) -> {
-                    dbHelper.deleteSubject(subject.maHp);
+                    subjectDao.deleteSubject(subject.maHp);
                     Toast.makeText(this, "Đã xóa môn học", Toast.LENGTH_SHORT).show();
-                    loadSubjectsForSelectedSemester(); // Refresh the list
+                    loadSubjectsForSelectedSemester();
                 })
                 .setNegativeButton("Hủy", null)
                 .show();
@@ -178,7 +174,6 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
         Intent intent = new Intent(this, MainDeadLineMonHoc.class);
         intent.putExtra("SUBJECT_MA_HP", subject.maHp);
         intent.putExtra("SUBJECT_TEN_HP", subject.tenHp);
-        // Gửi số tuần vào màn hình deadline
         intent.putExtra("SUBJECT_WEEKS", subject.soTuan);
         startActivity(intent);
     }
