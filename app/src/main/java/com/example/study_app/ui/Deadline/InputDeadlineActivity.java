@@ -1,10 +1,15 @@
 package com.example.study_app.ui.Deadline;
 
+import android.Manifest;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -14,6 +19,8 @@ import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+
+import com.example.study_app.ui.Subject.Model.Subject;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -101,6 +108,46 @@ public class InputDeadlineActivity extends AppCompatActivity {
 
         updateDateTimeUI();
         imgIcon.setImageResource(selectedIcon);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1001);
+            }
+        }
+
+    }
+    private void scheduleDeadlineNotification(Deadline deadline,String tenMonHoc) {
+        Calendar notifyTime = Calendar.getInstance();
+        notifyTime.setTime(deadline.getNgayBatDau());
+
+        // Trừ thời gian nhắc nhở
+        switch (deadline.getReminder()) {
+            case "Trước sự kiện 5 phút": notifyTime.add(Calendar.MINUTE, -5); break;
+            case "Trước sự kiện 15 phút": notifyTime.add(Calendar.MINUTE, -15); break;
+            case "Trước sự kiện 30 phút": notifyTime.add(Calendar.MINUTE, -30); break;
+            case "Trước sự kiện 1 giờ": notifyTime.add(Calendar.HOUR_OF_DAY, -1); break;
+            case "Trước sự kiện 1 ngày": notifyTime.add(Calendar.DAY_OF_MONTH, -1); break;
+        }
+
+        Intent intent = new Intent(this, DeadlineNotificationReceiver.class);
+        intent.putExtra(DeadlineNotificationReceiver.EXTRA_DEADLINE_ID, (int) deadline.getNgayBatDau().getTime());
+        intent.putExtra(DeadlineNotificationReceiver.EXTRA_DEADLINE_TITLE,"Deadline sắp tới: " +  deadline.getTieuDe());
+        intent.putExtra(DeadlineNotificationReceiver.EXTRA_DEADLINE_CONTENT, deadline.getNoiDung());
+        intent.putExtra(DeadlineNotificationReceiver.EXTRA_DEADLINE_CONTENT, "Môn học: " + tenMonHoc);
+
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this,
+                (int) deadline.getNgayBatDau().getTime(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        if (alarmManager != null) {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, notifyTime.getTimeInMillis(), pendingIntent);
+        }
     }
 
     private void findViews() {
@@ -212,6 +259,9 @@ public class InputDeadlineActivity extends AppCompatActivity {
         deadlineToReturn.setRepeat(selectedLapLai);
         deadlineToReturn.setReminder(selectedNhacNho);
 
+        Subject subject = dbHelper.getSubjectByMaHp(subjectMaHp);
+        String tenMonHoc = (subject != null) ? subject.tenHp : "";
+
         Intent resultIntent = new Intent();
         resultIntent.putExtra(KEY_TAI_KHOAN, deadlineToReturn);
 
@@ -222,6 +272,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
         }
 
         setResult(RESULT_OK, resultIntent);
+        scheduleDeadlineNotification(deadlineToReturn, tenMonHoc);
         finish();
     }
 

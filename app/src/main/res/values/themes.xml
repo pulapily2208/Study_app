@@ -11,4 +11,9 @@
     </style>
 
     <style name="Theme.Study_app" parent="Base.Theme.Study_app" />
+
+    <style name="Theme.Study_app.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 </resources>

@@ -27,6 +27,7 @@ public class MainDeadLine extends AppCompatActivity {
     private Toolbar toolbar;
     private TextView tvTodayEmpty, tvAllEmpty;
     private DeadlineDao dbHelper;
+    private DeadlineNotificationManager notificationManager;
 
     private AdapterDeadline todayAdapter;
     private AdapterMonHoc allAdapter;
@@ -44,6 +45,7 @@ public class MainDeadLine extends AppCompatActivity {
         tvAllEmpty = findViewById(R.id.tvAllEmpty);
 
         dbHelper = new DeadlineDao(this);
+        notificationManager = new DeadlineNotificationManager(this);
 
         // --- Toolbar Setup ---
         toolbar.setTitle("Tổng quan Deadline");
@@ -79,6 +81,7 @@ public class MainDeadLine extends AppCompatActivity {
             @Override
             public void onDeleteDeadline(Deadline deadline) {
                 dbHelper.deleteDeadline(deadline.getId());
+                notificationManager.cancelNotification(deadline.getId());
                 loadData();
                 Toast.makeText(MainDeadLine.this, "Đã xóa deadline", Toast.LENGTH_SHORT).show();
             }
@@ -87,6 +90,9 @@ public class MainDeadLine extends AppCompatActivity {
             public void onStateChanged(Deadline deadline, boolean isCompleted) {
                 deadline.setCompleted(isCompleted);
                 dbHelper.updateDeadline(deadline);
+                if(isCompleted) {
+                    notificationManager.cancelNotification(deadline.getId());
+                }
                 loadData();
             }
         };

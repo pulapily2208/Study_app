@@ -20,10 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class DeadlineDao extends SQLiteOpenHelper {
 
@@ -185,27 +182,27 @@ public class DeadlineDao extends SQLiteOpenHelper {
 
 
     //    DEADLINE
-    public ArrayList<Deadline> getAllDeadlines() {
-        ArrayList<Deadline> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        String query = "SELECT * FROM deadline ORDER BY ngay_ket_thuc ASC";
-
-        try (Cursor cursor = db.rawQuery(query, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Deadline d = cursorToDeadline(cursor); // Hàm chuyển Cursor → Deadline
-                    list.add(d);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting all deadlines", e);
-        } finally {
-            db.close();
-        }
-
-        return list;
-    }
+//    public ArrayList<Deadline> getAllDeadlines() {
+//        ArrayList<Deadline> list = new ArrayList<>();
+//        SQLiteDatabase db = this.getReadableDatabase();
+//
+//        String query = "SELECT * FROM deadline ORDER BY ngay_ket_thuc ASC";
+//
+//        try (Cursor cursor = db.rawQuery(query, null)) {
+//            if (cursor != null && cursor.moveToFirst()) {
+//                do {
+//                    Deadline d = cursorToDeadline(cursor); // Hàm chuyển Cursor → Deadline
+//                    list.add(d);
+//                } while (cursor.moveToNext());
+//            }
+//        } catch (Exception e) {
+//            Log.e("DatabaseHelper", "Error getting all deadlines", e);
+//        } finally {
+//            db.close();
+//        }
+//
+//        return list;
+//    }
 
 
     public ArrayList<Deadline> getDeadlinesByMaHp(String maHp) {
