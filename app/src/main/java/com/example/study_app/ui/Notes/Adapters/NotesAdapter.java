@@ -79,12 +79,7 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
             popup.setOnMenuItemClickListener(menuItem -> {
                 if (menuClickListener == null) return false;
-
-                if (menuItem.getItemId() == R.id.menu_edit) {
-                    menuClickListener.onEdit(note);
-                    return true;
-
-                } else if (menuItem.getItemId() == R.id.menu_delete) {
+                if (menuItem.getItemId() == R.id.menu_delete) {
                     menuClickListener.onDelete(note);
                     return true;
                 }

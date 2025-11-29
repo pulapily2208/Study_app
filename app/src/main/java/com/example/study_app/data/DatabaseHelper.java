@@ -618,6 +618,8 @@ public ArrayList<Deadline> getDeadlinesByWeek(String maHp, Date subjectStartDate
                     note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
                     note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
                     note.setImagePaths(getNoteImages(note.getId()));
+                    note.setPdfPaths(getNotePdfs(note.getId()));
+                    note.setAudioPaths(getNoteAudios(note.getId()));
                     notes.add(note);
                 } while (cursor.moveToNext());
             }
@@ -653,6 +655,24 @@ public ArrayList<Deadline> getDeadlinesByWeek(String maHp, Date subjectStartDate
             }
         }
 
+        if (note.getPdfPaths() != null){
+            for (String path : note.getPdfPaths()){
+                ContentValues pdfValue = new ContentValues();
+                pdfValue.put("note_id", noteId);
+                pdfValue.put("pdf_path", path);
+                db.insert("note_pdfs", null, pdfValue);
+            }
+        }
+
+        if (note.getAudioPaths() != null){
+            for (String path : note.getAudioPaths()){
+                ContentValues audioValue = new ContentValues();
+                audioValue.put("note_id", noteId);
+                audioValue.put("audio_path", path);
+                db.insert("note_audios", null, audioValue);
+            }
+        }
+
         return noteId;
     }
     public Note getNoteById(int noteId) {
@@ -674,6 +694,8 @@ public ArrayList<Deadline> getDeadlinesByWeek(String maHp, Date subjectStartDate
                 note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
                 note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
                 note.setImagePaths(getNoteImages(note.getId()));
+                note.setPdfPaths(getNotePdfs(note.getId()));
+                note.setAudioPaths(getNoteAudios(note.getId()));
             }
         } catch (Exception e) {
             Log.e("DatabaseHelper", "Lỗi khi lấy ghi chú theo ID", e);
@@ -716,6 +738,26 @@ public ArrayList<Deadline> getDeadlinesByWeek(String maHp, Date subjectStartDate
             }
         }
 
+        if (note.getPdfPaths() != null) {
+            for (String path : note.getPdfPaths()) {
+                ContentValues pdf = new ContentValues();
+                pdf.put("note_id", note.getId());
+                pdf.put("pdf_path", path);
+                pdf.put("created_at", System.currentTimeMillis());
+                db.insert("note_pdfs", null, pdf);
+            }
+        }
+
+        if(note.getAudioPaths() != null) {
+            for (String path : note.getAudioPaths()) {
+                ContentValues audio = new ContentValues();
+                audio.put("note_id", note.getId());
+                audio.put("audio_path", path);
+                audio.put("created_at", System.currentTimeMillis());
+                db.insert("note_audios", null, audio);
+            }
+        }
+
         return rows > 0;
     }
 
@@ -740,6 +782,40 @@ public ArrayList<Deadline> getDeadlinesByWeek(String maHp, Date subjectStartDate
         cursor.close();
         return images;
     }
+
+    public List<String> getNotePdfs(int noteId){
+        List<String> pdfs = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT pdf_path FROM note_pdfs WHERE note_id=?",
+                new String[]{String.valueOf(noteId)});
+
+        if (cursor.moveToFirst()) {
+            do {
+                pdfs.add(cursor.getString(0));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return pdfs;
+    }
+
+    public List<String> getNoteAudios(int noteId) {
+        List<String> audios = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT audio_path FROM note_audios WHERE note_id=?",
+                new String[]{String.valueOf(noteId)});
+
+        if (cursor.moveToFirst()) {
+            do {
+                audios.add(cursor.getString(0));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return audios;
+    }
+
+
 
     // CHƯƠNG TRÌNH ĐÀO TẠO
     public Map<String, Integer> getFacultiesMap() {

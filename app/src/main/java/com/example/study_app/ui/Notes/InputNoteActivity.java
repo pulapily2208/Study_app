@@ -1,9 +1,16 @@
 package com.example.study_app.ui.Notes;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.media.Image;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
@@ -15,18 +22,24 @@ import android.text.style.AlignmentSpan;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ClickableSpan;
 import android.text.style.StyleSpan;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.text.HtmlCompat;
 
@@ -38,8 +51,11 @@ import com.example.study_app.ui.Notes.Model.Note;
 import org.json.JSONArray;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -51,8 +67,8 @@ public class InputNoteActivity extends AppCompatActivity {
     private ImageView btnUndo, btnRedo, btnText, btnAttach, btnShowColorPalette, btnChooseFromGallery, btnTakePhoto, btnChecklist;
 
     private LinearLayout textFormattingToolbar, imageSourceChooserLayout, imageContainer;
-    private ImageView btnBold, btnItalic, btnHighlight, btnAlignLeft, btnAlignCenter, btnAlignRight;
-    private LinearLayout colorPalette;
+    private ImageView btnBold, btnItalic, btnHighlight, btnAlignLeft, btnAlignCenter, btnAlignRight, btnUploadPdf, btnAudio, btnRecordVoice, btnCancelVoice, btnFinishVoice;
+    private LinearLayout colorPalette, voiceContainer;
     private ImageView color1, color2, color3, color4, color5;
 
     private DatabaseHelper dbHelper;
@@ -62,11 +78,27 @@ public class InputNoteActivity extends AppCompatActivity {
     private ActivityResultLauncher<Uri> takePhoto;
     private ActivityResultLauncher<PickVisualMediaRequest> pickMultiple;
 
+    private ActivityResultLauncher<String> pickPdf;
+
     private List<String> imagePaths = new ArrayList<>();
+
+    private List<String> pdfPaths = new ArrayList<>();
+
+    private final List<String> audioPaths = new ArrayList<>();
+
+    private MediaRecorder mediaRecorder;
+    private boolean isRecording = false;
+    private File audioFile;
+    private Uri audioUri;
+
+
 
     private final Stack<String> undoStack = new Stack<>();
     private final Stack<String> redoStack = new Stack<>();
     private boolean isUndoingOrRedoing = false;
+
+    private static final int REQUEST_AUDIO_PERMISSION = 1001;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +142,17 @@ public class InputNoteActivity extends AppCompatActivity {
         });
     }
 
+    private boolean hasAudioPermission() {
+        return ContextCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestAudioPermission() {
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.RECORD_AUDIO},
+                REQUEST_AUDIO_PERMISSION);
+    }
+
     @SuppressLint("WrongViewCast")
     private void setupViews() {
         edtTitle = findViewById(R.id.edtTitle);
@@ -138,6 +181,17 @@ public class InputNoteActivity extends AppCompatActivity {
         btnAlignLeft = findViewById(R.id.btnAlignLeft);
         btnAlignCenter = findViewById(R.id.btnAlignCenter);
         btnAlignRight = findViewById(R.id.btnAlignRight);
+
+        btnUploadPdf = findViewById(R.id.btnUploadPdf);
+
+        btnAudio = findViewById(R.id.btnAudio);
+
+        voiceContainer = findViewById(R.id.voiceContainer);
+        btnRecordVoice = findViewById(R.id.btnRecordVoice);
+        btnCancelVoice = findViewById(R.id.btnCancelVoice);
+        btnFinishVoice = findViewById(R.id.btnFinishVoice);
+
+
 
         colorPalette = findViewById(R.id.colorPalette);
         color1 = findViewById(R.id.color1);
@@ -170,6 +224,17 @@ public class InputNoteActivity extends AppCompatActivity {
                 }
             }
         });
+
+        pickPdf = registerForActivityResult(new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        Uri savedUri = savePdfToAppFolder(uri);
+                        if (savedUri != null){
+                            pdfPaths.add(savedUri.getPath());
+                            addPdfToContainer(savedUri);
+                        }
+                    }
+                });
     }
 
     private Uri saveImageToAppFolder(Uri sourceUri) {
@@ -200,6 +265,52 @@ public class InputNoteActivity extends AppCompatActivity {
         }
     }
 
+    private Uri savePdfToAppFolder(Uri sourceUri) {
+        try {
+            String originalName = getFileNameFromUri(sourceUri);
+
+            InputStream inputStream = getContentResolver().openInputStream(sourceUri);
+            if (inputStream == null) return null;
+
+            File dir = new File(getFilesDir(), "pdfs");
+            if (!dir.exists()) dir.mkdirs();
+
+            File destFile = new File(dir, originalName);
+
+            FileOutputStream out = new FileOutputStream(destFile);
+            byte[] buffer = new byte[1024];
+            int length;
+
+            while ((length = inputStream.read(buffer)) > 0) {
+                out.write(buffer, 0, length);
+            }
+            out.close();
+            inputStream.close();
+            return Uri.fromFile(destFile);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private String getFileNameFromUri(Uri sourceUri) {
+        String result = null;
+        Cursor cursor = getContentResolver().query(sourceUri, null, null, null, null);
+        if (cursor != null){
+            if(cursor.moveToFirst()){
+                int nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                result = cursor.getString(nameIndex);
+
+            }
+            cursor.close();
+        }
+        if (result == null){
+            result = sourceUri.getLastPathSegment();
+        }
+        return result;
+    }
+
     private void addImageToContainer(Uri uri) {
         ImageView imageView = new ImageView(this);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
@@ -210,7 +321,138 @@ public class InputNoteActivity extends AppCompatActivity {
         imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
         Glide.with(this).load(uri).into(imageView);
+
+        imageView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+                builder.setTitle("Xóa ảnh");
+                builder.setMessage("Bạn có chắc chắn muốn xóa ảnh này?");
+                builder.setPositiveButton("Xóa", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String path = uri.getPath();
+                        imagePaths.remove(path);
+                        imageContainer.removeView(imageView);
+
+                        File file = new File(path);
+                        if (file.exists()) {
+                            file.delete();
+                        }
+
+                        Toast.makeText(InputNoteActivity.this, "Ảnh đã được xóa", Toast.LENGTH_SHORT).show();
+
+                    }
+                });
+                builder.setNegativeButton("Hủy", null);
+                builder.show();
+                return true;
+            }
+        });
         imageContainer.addView(imageView);
+    }
+
+    private void addPdfToContainer (Uri uri){
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setPadding(8, 8, 8, 8);
+
+        String pdfPath = uri.getPath();
+
+        layout.setTag(pdfPath);
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.note_ic_pdf);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(80, 80));
+        icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        TextView fileName = new TextView(this);
+        fileName.setText(new File(pdfPath).getName());
+        fileName.setTextSize(16);
+        fileName.setPadding(20, 20, 0, 0);
+        fileName.setLayoutParams(new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f  // Chiếm không gian còn lại
+        ));
+
+        ImageView btnMenu = new ImageView(this);
+        btnMenu.setImageResource(R.drawable.note_ic_more);
+        LinearLayout.LayoutParams menuParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+
+        menuParams.setMargins(0, 20, 5, 0);
+        btnMenu.setLayoutParams(menuParams);
+
+
+        layout.addView(icon);
+        layout.addView(fileName);
+        layout.addView(btnMenu);
+
+        layout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(Uri.parse(pdfPath), "application/pdf");
+                intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+                startActivity(intent);
+            }
+        });
+
+        btnMenu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PopupMenu popupMenu = new PopupMenu(v.getContext(), btnMenu);
+                popupMenu.getMenu().add("Xóa");
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        if (item.getTitle().equals("Xóa")) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+                            builder.setTitle("Xóa tệp");
+                            builder.setMessage("Bạn có chắc chắn muốn xóa tệp này?");
+                            builder.setPositiveButton("Xóa", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    pdfPaths.remove(pdfPath);
+
+                                    imageContainer.removeView(layout);
+
+                                    File file = new File(pdfPath);
+                                    if (file.exists()) {
+                                        file.delete();
+                                    }
+
+                                    Toast.makeText(InputNoteActivity.this, "PDF đã được xóa", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                            builder.setNegativeButton("Hủy", null);
+                            builder.show();
+
+                        }
+                        return true;
+                    }
+                });
+                popupMenu.show();
+            }
+        });
+
+        imageContainer.addView(layout);
+    }
+
+
+    private void showVoiceContainer() {
+        voiceContainer.setVisibility(View.VISIBLE);
+
+        btnRecordVoice.setVisibility(View.VISIBLE);
+        btnCancelVoice.setVisibility(View.VISIBLE);
+        btnFinishVoice.setVisibility(View.VISIBLE);
+
+        // Ẩn các thanh khác
+        colorPalette.setVisibility(View.GONE);
+        textFormattingToolbar.setVisibility(View.GONE);
+        imageSourceChooserLayout.setVisibility(View.GONE);
     }
 
     private void setUpClickListener() {
@@ -255,7 +497,134 @@ public class InputNoteActivity extends AppCompatActivity {
         btnTakePhoto.setOnClickListener(v -> openCamera());
 
         btnChecklist.setOnClickListener(v -> insertCheckboxAtCurrentLine());
+
+
+        btnUploadPdf.setOnClickListener(v -> pickPdf.launch("application/pdf"));
+
+        btnAudio.setOnClickListener(v -> {
+            showVoiceContainer();
+        });
+
+        btnRecordVoice.setOnClickListener(v -> {
+            if (!hasAudioPermission()) {
+                requestAudioPermission();
+            }
+            startRecording();
+        });
+
+        btnFinishVoice.setOnClickListener(v -> stopRecording());
+
+        btnCancelVoice.setOnClickListener(v -> {
+            // Ẩn giao diện
+            voiceContainer.setVisibility(View.GONE);
+
+            // Xoá file nếu đã tạo
+            if (audioFile != null) {
+                File f = new File(audioFile.toURI());
+                if (f.exists()) f.delete();
+            }
+        });
     }
+
+    private void startRecording() {
+        try {
+            String fileName = "AUD_" + System.currentTimeMillis() + ".mp3";
+            File dir = new File(getFilesDir(), "audio");
+            if (!dir.exists()) dir.mkdirs();
+            File audioFile = new File(dir, fileName);
+            audioUri = Uri.fromFile(audioFile);
+
+            mediaRecorder = new MediaRecorder();
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            mediaRecorder.setOutputFile(audioFile.getAbsolutePath());
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+            mediaRecorder.prepare();
+            mediaRecorder.start();
+
+            isRecording = true;
+            Toast.makeText(this, "Đang ghi âm...", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void stopRecording() {
+        try {
+            mediaRecorder.stop();
+            mediaRecorder.release();
+            mediaRecorder = null;
+            isRecording = false;
+
+            audioPaths.add(audioUri.getPath());
+            Toast.makeText(this, "Đã lưu audio", Toast.LENGTH_SHORT).show();
+            addAudioToContainer(audioUri);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addAudioToContainer(Uri audioUri) {
+        String audioPath = audioUri.getPath();
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setPadding(8, 8, 8, 8);
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.ic_audio);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(80, 80));
+
+        TextView fileName = new TextView(this);
+        fileName.setText(new File(audioUri.getPath()).getName());
+        fileName.setTextSize(16);
+        fileName.setPadding(20, 20, 0, 0);
+
+        layout.addView(icon);
+        layout.addView(fileName);
+
+        icon.setOnClickListener(v -> {
+            MediaPlayer mediaPlayer = new MediaPlayer();
+            try {
+                mediaPlayer.setDataSource(audioUri.getPath());
+                mediaPlayer.prepare();
+                mediaPlayer.start();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+
+        layout.setOnLongClickListener(v -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+            builder.setTitle("Xóa audio");
+            builder.setMessage("Bạn có chắc chắn muốn xóa audio này?");
+            builder.setPositiveButton("Xóa", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                    audioPaths.remove(audioPath);
+
+                    imageContainer.removeView(layout);
+
+                    File file = new File(audioPath);
+                    if (file.exists()) {
+                        file.delete();
+                    }
+
+                    Toast.makeText(InputNoteActivity.this, "Audio đã được xóa", Toast.LENGTH_SHORT).show();
+                }
+            });
+            builder.setNegativeButton("Hủy", null);
+            builder.show();
+            return true;
+
+        });
+
+        imageContainer.addView(layout);
+    }
+
 
     private void insertCheckboxAtCurrentLine() {
         int start = Math.max(edtContent.getSelectionStart(), 0);
@@ -269,6 +638,7 @@ public class InputNoteActivity extends AppCompatActivity {
             editable.insert(lineStart, "☐ ");
         }
     }
+
 
     private int toggle(View v) {
         return v.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE;
@@ -399,6 +769,9 @@ public class InputNoteActivity extends AppCompatActivity {
         currentNote.setTimestamp();
 
         currentNote.setImagePaths(new ArrayList<>(imagePaths));
+        currentNote.setPdfPaths(pdfPaths);
+        currentNote.setAudioPaths(audioPaths);
+
 
         if (currentNote.getId() == 0) {
             dbHelper.insertNote(currentNote);
@@ -437,7 +810,23 @@ public class InputNoteActivity extends AppCompatActivity {
             }
         }
 
+        if (currentNote.getPdfPaths() != null) {
+            for (String path : currentNote.getPdfPaths()) {
+                File file = new File(path);
+                if (file.exists()) {
+                    addPdfToContainer(Uri.fromFile(file));
+                }
+            }
+        }
 
-        makeCheckboxesClickable();
+        if(currentNote.getAudioPaths() != null) {
+            for (String path : currentNote.getAudioPaths()) {
+                File file = new File(path);
+                if (file.exists()) {
+                    audioPaths.add(path);
+                    addAudioToContainer(Uri.fromFile(file));
+                }
+            }
+        }
     }
 }

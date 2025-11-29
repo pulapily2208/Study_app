@@ -22,12 +22,15 @@ public class Note implements Parcelable {
 
     // NEW: danh sách nhiều ảnh
     private List<String> imagePaths = new ArrayList<>();
+    private List<String> pdfPaths = new ArrayList<>();
+
+    private List<String> audioPaths = new ArrayList<>();
 
     public Note() {}
 
     // Constructor đầy đủ
     public Note(int id, int user_id, String ma_hp, String title, String body, int pinned,
-                String color_tag, String created_at, String updated_at, List<String> imagePaths) {
+                String color_tag, String created_at, String updated_at, List<String> imagePaths, List<String> pdfPaths, List<String> audioPaths) {
 
         this.id = id;
         this.user_id = user_id;
@@ -39,6 +42,8 @@ public class Note implements Parcelable {
         this.created_at = created_at;
         this.updated_at = updated_at;
         this.imagePaths = imagePaths;
+        this.pdfPaths = pdfPaths;
+        this.audioPaths = audioPaths;
     }
 
     // Constructor Parcel
@@ -56,6 +61,12 @@ public class Note implements Parcelable {
         // NEW: đọc danh sách ảnh
         imagePaths = new ArrayList<>();
         in.readStringList(imagePaths);
+
+        pdfPaths = new ArrayList<>();
+        in.readStringList(pdfPaths);
+
+        audioPaths = new ArrayList<>();
+        in.readStringList(audioPaths);
     }
 
     public static final Creator<Note> CREATOR = new Creator<Note>() {
@@ -108,10 +119,33 @@ public class Note implements Parcelable {
         this.imagePaths = imagePaths;
     }
 
+    public List<String> getPdfPaths() {
+        return pdfPaths;
+    }
+
+    public void setPdfPaths(List<String> pdfPaths) {
+        this.pdfPaths = pdfPaths;
+    }
+
+    public List<String> getAudioPaths() {
+        return audioPaths;
+    }
+
+    public void setAudioPaths(List<String> audioPaths) {
+        this.audioPaths = audioPaths;
+    }
+
     public void addImagePath(String imagePath) {
         if (this.imagePaths == null) this.imagePaths = new ArrayList<>();
         this.imagePaths.add(imagePath);
     }
+
+    public void addPdfPath(String pdfPath) {
+        this.pdfPaths.add(pdfPath); }
+
+    public void addAudioPath(String audioPath) {
+        this.audioPaths.add(audioPath); }
+
 
     // ====================== Parcelable ==========================
 
@@ -129,6 +163,8 @@ public class Note implements Parcelable {
 
         // NEW: ghi danh sách ảnh
         dest.writeStringList(imagePaths);
+        dest.writeStringList(pdfPaths);
+        dest.writeStringList(audioPaths);
     }
 
     @Override

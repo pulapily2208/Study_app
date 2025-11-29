@@ -70,9 +70,9 @@ public class NotesActivity extends AppCompatActivity {
             notesAdapter = new NotesAdapter(notesList, this);
 
             notesAdapter.setOnNoteClickListener(note -> {
-                Intent intent = new Intent(NotesActivity.this, NotesDetailActivity.class);
-                // Truyền object Note bằng Parcelable
-                intent.putExtra("note", note);
+
+                Intent intent = new Intent(NotesActivity.this, InputNoteActivity.class);
+                intent.putExtra("note_id", note.getId());
                 startActivity(intent);
             });
 
