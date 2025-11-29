@@ -20,10 +20,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ui.Deadline.MainDeadLine"/>
-        <activity
-            android:name=".ui.Deadline.InputDeadlineActivity"/>
+        <activity android:name=".ui.Deadline.MainDeadLineMonHoc"/>
+        <activity android:name=".ui.Deadline.MainDeadLine"/>
+        <activity android:name=".ui.Deadline.InputDeadlineActivity"/>
         <activity android:name=".ui.Subject.SubjectListActivity"/>
         <activity android:name=".ui.Subject.SubjectAddActivity"/>
         <activity android:name=".ui.Subject.SubjectDetailActivity"/>

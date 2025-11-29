@@ -26,6 +26,7 @@ public class Deadline implements Serializable {
     private String repeat;
     private String note;
     private int weekIndex;
+    private String tenMon;
     private long duration; // Kept for compatibility
 
     public Deadline() {}
@@ -43,6 +44,22 @@ public class Deadline implements Serializable {
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
+
+    public String getReminder() {
+        return reminder;
+    }
+
+    public String getTenMon() {
+        return tenMon;
+    }
+
+    public void setTenMon(String tenMon) {
+        this.tenMon = tenMon;
+    }
+
+    public String getRepeat() {
+        return repeat;
+    }
 
     public int getWeekIndex() { return weekIndex; }
     public void setWeekIndex(int weekIndex) { this.weekIndex = weekIndex; }

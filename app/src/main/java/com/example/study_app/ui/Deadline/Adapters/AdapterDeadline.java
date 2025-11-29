@@ -13,7 +13,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
+import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.ui.Deadline.Models.Deadline;
+import com.example.study_app.ui.Subject.Model.Subject;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,6 +37,11 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
         this.deadlineListener = listener;
     }
 
+    public void updateData(List<Deadline> newDeadlines) {
+        this.deadlines.clear();
+        this.deadlines.addAll(newDeadlines);
+        notifyDataSetChanged();
+    }
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -47,14 +54,22 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
         Deadline deadline = deadlines.get(position);
         if (deadline == null) return;
 
+//         Lấy tên môn
+//        Subject s = new DatabaseHelper(context).getSubjectByMaHp(deadline.getMaHp());
+        String displayTitle = deadline.getTieuDe();
+//        if (s != null && s.tenHp != null) {
+//            displayTitle += " (" + s.tenHp + ")";
+//        }
+
+        holder.tieuDe.setText(displayTitle); // ✅ phải set displayTitle, không phải deadline.getTieuDe()
+
         holder.icon.setImageResource(deadline.getIcon());
-        holder.tieuDe.setText(deadline.getTieuDe());
 
         if (!deadline.isCompleted() && deadline.getNgayKetThuc() != null) {
             long diff = deadline.getNgayKetThuc().getTime() - new Date().getTime();
             holder.tieuDe.setTextColor(diff <= 3600_000 ? Color.RED : Color.BLACK);
         } else {
-             holder.tieuDe.setTextColor(Color.BLACK);
+            holder.tieuDe.setTextColor(Color.BLACK);
         }
 
         holder.checkBox.setOnCheckedChangeListener(null);
@@ -70,7 +85,7 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
             if (deadlineListener != null) {
                 deadlineListener.onStateChanged(deadline, isChecked);
             }
-            notifyItemChanged(holder.getAdapterPosition()); // Refresh the item view
+            notifyItemChanged(holder.getAdapterPosition());
         });
 
         holder.itemView.setOnClickListener(v -> {

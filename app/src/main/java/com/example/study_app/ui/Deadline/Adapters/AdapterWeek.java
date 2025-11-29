@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.DeadlineDao;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Deadline.Models.Week;
 
@@ -87,7 +88,7 @@ public class AdapterWeek extends RecyclerView.Adapter<AdapterWeek.ViewHolder> {
         Week week = weeks.get(position);
         if (week == null) return;
 
-        DatabaseHelper db = new DatabaseHelper(context);
+        DeadlineDao db = new DeadlineDao(context);
         ArrayList<Deadline> deadlines = db.getDeadlinesByWeek(this.maHp, this.subjectStartDate, position);
 
         AdapterDeadline adapterDeadline = new AdapterDeadline(context, deadlines);

@@ -30,14 +30,13 @@ import java.util.Map;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "study_app.db";
-    private static final int DB_VERSION = 11; // Incremented version
+    private static final int DB_VERSION = 11;
 
     private final Context context;
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
     private static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-
-    // Status constants for curriculum display
+    
     public static final String STATUS_NOT_ENROLLED = "NOT_ENROLLED";
     public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
     public static final String STATUS_COMPLETED = "COMPLETED";
@@ -423,179 +422,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // The CASCADE constraint on the enrollments table will automatically remove the corresponding enrollments.
         db.delete("mon_hoc", "ma_hp = ?", new String[]{maHp});
     }
-
-
-//    DEADLINE
-public ArrayList<Deadline> getDeadlinesByWeek(String maHp, Date subjectStartDate, int weekIndex) {
-    ArrayList<Deadline> list = new ArrayList<>();
-    if (subjectStartDate == null) return list;
-
-    SQLiteDatabase db = this.getReadableDatabase();
-
-    Calendar cal = Calendar.getInstance();
-    cal.setTime(subjectStartDate);
-    cal.add(Calendar.WEEK_OF_YEAR, weekIndex);
-    cal.set(Calendar.DAY_OF_WEEK, cal.getFirstDayOfWeek());
-    Date weekStart = cal.getTime();
-
-    cal.add(Calendar.DAY_OF_YEAR, 7);
-    Date weekEnd = cal.getTime();
-
-    String weekStartStr = formatDateTime(weekStart);
-    String weekEndStr = formatDateTime(weekEnd);
-
-    String query = "SELECT * FROM deadline WHERE ma_hp = ? AND (" +
-                   // One-time events within the week
-                   "(repeat_type = 'Sự kiện một lần' AND ngay_bat_dau >= ? AND ngay_bat_dau < ?) OR " +
-                   // Repeating events that started before this week ended
-                   "(repeat_type != 'Sự kiện một lần' AND ngay_bat_dau < ?) " +
-                   ") ORDER BY ngay_bat_dau ASC";
-
-    try (Cursor cursor = db.rawQuery(query, new String[]{maHp, weekStartStr, weekEndStr, weekEndStr})) {
-        if (cursor != null && cursor.moveToFirst()) {
-            do {
-                String repeatType = cursor.getString(cursor.getColumnIndexOrThrow("repeat_type"));
-                Date deadlineStartDate = parseDateTime(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
-
-                boolean shouldAdd = false;
-                if ("Sự kiện một lần".equals(repeatType)) {
-                    shouldAdd = true; // Already filtered by SQL
-                } else if (deadlineStartDate != null) {
-                    if ("Hàng ngày".equals(repeatType)) {
-                        shouldAdd = true; // If it started before week end, it occurs daily.
-                    } else if ("Hàng tuần".equals(repeatType)) {
-                        // Check if the event's day of the week falls within this week
-                        Calendar deadlineCal = Calendar.getInstance();
-                        deadlineCal.setTime(deadlineStartDate);
-                        int eventDayOfWeek = deadlineCal.get(Calendar.DAY_OF_WEEK);
-
-                        Calendar weekCheckCal = Calendar.getInstance();
-                        weekCheckCal.setTime(weekStart);
-
-                        for(int i=0; i<7; i++){
-                            if(weekCheckCal.get(Calendar.DAY_OF_WEEK) == eventDayOfWeek){
-                                shouldAdd = true;
-                                break;
-                            }
-                            weekCheckCal.add(Calendar.DAY_OF_YEAR, 1);
-                        }
-                    }
-                }
-
-                if (shouldAdd) {
-                    Deadline d = new Deadline();
-                    d.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
-                    d.setTieuDe(cursor.getString(cursor.getColumnIndexOrThrow("tieu_de")));
-                    d.setNoiDung(cursor.getString(cursor.getColumnIndexOrThrow("noi_dung")));
-                    d.setNgayBatDau(deadlineStartDate);
-                    d.setNgayKetThuc(parseDateTime(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
-                    d.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
-                    d.setRepeat(repeatType);
-                    d.setReminder(cursor.getString(cursor.getColumnIndexOrThrow("reminder_time")));
-                    d.setIcon(cursor.getInt(cursor.getColumnIndexOrThrow("icon")));
-                    d.setNote(cursor.getString(cursor.getColumnIndexOrThrow("notes")));
-                    d.setWeekIndex(cursor.getInt(cursor.getColumnIndexOrThrow("weekIndex")));
-                    d.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
-                    list.add(d);
-                }
-            } while (cursor.moveToNext());
-        }
-    } catch (Exception e) {
-        Log.e("DatabaseHelper", "Error getting deadlines by week", e);
-    }
-    return list;
-}
-
-    public ArrayList<Deadline> getDeadlinesByMaHp(String maHp) {
-        ArrayList<Deadline> deadlineList = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        // The query should be on the 'deadline' table based on your schema
-        String query = "SELECT * FROM deadline WHERE ma_hp = ?";
-
-        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Deadline deadline = new Deadline();
-                    deadline.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
-                    deadline.setTieuDe(cursor.getString(cursor.getColumnIndexOrThrow("tieu_de")));
-                    deadline.setNoiDung(cursor.getString(cursor.getColumnIndexOrThrow("noi_dung")));
-                    deadline.setNgayBatDau(parseDateTime(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
-                    deadline.setNgayKetThuc(parseDateTime(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
-                    deadline.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
-                    deadline.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
-                    deadline.setRepeat(cursor.getString(cursor.getColumnIndexOrThrow("repeat_type")));
-                    deadline.setReminder(cursor.getString(cursor.getColumnIndexOrThrow("reminder_time")));
-                    deadline.setIcon(cursor.getInt(cursor.getColumnIndexOrThrow("icon")));
-                    deadline.setNote(cursor.getString(cursor.getColumnIndexOrThrow("notes")));
-
-                    deadlineList.add(deadline);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting deadlines for maHp: " + maHp, e);
-        }
-        return deadlineList;
-    }
-
-    public long addDeadline(Deadline deadline, String maHp) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put("ma_hp", maHp);
-        values.put("tieu_de", deadline.getTieuDe());
-        values.put("noi_dung", deadline.getNoiDung());
-        values.put("ngay_bat_dau", formatDateTime(deadline.getNgayBatDau()));
-        values.put("ngay_ket_thuc", formatDateTime(deadline.getNgayKetThuc()));
-        values.put("completed", deadline.isCompleted() ? 1 : 0);
-        values.put("repeat_type", deadline.getRepeatText());
-        values.put("reminder_time", deadline.getReminderText());
-        values.put("icon", deadline.getIcon());
-        values.put("notes", deadline.getNote());
-        values.put("weekIndex", deadline.getWeekIndex());
-
-        try {
-            return db.insertOrThrow("deadline", null, values);
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Failed to add deadline", e);
-            return -1;
-        }
-    }
-
-    public int updateDeadline(Deadline deadline) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-
-        values.put("tieu_de", deadline.getTieuDe());
-        values.put("noi_dung", deadline.getNoiDung());
-        values.put("ngay_bat_dau", formatDateTime(deadline.getNgayBatDau()));
-        values.put("ngay_ket_thuc", formatDateTime(deadline.getNgayKetThuc()));
-        values.put("completed", deadline.isCompleted() ? 1 : 0);
-        values.put("repeat_type", deadline.getRepeatText());
-        values.put("reminder_time", deadline.getReminderText());
-        values.put("icon", deadline.getIcon());
-        values.put("notes", deadline.getNote());
-        values.put("weekIndex", deadline.getWeekIndex());
-
-        return db.update("deadline", values, "id = ?", new String[]{String.valueOf(deadline.getId())});
-    }
-
-
-
-    public boolean deleteDeadline(int id) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        int rows = 0;
-        try {
-            rows = db.delete("deadline", "id = ?", new String[]{String.valueOf(id)});
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error deleting deadline", e);
-        }
-        return rows > 0;
-    }
-
-
-
-
-
 
 
     // NOTE
