@@ -8,10 +8,8 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import com.example.study_app.R;
-import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Notes.Model.Note;
-import com.example.study_app.ui.Subject.Model.Subject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,10 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -91,7 +87,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    private Date parseDate(String dateStr) {
+    // Package-private so DAOs can use them
+    Date parseDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return null;
         try {
             return dateFormat.parse(dateStr);
@@ -100,7 +97,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    private Date parseTime(String timeStr) {
+    Date parseTime(String timeStr) {
         if (timeStr == null || timeStr.isEmpty()) return null;
         try {
             return timeFormat.parse(timeStr);
@@ -109,16 +106,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    private String formatDate(Date date) {
+    String formatDate(Date date) {
         if (date == null) return null;
         return dateFormat.format(date);
     }
 
-    private String formatTime(Date time) {
+    String formatTime(Date time) {
         if (time == null) return null;
         return timeFormat.format(time);
     }
-     private Date parseDateTime(String dateTimeStr) {
+
+     Date parseDateTime(String dateTimeStr) {
         if (dateTimeStr == null || dateTimeStr.isEmpty()) return null;
         try {
             return dateTimeFormat.parse(dateTimeStr);
@@ -128,11 +126,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    private String formatDateTime(Date date) {
+    String formatDateTime(Date date) {
         if (date == null) return null;
         return dateTimeFormat.format(date);
     }
-
 
     private void runSqlFromRaw(SQLiteDatabase db, int resId) {
         try (InputStream inputStream = context.getResources().openRawResource(resId);
@@ -161,584 +158,220 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    // SUBJECT
-    public ArrayList<String> getAllSemesterNames() {
-        ArrayList<String> semesterNames = new ArrayList<>();
-        String selectQuery = "SELECT ten_hoc_ky FROM hoc_ky ORDER BY nam_hoc DESC, id DESC";
+    // NOTE METHODS
+    public ArrayList<Note> getAllNotes() {
+        ArrayList<Note> notes = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        try (Cursor cursor = db.rawQuery(selectQuery, null)) {
+        Cursor cursor = null;
+        try {
+            cursor = db.rawQuery("SELECT * FROM notes ORDER BY id DESC", null);
             if (cursor != null && cursor.moveToFirst()) {
-                int tenHocKyIndex = cursor.getColumnIndexOrThrow("ten_hoc_ky");
                 do {
-                    semesterNames.add(cursor.getString(tenHocKyIndex));
+                    Note note = new Note();
+                    note.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                    note.setUser_id(cursor.getInt(cursor.getColumnIndexOrThrow("user_id")));
+                    note.setMa_hp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
+                    note.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
+                    note.setBody(cursor.getString(cursor.getColumnIndexOrThrow("body")));
+                    note.setPinned(cursor.getInt(cursor.getColumnIndexOrThrow("pinned")));
+                    note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
+                    note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
+                    note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
+                    note.setImagePaths(getNoteImages(note.getId()));
+                    note.setPdfPaths(getNotePdfs(note.getId()));
+                    note.setAudioPaths(getNoteAudios(note.getId()));
+                    notes.add(note);
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting semesters", e);
-        }
-        return semesterNames;
-    }
-
-    public int getSemesterIdByName(String semesterName) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        int semesterId = -1;
-        if (semesterName == null) return semesterId;
-        try (Cursor cursor = db.query("hoc_ky", new String[]{"id"}, "ten_hoc_ky = ?", new String[]{semesterName}, null, null, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                semesterId = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting semester ID by name", e);
-        }
-        return semesterId;
-    }
-
-    public ArrayList<Subject> getSubjectsBySemester(String semesterName) {
-        ArrayList<Subject> subjectList = new ArrayList<>();
-        int semesterId = getSemesterIdByName(semesterName);
-        if (semesterId == -1) return subjectList;
-
-        String selectQuery = "SELECT m.* FROM mon_hoc m " +
-                "INNER JOIN enrollments e ON m.ma_hp = e.ma_hp " +
-                "WHERE e.hoc_ky = ?";
-
-        SQLiteDatabase db = this.getReadableDatabase();
-        try (Cursor cursor = db.rawQuery(selectQuery, new String[]{String.valueOf(semesterId)})) {
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Subject subject = new Subject();
-                    subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
-                    subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
-                    subject.soTc = cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi"));
-                    subject.loaiMon = cursor.getString(cursor.getColumnIndexOrThrow("loai_hp"));
-                    subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
-                    subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
-                    subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
-                    subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
-                    subject.gioBatDau = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
-                    subject.gioKetThuc = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
-                    subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
-                    subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
-                    subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
-                    subject.tenHk = semesterName;
-                    subjectList.add(subject);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting subjects by semester", e);
-        }
-        return subjectList;
-    }
-
-    public Subject getSubjectByMaHp(String maHp) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Subject subject = null;
-        String query = "SELECT * FROM mon_hoc WHERE ma_hp = ?";
-        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
-            if (cursor != null && cursor.moveToFirst()) {
-                subject = new Subject();
-                subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
-                subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
-                subject.soTc = cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi"));
-                subject.loaiMon = cursor.getString(cursor.getColumnIndexOrThrow("loai_hp"));
-                subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
-                subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
-                subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
-                subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
-                subject.gioBatDau = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
-                subject.gioKetThuc = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
-                subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
-                subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
-                subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting subject detail", e);
-        }
-        return subject;
-    }
-
-    public long addSubject(Subject subject) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        long newRowId = -1;
-
-        int semesterId = getSemesterIdByName(subject.tenHk);
-        if (semesterId == -1) {
-            Log.e("DatabaseHelper", "Cannot add subject. Semester not found: " + subject.tenHk);
-            return -1;
-        }
-
-        ContentValues values = new ContentValues();
-        values.put("ma_hp", subject.maHp);
-        values.put("ten_hp", subject.tenHp);
-        values.put("so_tin_chi", subject.soTc);
-        values.put("loai_hp", subject.loaiMon);
-        values.put("giang_vien", subject.tenGv);
-        values.put("phong_hoc", subject.phongHoc);
-        values.put("ngay_bat_dau", formatDate(subject.ngayBatDau));
-        values.put("ngay_ket_thuc", formatDate(subject.ngayKetThuc));
-        values.put("gio_bat_dau", formatTime(subject.gioBatDau));
-        values.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
-        values.put("ghi_chu", subject.ghiChu);
-        values.put("color_tag", subject.mauSac);
-        values.put("so_tuan", subject.soTuan);
-        // We don't save hoc_ky directly in mon_hoc table as per original schema
-        // It is managed via the enrollments table.
-
-        db.beginTransaction();
-        try {
-            newRowId = db.insertOrThrow("mon_hoc", null, values);
-
-            // Now, create the enrollment
-            if (newRowId != -1) {
-                enrollSubjectInSemester(subject.maHp, semesterId);
-            }
-
-            db.setTransactionSuccessful();
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Failed to add subject or enrollment", e);
-            newRowId = -1; // Ensure failure is reported
+            Log.e("DatabaseHelper", "Lỗi khi lấy tất cả ghi chú", e);
         } finally {
-            db.endTransaction();
-        }
-        return newRowId;
-    }
-
-    // NEW: Add or only enroll if subject code already exists
-    public long addOrEnrollSubject(Subject subject) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        long resultId = -1;
-
-        int semesterId = getSemesterIdByName(subject.tenHk);
-        if (semesterId == -1) {
-            Log.e("DatabaseHelper", "Semester not found: " + subject.tenHk);
-            return -1;
-        }
-
-        Subject existing = getSubjectByMaHp(subject.maHp);
-        db.beginTransaction();
-        try {
-            if (existing == null) {
-                // Insert new subject (same as addSubject but consolidated here)
-                ContentValues values = new ContentValues();
-                values.put("ma_hp", subject.maHp);
-                values.put("ten_hp", subject.tenHp);
-                values.put("so_tin_chi", subject.soTc);
-                values.put("loai_hp", subject.loaiMon);
-                values.put("giang_vien", subject.tenGv);
-                values.put("phong_hoc", subject.phongHoc);
-                values.put("ngay_bat_dau", formatDate(subject.ngayBatDau));
-                values.put("ngay_ket_thuc", formatDate(subject.ngayKetThuc));
-                values.put("gio_bat_dau", formatTime(subject.gioBatDau));
-                values.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
-                values.put("ghi_chu", subject.ghiChu);
-                values.put("color_tag", subject.mauSac);
-                values.put("so_tuan", subject.soTuan);
-
-                resultId = db.insertOrThrow("mon_hoc", null, values);
-            } else {
-                // Subject already exists in curriculum → only optionally update personal fields
-                ContentValues update = new ContentValues();
-                if (subject.tenGv != null && !subject.tenGv.isEmpty()) update.put("giang_vien", subject.tenGv);
-                if (subject.phongHoc != null && !subject.phongHoc.isEmpty()) update.put("phong_hoc", subject.phongHoc);
-                if (subject.ngayBatDau != null) update.put("ngay_bat_dau", formatDate(subject.ngayBatDau));
-                if (subject.ngayKetThuc != null) update.put("ngay_ket_thuc", formatDate(subject.ngayKetThuc));
-                if (subject.gioBatDau != null) update.put("gio_bat_dau", formatTime(subject.gioBatDau));
-                if (subject.gioKetThuc != null) update.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
-                if (subject.ghiChu != null) update.put("ghi_chu", subject.ghiChu);
-                if (subject.mauSac != null) update.put("color_tag", subject.mauSac);
-                if (subject.soTuan > 0) update.put("so_tuan", subject.soTuan);
-                if (update.size() > 0) {
-                    db.update("mon_hoc", update, "ma_hp = ?", new String[]{subject.maHp});
-                }
-                resultId = 1; // mark success
+            if (cursor != null) {
+                cursor.close();
             }
-
-            // Ensure enrollment
-            enrollSubjectInSemester(subject.maHp, semesterId);
-
-            db.setTransactionSuccessful();
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "addOrEnrollSubject failed", e);
-            resultId = -1;
-        } finally {
-            db.endTransaction();
         }
-        return resultId;
+        return notes;
     }
 
-    public void enrollSubjectInSemester(String maHp, int semesterId) {
+    public long insertNote(Note note) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("user_id", 1);
-        values.put("ma_hp", maHp);
-        values.put("hoc_ky", semesterId);
-        // Use insert with conflict algorithm to avoid duplicates if user tries to add the same subject to the same semester
-        db.insertWithOnConflict("enrollments", null, values, SQLiteDatabase.CONFLICT_IGNORE);
-    }
+        values.put("user_id", note.getUser_id());
+        values.put("ma_hp", note.getMa_hp());
+        values.put("title", note.getTitle());
+        values.put("body", note.getBody());
+        values.put("pinned", note.getPinned());
+        values.put("color_tag", note.getColor_tag());
+        values.put("created_at", System.currentTimeMillis());
+        values.put("updated_at", System.currentTimeMillis());
+        long noteId = db.insert("notes", null, values);
+        if (note.getImagePaths() != null) {
+            for (String path : note.getImagePaths()) {
+                ContentValues imgValue = new ContentValues();
+                imgValue.put("note_id", noteId);
+                imgValue.put("image_path", path);
+                db.insert("note_images", null, imgValue);
 
-    public int updateSubject(Subject subject) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        int rowsAffected = 0;
-        int semesterId = getSemesterIdByName(subject.tenHk);
-        if (semesterId == -1) {
-            Log.e("DatabaseHelper", "Cannot update subject. Semester not found: " + subject.tenHk);
-            return 0;
+            }
         }
+
+        if (note.getPdfPaths() != null){
+            for (String path : note.getPdfPaths()){
+                ContentValues pdfValue = new ContentValues();
+                pdfValue.put("note_id", noteId);
+                pdfValue.put("pdf_path", path);
+                db.insert("note_pdfs", null, pdfValue);
+            }
+        }
+
+        if (note.getAudioPaths() != null){
+            for (String path : note.getAudioPaths()){
+                ContentValues audioValue = new ContentValues();
+                audioValue.put("note_id", noteId);
+                audioValue.put("audio_path", path);
+                db.insert("note_audios", null, audioValue);
+            }
+        }
+
+        return noteId;
+    }
+    public Note getNoteById(int noteId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = null;
+        Note note = null;
+        try {
+            cursor = db.rawQuery("SELECT * FROM notes WHERE id = ?",
+                    new String[]{String.valueOf(noteId)});
+            if (cursor != null && cursor.moveToFirst()) {
+                note = new Note();
+                note.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                note.setUser_id(cursor.getInt(cursor.getColumnIndexOrThrow("user_id")));
+                note.setMa_hp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
+                note.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
+                note.setBody(cursor.getString(cursor.getColumnIndexOrThrow("body")));
+                note.setPinned(cursor.getInt(cursor.getColumnIndexOrThrow("pinned")));
+                note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
+                note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
+                note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
+                note.setImagePaths(getNoteImages(note.getId()));
+                note.setPdfPaths(getNotePdfs(note.getId()));
+                note.setAudioPaths(getNoteAudios(note.getId()));
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Lỗi khi lấy ghi chú theo ID", e);
+            return null; // Trả về null nếu có lỗi
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return note;
+    }
+    public boolean updateNote(Note note) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // Tự động cập nhật thời gian
+        note.setTimestamp();
 
         ContentValues values = new ContentValues();
-        values.put("ten_hp", subject.tenHp);
-        values.put("so_tin_chi", subject.soTc);
-        values.put("loai_hp", subject.loaiMon);
-        values.put("giang_vien", subject.tenGv);
-        values.put("phong_hoc", subject.phongHoc);
-        values.put("ngay_bat_dau", formatDate(subject.ngayBatDau));
-        values.put("ngay_ket_thuc", formatDate(subject.ngayKetThuc));
-        values.put("gio_bat_dau", formatTime(subject.gioBatDau));
-        values.put("gio_ket_thuc", formatTime(subject.gioKetThuc));
-        values.put("ghi_chu", subject.ghiChu);
-        values.put("color_tag", subject.mauSac);
-        values.put("so_tuan", subject.soTuan);
+        values.put("title", note.getTitle());
+        values.put("body", note.getBody());
+        values.put("pinned", note.getPinned());
+        values.put("color_tag", note.getColor_tag());
+        values.put("created_at", note.getCreated_at());
+        values.put("updated_at", note.getUpdated_at());
+        values.put("ma_hp", note.getMa_hp());
+        values.put("user_id", note.getUser_id());
+        int rows = db.update("notes", values, "id=?", new String[]{String.valueOf(note.getId())});
 
-        db.beginTransaction();
-        try {
-            rowsAffected = db.update("mon_hoc", values, "ma_hp = ?", new String[]{subject.maHp});
+        // XÓA ảnh cũ
+        db.delete("note_images", "note_id=?", new String[]{String.valueOf(note.getId())});
 
-            // Update enrollment: remove old ones and add the new one to handle semester changes
-            db.delete("enrollments", "ma_hp = ?", new String[]{subject.maHp});
-            enrollSubjectInSemester(subject.maHp, semesterId);
-
-            db.setTransactionSuccessful();
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Failed to update subject or enrollment", e);
-            rowsAffected = 0; // Ensure failure is reported
-        } finally {
-            db.endTransaction();
+        // THÊM ảnh mới
+        if (note.getImagePaths() != null) {
+            for (String path : note.getImagePaths()) {
+                ContentValues img = new ContentValues();
+                img.put("note_id", note.getId());
+                img.put("image_path", path);
+                img.put("created_at", System.currentTimeMillis());
+                db.insert("note_images", null, img);
+            }
         }
-        return rowsAffected;
+
+        if (note.getPdfPaths() != null) {
+            for (String path : note.getPdfPaths()) {
+                ContentValues pdf = new ContentValues();
+                pdf.put("note_id", note.getId());
+                pdf.put("pdf_path", path);
+                pdf.put("created_at", System.currentTimeMillis());
+                db.insert("note_pdfs", null, pdf);
+            }
+        }
+
+        if(note.getAudioPaths() != null) {
+            for (String path : note.getAudioPaths()) {
+                ContentValues audio = new ContentValues();
+                audio.put("note_id", note.getId());
+                audio.put("audio_path", path);
+                audio.put("created_at", System.currentTimeMillis());
+                db.insert("note_audios", null, audio);
+            }
+        }
+
+        return rows > 0;
     }
 
-    public void deleteSubject(String maHp) {
+    public boolean deleteNote(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
-        // The CASCADE constraint on the enrollments table will automatically remove the corresponding enrollments.
-        db.delete("mon_hoc", "ma_hp = ?", new String[]{maHp});
+        int rowsDeleted = db.delete("notes", "id = ?", new String[]{String.valueOf(id)});
+        return rowsDeleted > 0;
     }
 
-    // CHƯƠNG TRÌNH ĐÀO TẠO
-    public Map<String, Integer> getFacultiesMap() {
-        Map<String, Integer> faculties = new HashMap<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        try (Cursor cursor = db.query("khoa", new String[]{"id", "ten_khoa"}, null, null, null, null, "ten_khoa ASC")) {
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    faculties.put(cursor.getString(cursor.getColumnIndexOrThrow("ten_khoa")),
-                            cursor.getInt(cursor.getColumnIndexOrThrow("id")));
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting faculties map", e);
-        }
-        return faculties;
-    }
-
-    // 1. Lấy danh sách tên các nhóm để hiển thị lên Header/Menu
-    public List<String> getAllCourseGroups() {
-        List<String> groups = new ArrayList<>();
+    public List<String> getNoteImages(int noteId) {
+        List<String> images = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
 
-        // Lấy trực tiếp từ bảng định nghĩa nhóm (hoc_phan_tu_chon)
-        // Sắp xếp theo ID để thứ tự hiển thị logic (Đại cương -> Chuyên ngành -> Tốt nghiệp)
-        String query = "SELECT ten_nhom FROM hoc_phan_tu_chon ORDER BY id ASC";
+        Cursor cursor = db.rawQuery("SELECT image_path FROM note_images WHERE note_id=?",
+                new String[]{String.valueOf(noteId)});
 
-        try (Cursor cursor = db.rawQuery(query, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    String groupName = cursor.getString(0);
-                    if (groupName != null && !groupName.isEmpty()) {
-                        groups.add(groupName);
-                    }
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting course groups", e);
+        if (cursor.moveToFirst()) {
+            do {
+                images.add(cursor.getString(0));
+            } while (cursor.moveToNext());
         }
-        return groups;
+        cursor.close();
+        return images;
     }
 
-    // 2. Lấy danh sách môn học kèm theo Tên Nhóm (Thay vì số ID)
-    public List<Curriculum> getAllCoursesForCurriculum() {
-        List<Curriculum> courses = new ArrayList<>();
+    public List<String> getNotePdfs(int noteId){
+        List<String> pdfs = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
 
-        // CÂU TRUY VẤN QUAN TRỌNG:
-        // Kết nối bảng mon_hoc (m) với bảng hoc_phan_tu_chon (h)
-        // Nếu m.nhom_tu_chon khớp với h.id, ta lấy h.ten_nhom
-        String query = "SELECT m.*, h.ten_nhom AS ten_nhom_day_du " +
-                "FROM mon_hoc m " +
-                "LEFT JOIN hoc_phan_tu_chon h ON m.nhom_tu_chon = h.id " +
-                "ORDER BY m.hoc_ky ASC, m.ma_hp ASC";
+        Cursor cursor = db.rawQuery("SELECT pdf_path FROM note_pdfs WHERE note_id=?",
+                new String[]{String.valueOf(noteId)});
 
-        try (Cursor cursor = db.rawQuery(query, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Curriculum course = new Curriculum();
-
-                    // Các trường cơ bản
-                    course.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
-                    course.setTenHp(cursor.getString(cursor.getColumnIndexOrThrow("ten_hp")));
-                    course.setSoTinChi(cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi")));
-                    course.setSoTietLyThuyet(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_ly_thuyet")));
-                    course.setSoTietThucHanh(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_thuc_hanh")));
-                    course.setHocKy(cursor.getInt(cursor.getColumnIndexOrThrow("hoc_ky")));
-                    course.setLoaiHp(cursor.getString(cursor.getColumnIndexOrThrow("loai_hp")));
-                    course.setKhoaId(cursor.getInt(cursor.getColumnIndexOrThrow("khoa_id")));
-
-                    // XỬ LÝ NHÓM TỰ CHỌN (LOGIC QUAN TRỌNG)
-                    // Lấy tên nhóm từ bảng JOIN (cột ten_nhom_day_du)
-                    int nameIndex = cursor.getColumnIndex("ten_nhom_day_du");
-                    String realGroupName = "";
-
-                    if (nameIndex != -1) {
-                        realGroupName = cursor.getString(nameIndex);
-                    }
-
-                    // Nếu lấy được tên nhóm từ bảng join thì set vào
-                    if (realGroupName != null && !realGroupName.isEmpty()) {
-                        course.setNhomTuChon(realGroupName);
-                    } else {
-                        // Trường hợp môn bắt buộc (nhóm là NULL) hoặc không khớp ID
-                        // Ta lấy giá trị gốc, hoặc để trống nếu null
-                        String originalValue = cursor.getString(cursor.getColumnIndexOrThrow("nhom_tu_chon"));
-                        course.setNhomTuChon(originalValue != null ? originalValue : "");
-                    }
-
-                    courses.add(course);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting all courses for curriculum", e);
+        if (cursor.moveToFirst()) {
+            do {
+                pdfs.add(cursor.getString(0));
+            } while (cursor.moveToNext());
         }
-        return courses;
+        cursor.close();
+        return pdfs;
     }
 
-    // NEW: Map enrolled subjects for a given user
-    public Map<String, Integer> getEnrolledSubjectsMap(int userId) {
-        Map<String, Integer> map = new HashMap<>();
+    public List<String> getNoteAudios(int noteId) {
+        List<String> audios = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        String sql = "SELECT ma_hp, hoc_ky FROM enrollments WHERE user_id = ?";
-        try (Cursor c = db.rawQuery(sql, new String[]{String.valueOf(userId)})) {
-            if (c.moveToFirst()) {
-                do {
-                    map.put(c.getString(c.getColumnIndexOrThrow("ma_hp")),
-                            c.getInt(c.getColumnIndexOrThrow("hoc_ky")));
-                } while (c.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "getEnrolledSubjectsMap error", e);
+
+        Cursor cursor = db.rawQuery("SELECT audio_path FROM note_audios WHERE note_id=?",
+                new String[]{String.valueOf(noteId)});
+
+        if (cursor.moveToFirst()) {
+            do {
+                audios.add(cursor.getString(0));
+            } while (cursor.moveToNext());
         }
-        return map;
-    }
-
-    // NEW: Compute status based on enrollment and end date
-    private String computeSubjectStatus(boolean enrolled, Date endDate) {
-        if (!enrolled) return STATUS_NOT_ENROLLED;
-        if (endDate != null) {
-            Date today = new Date();
-            if (endDate.before(today)) return STATUS_COMPLETED;
-            return STATUS_IN_PROGRESS;
-        }
-        return STATUS_IN_PROGRESS;
-    }
-
-    // NEW: Get curriculum with status for a given user
-    public List<Curriculum> getAllCoursesForCurriculumWithStatus(int userId) {
-        List<Curriculum> courses = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Map<String, Integer> enrolledMap = getEnrolledSubjectsMap(userId);
-
-        String query = "SELECT m.*, h.ten_nhom AS ten_nhom_day_du " +
-                "FROM mon_hoc m " +
-                "LEFT JOIN hoc_phan_tu_chon h ON m.nhom_tu_chon = h.id " +
-                "ORDER BY m.hoc_ky ASC, m.ma_hp ASC";
-
-        try (Cursor cursor = db.rawQuery(query, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Curriculum course = new Curriculum();
-                    course.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
-                    course.setTenHp(cursor.getString(cursor.getColumnIndexOrThrow("ten_hp")));
-                    course.setSoTinChi(cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi")));
-                    course.setSoTietLyThuyet(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_ly_thuyet")));
-                    course.setSoTietThucHanh(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_thuc_hanh")));
-                    course.setHocKy(cursor.getInt(cursor.getColumnIndexOrThrow("hoc_ky")));
-                    course.setLoaiHp(cursor.getString(cursor.getColumnIndexOrThrow("loai_hp")));
-                    course.setKhoaId(cursor.getInt(cursor.getColumnIndexOrThrow("khoa_id")));
-
-                    // FIX: Safely get the column index before retrieving the string
-                    int nameIndex = cursor.getColumnIndex("ten_nhom_day_du");
-                    String realGroupName = null;
-                    if (nameIndex != -1) {
-                        realGroupName = cursor.getString(nameIndex);
-                    }
-
-                    if (realGroupName != null && !realGroupName.isEmpty()) {
-                        course.setNhomTuChon(realGroupName);
-                    } else {
-                        String originalValue = cursor.getString(cursor.getColumnIndexOrThrow("nhom_tu_chon"));
-                        course.setNhomTuChon(originalValue != null ? originalValue : "");
-                    }
-
-                    String endDateStr = cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"));
-                    Date endDate = parseDate(endDateStr);
-
-                    boolean enrolled = enrolledMap.containsKey(course.getMaHp());
-                    String status = computeSubjectStatus(enrolled, endDate);
-
-                    // Inject status via reflection to Curriculum if available
-                    try {
-                        // If Curriculum has setStatus, call it (newer version supports it)
-                        Curriculum.class.getMethod("setStatus", String.class).invoke(course, status);
-                    } catch (Exception ignored) {
-                        // Older Curriculum class without status -> ignore
-                    }
-
-                    courses.add(course);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getAllCoursesForCurriculumWithStatus", e);
-        }
-        return courses;
-    }
-
-    /**
-     * Searches for subject codes (ma_hp) in the curriculum that start with a given prefix.
-     * This is used for the AutoCompleteTextView suggestions.
-     * @param prefix The prefix to search for.
-     * @return A list of matching subject codes.
-     */
-    public List<String> searchSubjectCodes(String prefix) {
-        List<String> subjectCodes = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        // The LIKE operator with '%' will find any values that start with the prefix.
-        // The LIMIT 20 is to avoid returning too many results.
-        String query = "SELECT ma_hp FROM mon_hoc WHERE ma_hp LIKE ? ORDER BY ma_hp LIMIT 20";
-        try (Cursor cursor = db.rawQuery(query, new String[]{prefix + "%"})) {
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    subjectCodes.add(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error searching subject codes", e);
-        }
-        return subjectCodes;
-    }
-
-    /**
-     * Retrieves the details of a specific course from the base curriculum table (mon_hoc).
-     * This is used to auto-fill the subject creation form.
-     * @param maHp The course code to look for.
-     * @return A Curriculum object with the course details, or null if not found.
-     */
-    public Curriculum getCurriculumDetailsByMaHp(String maHp) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Curriculum curriculum = null;
-        // UPDATED QUERY: Join with hoc_phan_tu_chon to get the group name
-        String query = "SELECT m.*, h.ten_nhom AS ten_nhom_day_du " +
-                "FROM mon_hoc m " +
-                "LEFT JOIN hoc_phan_tu_chon h ON m.nhom_tu_chon = h.id " +
-                "WHERE m.ma_hp = ?";
-
-        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
-            if (cursor != null && cursor.moveToFirst()) {
-                curriculum = new Curriculum();
-                curriculum.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
-                curriculum.setTenHp(cursor.getString(cursor.getColumnIndexOrThrow("ten_hp")));
-                curriculum.setSoTinChi(cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi")));
-                curriculum.setSoTietLyThuyet(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_ly_thuyet")));
-                curriculum.setSoTietThucHanh(cursor.getInt(cursor.getColumnIndexOrThrow("so_tiet_thuc_hanh")));
-                curriculum.setHocKy(cursor.getInt(cursor.getColumnIndexOrThrow("hoc_ky")));
-                curriculum.setLoaiHp(cursor.getString(cursor.getColumnIndexOrThrow("loai_hp")));
-                curriculum.setKhoaId(cursor.getInt(cursor.getColumnIndexOrThrow("khoa_id")));
-
-                // Get the full group name from the join
-                int nameIndex = cursor.getColumnIndex("ten_nhom_day_du");
-                String realGroupName = null;
-                if (nameIndex != -1) {
-                    realGroupName = cursor.getString(nameIndex);
-                }
-
-                if (realGroupName != null && !realGroupName.isEmpty()) {
-                    curriculum.setNhomTuChon(realGroupName);
-                } else {
-                    // Fallback for compulsory subjects or if the ID doesn't match
-                    curriculum.setNhomTuChon(""); // Set to empty string if not a choice group
-                }
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting curriculum details by maHp", e);
-        }
-        return curriculum;
-    }
-    /**
-     * Retrieves the list of prerequisite course codes for a given subject.
-     * @param maHp The course code to check.
-     * @return A list of prerequisite course codes.
-     */
-    public List<String> getPrerequisites(String maHp) {
-        List<String> prerequisites = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        String query = "SELECT ma_hp_tien_quyet FROM hoc_phan_tien_quyet WHERE ma_hp = ?";
-        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
-            if (cursor != null && cursor.moveToFirst()) {
-                int preReqIndex = cursor.getColumnIndexOrThrow("ma_hp_tien_quyet");
-                do {
-                    prerequisites.add(cursor.getString(preReqIndex));
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting prerequisites for " + maHp, e);
-        }
-        return prerequisites;
-    }
-
-    /**
-     * Checks if all prerequisites for a given course have been COMPLETED (status = STATUS_COMPLETED).
-     * @param maHp The course code to check.
-     * @param userId The ID of the user (currently hardcoded as 1 in usage).
-     * @return True if all prerequisites are completed or if there are no prerequisites. False otherwise.
-     */
-    public boolean checkPrerequisiteStatus(String maHp, int userId) {
-        List<String> prerequisites = getPrerequisites(maHp);
-        if (prerequisites.isEmpty()) {
-            return true; // No prerequisites, so condition is met.
-        }
-
-        // Lấy danh sách các môn đã đăng ký của user (bao gồm cả end date)
-        Map<String, Integer> enrolledMap = getEnrolledSubjectsMap(userId);
-
-        for (String preReqMaHp : prerequisites) {
-            if (!enrolledMap.containsKey(preReqMaHp)) {
-                // Môn tiên quyết chưa từng được đăng ký/học
-                return false;
-            }
-
-            // Môn tiên quyết đã đăng ký, kiểm tra trạng thái hoàn thành
-            Subject preReqSubject = getSubjectByMaHp(preReqMaHp);
-
-            // Nếu không tìm thấy môn học hoặc ngày kết thúc chưa có, coi như chưa hoàn thành
-            if (preReqSubject == null || preReqSubject.ngayKetThuc == null) {
-                return false;
-            }
-
-            // Kiểm tra trạng thái: chỉ cần là STATUS_COMPLETED mới được chấp nhận
-            String status = computeSubjectStatus(true, preReqSubject.ngayKetThuc);
-            if (!status.equals(STATUS_COMPLETED)) {
-                Log.d("DatabaseHelper", "Prerequisite " + preReqMaHp + " is not completed. Status: " + status);
-                return false;
-            }
-        }
-
-        return true; // Tất cả các môn tiên quyết đều đã hoàn thành.
+        cursor.close();
+        return audios;
     }
 }
