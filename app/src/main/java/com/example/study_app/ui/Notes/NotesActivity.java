@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import com.example.study_app.R;
-import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.NotesDao;
 import com.example.study_app.ui.Notes.Adapters.NotesAdapter;
 import com.example.study_app.ui.Notes.Model.Note;
 
@@ -28,7 +28,7 @@ public class NotesActivity extends AppCompatActivity {
     private ImageView btnBack;
     private NotesAdapter notesAdapter;
     private ArrayList<Note> notesList;
-    private DatabaseHelper dbHelper;
+    private NotesDao dbHelper;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -39,7 +39,7 @@ public class NotesActivity extends AppCompatActivity {
         emptyImage = findViewById(R.id.emptyImage);
         btnAdd = findViewById(R.id.btnAdd);
         btnBack = findViewById(R.id.btnBack);
-        dbHelper = new DatabaseHelper(this);
+        dbHelper = new NotesDao(this);
 
         recyclerView.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
 
