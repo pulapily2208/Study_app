@@ -66,10 +66,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.w("DatabaseHelper", "Upgrading database from version " + oldVersion + " to " + newVersion + ", which will destroy all old data");
         if (oldVersion < 11) {
-             db.execSQL("ALTER TABLE deadline RENAME COLUMN reminder_time TO reminder_time_old;");
-             db.execSQL("ALTER TABLE deadline ADD COLUMN reminder_time TEXT;");
-             db.execSQL("UPDATE deadline SET reminder_time = reminder_time_old;");
-             db.execSQL("ALTER TABLE deadline DROP COLUMN reminder_time_old;");
+            db.execSQL("ALTER TABLE deadline RENAME COLUMN reminder_time TO reminder_time_old;");
+            db.execSQL("ALTER TABLE deadline ADD COLUMN reminder_time TEXT;");
+            db.execSQL("UPDATE deadline SET reminder_time = reminder_time_old;");
+            db.execSQL("ALTER TABLE deadline DROP COLUMN reminder_time_old;");
         }
         db.execSQL("DROP TABLE IF EXISTS hoc_ky");
         db.execSQL("DROP TABLE IF EXISTS khoa");
@@ -116,7 +116,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return timeFormat.format(time);
     }
 
-     Date parseDateTime(String dateTimeStr) {
+    Date parseDateTime(String dateTimeStr) {
         if (dateTimeStr == null || dateTimeStr.isEmpty()) return null;
         try {
             return dateTimeFormat.parse(dateTimeStr);
@@ -156,222 +156,5 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         } catch (IOException e) {
             throw new RuntimeException("Error reading SQL file", e);
         }
-    }
-
-    // NOTE METHODS
-    public ArrayList<Note> getAllNotes() {
-        ArrayList<Note> notes = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        try {
-            cursor = db.rawQuery("SELECT * FROM notes ORDER BY id DESC", null);
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Note note = new Note();
-                    note.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
-                    note.setUser_id(cursor.getInt(cursor.getColumnIndexOrThrow("user_id")));
-                    note.setMa_hp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
-                    note.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
-                    note.setBody(cursor.getString(cursor.getColumnIndexOrThrow("body")));
-                    note.setPinned(cursor.getInt(cursor.getColumnIndexOrThrow("pinned")));
-                    note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
-                    note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
-                    note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
-                    note.setImagePaths(getNoteImages(note.getId()));
-                    note.setPdfPaths(getNotePdfs(note.getId()));
-                    note.setAudioPaths(getNoteAudios(note.getId()));
-                    notes.add(note);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy tất cả ghi chú", e);
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        return notes;
-    }
-
-    public long insertNote(Note note) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put("user_id", note.getUser_id());
-        values.put("ma_hp", note.getMa_hp());
-        values.put("title", note.getTitle());
-        values.put("body", note.getBody());
-        values.put("pinned", note.getPinned());
-        values.put("color_tag", note.getColor_tag());
-        values.put("created_at", System.currentTimeMillis());
-        values.put("updated_at", System.currentTimeMillis());
-        long noteId = db.insert("notes", null, values);
-        if (note.getImagePaths() != null) {
-            for (String path : note.getImagePaths()) {
-                ContentValues imgValue = new ContentValues();
-                imgValue.put("note_id", noteId);
-                imgValue.put("image_path", path);
-                db.insert("note_images", null, imgValue);
-
-            }
-        }
-
-        if (note.getPdfPaths() != null){
-            for (String path : note.getPdfPaths()){
-                ContentValues pdfValue = new ContentValues();
-                pdfValue.put("note_id", noteId);
-                pdfValue.put("pdf_path", path);
-                db.insert("note_pdfs", null, pdfValue);
-            }
-        }
-
-        if (note.getAudioPaths() != null){
-            for (String path : note.getAudioPaths()){
-                ContentValues audioValue = new ContentValues();
-                audioValue.put("note_id", noteId);
-                audioValue.put("audio_path", path);
-                db.insert("note_audios", null, audioValue);
-            }
-        }
-
-        return noteId;
-    }
-    public Note getNoteById(int noteId) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = null;
-        Note note = null;
-        try {
-            cursor = db.rawQuery("SELECT * FROM notes WHERE id = ?",
-                    new String[]{String.valueOf(noteId)});
-            if (cursor != null && cursor.moveToFirst()) {
-                note = new Note();
-                note.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
-                note.setUser_id(cursor.getInt(cursor.getColumnIndexOrThrow("user_id")));
-                note.setMa_hp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
-                note.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
-                note.setBody(cursor.getString(cursor.getColumnIndexOrThrow("body")));
-                note.setPinned(cursor.getInt(cursor.getColumnIndexOrThrow("pinned")));
-                note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
-                note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
-                note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
-                note.setImagePaths(getNoteImages(note.getId()));
-                note.setPdfPaths(getNotePdfs(note.getId()));
-                note.setAudioPaths(getNoteAudios(note.getId()));
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Lỗi khi lấy ghi chú theo ID", e);
-            return null; // Trả về null nếu có lỗi
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        return note;
-    }
-    public boolean updateNote(Note note) {
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        // Tự động cập nhật thời gian
-        note.setTimestamp();
-
-        ContentValues values = new ContentValues();
-        values.put("title", note.getTitle());
-        values.put("body", note.getBody());
-        values.put("pinned", note.getPinned());
-        values.put("color_tag", note.getColor_tag());
-        values.put("created_at", note.getCreated_at());
-        values.put("updated_at", note.getUpdated_at());
-        values.put("ma_hp", note.getMa_hp());
-        values.put("user_id", note.getUser_id());
-        int rows = db.update("notes", values, "id=?", new String[]{String.valueOf(note.getId())});
-
-        // XÓA ảnh cũ
-        db.delete("note_images", "note_id=?", new String[]{String.valueOf(note.getId())});
-
-        // THÊM ảnh mới
-        if (note.getImagePaths() != null) {
-            for (String path : note.getImagePaths()) {
-                ContentValues img = new ContentValues();
-                img.put("note_id", note.getId());
-                img.put("image_path", path);
-                img.put("created_at", System.currentTimeMillis());
-                db.insert("note_images", null, img);
-            }
-        }
-
-        if (note.getPdfPaths() != null) {
-            for (String path : note.getPdfPaths()) {
-                ContentValues pdf = new ContentValues();
-                pdf.put("note_id", note.getId());
-                pdf.put("pdf_path", path);
-                pdf.put("created_at", System.currentTimeMillis());
-                db.insert("note_pdfs", null, pdf);
-            }
-        }
-
-        if(note.getAudioPaths() != null) {
-            for (String path : note.getAudioPaths()) {
-                ContentValues audio = new ContentValues();
-                audio.put("note_id", note.getId());
-                audio.put("audio_path", path);
-                audio.put("created_at", System.currentTimeMillis());
-                db.insert("note_audios", null, audio);
-            }
-        }
-
-        return rows > 0;
-    }
-
-    public boolean deleteNote(int id) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        int rowsDeleted = db.delete("notes", "id = ?", new String[]{String.valueOf(id)});
-        return rowsDeleted > 0;
-    }
-
-    public List<String> getNoteImages(int noteId) {
-        List<String> images = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        Cursor cursor = db.rawQuery("SELECT image_path FROM note_images WHERE note_id=?",
-                new String[]{String.valueOf(noteId)});
-
-        if (cursor.moveToFirst()) {
-            do {
-                images.add(cursor.getString(0));
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        return images;
-    }
-
-    public List<String> getNotePdfs(int noteId){
-        List<String> pdfs = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        Cursor cursor = db.rawQuery("SELECT pdf_path FROM note_pdfs WHERE note_id=?",
-                new String[]{String.valueOf(noteId)});
-
-        if (cursor.moveToFirst()) {
-            do {
-                pdfs.add(cursor.getString(0));
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        return pdfs;
-    }
-
-    public List<String> getNoteAudios(int noteId) {
-        List<String> audios = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        Cursor cursor = db.rawQuery("SELECT audio_path FROM note_audios WHERE note_id=?",
-                new String[]{String.valueOf(noteId)});
-
-        if (cursor.moveToFirst()) {
-            do {
-                audios.add(cursor.getString(0));
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        return audios;
     }
 }
