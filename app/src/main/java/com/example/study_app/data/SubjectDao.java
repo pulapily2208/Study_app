@@ -29,7 +29,7 @@ public class SubjectDao {
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-            Log.e("SubjectDao", "Error getting semesters", e);
+            Log.e("SubjectDao", "Lỗi khi lấy danh sách học kỳ", e);
         }
         return semesterNames;
     }
@@ -43,7 +43,7 @@ public class SubjectDao {
                 semesterId = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
             }
         } catch (Exception e) {
-            Log.e("SubjectDao", "Error getting semester ID by name", e);
+            Log.e("SubjectDao", "Lỗi khi lấy ID học kỳ theo tên", e);
         }
         return semesterId;
     }
@@ -80,7 +80,7 @@ public class SubjectDao {
                 } while (cursor.moveToNext());
             }
         } catch (Exception e) {
-            Log.e("SubjectDao", "Error getting subjects by semester", e);
+            Log.e("SubjectDao", "Lỗi khi lấy danh sách môn học theo học kỳ", e);
         }
         return subjectList;
     }
@@ -88,7 +88,10 @@ public class SubjectDao {
     public Subject getSubjectByMaHp(String maHp) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Subject subject = null;
-        String query = "SELECT * FROM mon_hoc WHERE ma_hp = ?";
+        String query = "SELECT m.*, hk.ten_hoc_ky FROM mon_hoc m " +
+                "INNER JOIN enrollments e ON m.ma_hp = e.ma_hp " +
+                "INNER JOIN hoc_ky hk ON e.hoc_ky = hk.id " +
+                "WHERE m.ma_hp = ?";
         try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
             if (cursor != null && cursor.moveToFirst()) {
                 subject = new Subject();
@@ -105,12 +108,33 @@ public class SubjectDao {
                 subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
                 subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
                 subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
+                subject.tenHk = cursor.getString(cursor.getColumnIndexOrThrow("ten_hoc_ky"));
             }
         } catch (Exception e) {
-            Log.e("SubjectDao", "Error getting subject detail", e);
+            Log.e("SubjectDao", "Lỗi khi lấy chi tiết môn học", e);
         }
         return subject;
     }
+
+    /**
+     * Tìm định nghĩa một môn học chỉ từ bảng mon_hoc.
+     * Được sử dụng để kiểm tra sự tồn tại trước khi thêm mới hoặc cập nhật.
+     */
+    private Subject getSubjectDefinition(String maHp) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        Subject subject = null;
+        try (Cursor cursor = db.query("mon_hoc", new String[]{"ma_hp", "ten_hp"}, "ma_hp = ?", new String[]{maHp}, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                subject = new Subject();
+                subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
+                subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
+            }
+        } catch (Exception e) {
+            Log.e("SubjectDao", "Lỗi khi lấy định nghĩa môn học", e);
+        }
+        return subject;
+    }
+
 
     public long addOrEnrollSubject(Subject subject) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -118,11 +142,11 @@ public class SubjectDao {
 
         int semesterId = getSemesterIdByName(subject.tenHk);
         if (semesterId == -1) {
-            Log.e("SubjectDao", "Semester not found: " + subject.tenHk);
+            Log.e("SubjectDao", "Không tìm thấy học kỳ: " + subject.tenHk);
             return -1;
         }
 
-        Subject existing = getSubjectByMaHp(subject.maHp);
+        Subject existing = getSubjectDefinition(subject.maHp); // Sử dụng phương thức kiểm tra đã sửa
         db.beginTransaction();
         try {
             if (existing == null) {
@@ -156,14 +180,14 @@ public class SubjectDao {
                 if (update.size() > 0) {
                     db.update("mon_hoc", update, "ma_hp = ?", new String[]{subject.maHp});
                 }
-                resultId = 1; // mark success
+                resultId = 1; // Đánh dấu thành công
             }
 
             enrollSubjectInSemester(subject.maHp, semesterId);
 
             db.setTransactionSuccessful();
         } catch (Exception e) {
-            Log.e("SubjectDao", "addOrEnrollSubject failed", e);
+            Log.e("SubjectDao", "Thêm hoặc ghi danh môn học thất bại", e);
             resultId = -1;
         } finally {
             db.endTransaction();
@@ -185,7 +209,7 @@ public class SubjectDao {
         int rowsAffected = 0;
         int semesterId = getSemesterIdByName(subject.tenHk);
         if (semesterId == -1) {
-            Log.e("SubjectDao", "Cannot update subject. Semester not found: " + subject.tenHk);
+            Log.e("SubjectDao", "Không thể cập nhật môn học. Không tìm thấy học kỳ: " + subject.tenHk);
             return 0;
         }
 
@@ -212,8 +236,8 @@ public class SubjectDao {
 
             db.setTransactionSuccessful();
         } catch (Exception e) {
-            Log.e("SubjectDao", "Failed to update subject or enrollment", e);
-            rowsAffected = 0; // Ensure failure is reported
+            Log.e("SubjectDao", "Cập nhật môn học hoặc ghi danh thất bại", e);
+            rowsAffected = 0; // Đảm bảo báo cáo thất bại
         } finally {
             db.endTransaction();
         }

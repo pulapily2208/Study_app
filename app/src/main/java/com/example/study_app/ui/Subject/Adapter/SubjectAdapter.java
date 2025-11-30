@@ -86,6 +86,14 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
 
         // Set listener for the options menu
         holder.ivOptionsMenu.setOnClickListener(v -> showPopupMenu(v, subject));
+
+        // Add click listener to the whole item to view details
+        holder.itemView.setOnClickListener(v -> {
+            Context context = v.getContext();
+            Intent intent = new Intent(context, SubjectDetailActivity.class);
+            intent.putExtra("SUBJECT_ID", subject.maHp);
+            context.startActivity(intent);
+        });
     }
 
     private void showPopupMenu(View view, Subject subject) {
@@ -93,14 +101,6 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
         popup.getMenuInflater().inflate(R.menu.subject_options_menu, popup.getMenu());
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
-
-            if (itemId == R.id.action_view_details) {
-                Context context = view.getContext();
-                Intent intent = new Intent(context, SubjectDetailActivity.class);
-                intent.putExtra("SUBJECT_ID", subject.maHp);
-                context.startActivity(intent);
-                return true;
-            }
 
             // For other actions, use the listener
             if (actionListener == null) return false;

@@ -20,6 +20,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import com.example.study_app.data.DeadlineDao;
 import com.example.study_app.ui.Subject.Model.Subject;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import android.widget.TextView;
@@ -56,7 +57,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
     private ImageView imgIcon;
 
     // Data & Helpers
-    private DatabaseHelper dbHelper;
+    private DeadlineDao dbHelper;
     private String subjectMaHp;
     private Deadline deadlineToEdit = null;
     private boolean isEditMode = false;
@@ -101,7 +102,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.deadline_input);
 
-        dbHelper = new DatabaseHelper(this);
+        dbHelper = new DeadlineDao(this);
         findViews();
         handleIntent();
         setupListeners();

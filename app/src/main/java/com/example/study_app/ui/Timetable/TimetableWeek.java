@@ -160,10 +160,10 @@ List<WeekViewEntity.Event> events = new ArrayList<>();
 //
 //        events.add(event1);
 
-        DatabaseHelper dbHelper = new DatabaseHelper(this);
-        ArrayList<String> semesters = dbHelper.getAllSemesterNames();
-        String selectedSemester = semesters.get(0);
-        ArrayList<Subject> subjects = dbHelper.getSubjectsBySemester(selectedSemester);
+//        DatabaseHelper dbHelper = new DatabaseHelper(this);
+//        ArrayList<String> semesters = dbHelper.getAllSemesterNames();
+//        String selectedSemester = semesters.get(0);
+//        ArrayList<Subject> subjects = dbHelper.getSubjectsBySemester(selectedSemester);
 
 //        for (Subject s : subjects) {
 //            Calendar start = Calendar.getInstance();

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,47 +28,39 @@ import java.util.ArrayList;
 
 public class SubjectListActivity extends AppCompatActivity implements SubjectAdapter.OnSubjectActionClickListener {
 
-    private FloatingActionButton fab;
     private RecyclerView recyclerViewSubjects;
     private SubjectAdapter subjectAdapter;
-    private DatabaseHelper dbHelper;
     private SubjectDao subjectDao;
     private ArrayList<Subject> subjectList;
     private Spinner spinnerSemesters;
     private TextView tvEmptyList;
-    private String selectedSemesterName; // To hold the currently selected semester
+    private String selectedSemesterName;
+    private FloatingActionButton fabAddSubject;
+    private ImageButton btnBulkAddSubject;
 
-    // Request codes for starting activities
     private static final int ADD_SUBJECT_REQUEST = 1;
     private static final int EDIT_SUBJECT_REQUEST = 2;
+    private static final int BULK_IMPORT_REQUEST = 3;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.subject_list);
 
-        fab = findViewById(R.id.fab);
         recyclerViewSubjects = findViewById(R.id.recyclerViewSubjects);
         spinnerSemesters = findViewById(R.id.spinnerSemesters);
         tvEmptyList = findViewById(R.id.tvEmptyList);
+        fabAddSubject = findViewById(R.id.fab_add_subject);
+        btnBulkAddSubject = findViewById(R.id.btn_bulk_add_subject);
 
-        dbHelper = new DatabaseHelper(this);
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
         subjectDao = new SubjectDao(dbHelper);
+
         subjectList = new ArrayList<>();
 
         subjectAdapter = new SubjectAdapter(subjectList, this);
         recyclerViewSubjects.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewSubjects.setAdapter(subjectAdapter);
-
-        fab.setOnClickListener(v -> {
-            if (selectedSemesterName != null && !selectedSemesterName.isEmpty()) {
-                Intent intent = new Intent(SubjectListActivity.this, SubjectAddActivity.class);
-                intent.putExtra("SEMESTER_NAME", selectedSemesterName); // Pass semester name
-                startActivityForResult(intent, ADD_SUBJECT_REQUEST); // Use forResult
-            } else {
-                Toast.makeText(this, "Vui lòng chọn một học kỳ trước khi thêm.", Toast.LENGTH_SHORT).show();
-            }
-        });
 
         spinnerSemesters.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -81,6 +74,26 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
                 selectedSemesterName = null;
             }
         });
+
+        fabAddSubject.setOnClickListener(v -> {
+            if (selectedSemesterName != null && !selectedSemesterName.isEmpty()) {
+                Intent intent = new Intent(this, SubjectAddActivity.class);
+                intent.putExtra("SEMESTER_NAME", selectedSemesterName);
+                startActivityForResult(intent, ADD_SUBJECT_REQUEST);
+            } else {
+                Toast.makeText(this, "Vui lòng chọn một học kỳ trước khi thêm.", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnBulkAddSubject.setOnClickListener(v -> {
+            if (selectedSemesterName != null && !selectedSemesterName.isEmpty()) {
+                Intent intent = new Intent(this, SubjectBulkImportActivity.class);
+                intent.putExtra("SEMESTER_NAME", selectedSemesterName);
+                startActivityForResult(intent, BULK_IMPORT_REQUEST);
+            } else {
+                Toast.makeText(this, "Vui lòng chọn một học kỳ trước.", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
@@ -92,13 +105,10 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        if ((requestCode == ADD_SUBJECT_REQUEST || requestCode == EDIT_SUBJECT_REQUEST) && resultCode == RESULT_OK) {
+        if ((requestCode == ADD_SUBJECT_REQUEST || requestCode == EDIT_SUBJECT_REQUEST || requestCode == BULK_IMPORT_REQUEST) && resultCode == RESULT_OK) {
             Toast.makeText(this, "Danh sách môn học đã được cập nhật.", Toast.LENGTH_SHORT).show();
-            loadSubjectsForSelectedSemester();
         }
     }
-
 
     private void loadSemesters() {
         String previouslySelected = selectedSemesterName;
@@ -112,9 +122,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
             spinnerSemesters.setSelection(spinnerPosition);
         } else if (!semesterNames.isEmpty()) {
             spinnerSemesters.setSelection(0);
-        }
-
-        if (semesterNames.isEmpty()) {
+        } else {
             subjectList.clear();
             subjectAdapter.notifyDataSetChanged();
             checkEmptyState();
