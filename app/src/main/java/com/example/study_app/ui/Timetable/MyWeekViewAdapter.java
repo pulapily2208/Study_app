@@ -1,11 +1,11 @@
 package com.example.study_app.ui.Timetable;
 
 import androidx.annotation.NonNull;
+
 import com.alamkanak.weekview.WeekView;
 import com.alamkanak.weekview.WeekViewEntity;
 
-import java.time.LocalDate;
-import java.time.YearMonth;
+import java.util.Calendar;
 import java.util.List;
 
 public class MyWeekViewAdapter extends WeekView.SimpleAdapter<WeekViewEntity> {
@@ -16,12 +16,12 @@ public class MyWeekViewAdapter extends WeekView.SimpleAdapter<WeekViewEntity> {
         this.events = events;
     }
 
-    @NonNull
-    public List<WeekViewEntity> onMonthChange(
-            @NonNull YearMonth yearMonth,
-            @NonNull LocalDate firstVisibleDay,
-            @NonNull LocalDate lastVisibleDay
-    ) {
-        return events;   // load tất cả sự kiện
-    }
+//    @NonNull
+
+//    @Override
+//    public List<WeekViewEntity> onLoad(@NonNull Calendar startDate,
+//                                       @NonNull Calendar endDate) {
+//        return events; // Trả toàn bộ sự kiện
+//    }
+
 }

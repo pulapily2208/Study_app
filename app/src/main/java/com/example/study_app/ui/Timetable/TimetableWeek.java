@@ -93,12 +93,27 @@ public class TimetableWeek extends AppCompatActivity {
     }
 
     // Tính ngày Monday của tuần
+//    private Calendar getStartOfWeek(CalendarDay date) {
+//        Calendar cal = Calendar.getInstance();
+//        cal.set(date.getYear(), date.getMonth(), date.getDay());
+//        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+//        int diff = Calendar.MONDAY - dayOfWeek;
+//        cal.add(Calendar.DAY_OF_MONTH, diff);
+//        return cal;
+//    }
     private Calendar getStartOfWeek(CalendarDay date) {
         Calendar cal = Calendar.getInstance();
         cal.set(date.getYear(), date.getMonth(), date.getDay());
+
+        // Set giờ, phút, giây = 0 để chính xác
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-        int diff = Calendar.MONDAY - dayOfWeek;
-        cal.add(Calendar.DAY_OF_MONTH, diff);
+        int diff = (dayOfWeek + 5) % 7; // Chủ nhật → 6, Thứ hai → 0
+        cal.add(Calendar.DAY_OF_MONTH, -diff);
         return cal;
     }
 
