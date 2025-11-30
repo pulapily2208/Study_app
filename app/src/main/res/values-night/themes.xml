@@ -7,8 +7,12 @@
         <!-- For Edge-to-Edge display -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
     </style>
 
-    <style name="Theme.Study_app" parent="Base.Theme.Study_app" />
+     <style name="Theme.Study_app" parent="Base.Theme.Study_app" />
+
+    <style name="Theme.Study_app.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 </resources>
