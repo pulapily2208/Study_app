@@ -29,7 +29,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.R;
-import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.DeadlineDao;
 import com.example.study_app.ui.Deadline.Adapters.IconAdapter;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 

@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,8 +22,11 @@ import com.alamkanak.weekview.WeekView;
 import com.alamkanak.weekview.WeekViewEntity;
 import com.alamkanak.weekview.WeekViewEntity.Event;
 import com.alamkanak.weekview.DateTimeInterpreter;
+import com.alamkanak.weekview.WeekViewEvent;
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.SubjectDao;
+import com.example.study_app.data.TimetableDao;
 import com.example.study_app.ui.Subject.Model.Subject;
 import com.example.study_app.ui.Subject.SubjectAddActivity;
 import com.google.android.material.chip.Chip;
@@ -44,9 +48,9 @@ public class TimetableWeek extends AppCompatActivity {
     TextView tvSelectedDate;
     LinearLayout llDateContainer;
 //    List<WeekViewEntity> events = new ArrayList<>();
-List<WeekViewEntity.Event> events = new ArrayList<>();
 
     Button btnAdd;
+    private String selectedDate = null; // lưu ngày được chọn (dạng yyyy-MM-dd)
 
     // ẩn lịch tháng
     private void hideMonthCalendar() {
@@ -77,6 +81,9 @@ List<WeekViewEntity.Event> events = new ArrayList<>();
         Calendar c = Calendar.getInstance();
         c.set(date.getYear(), date.getMonth(), date.getDay());
         tvSelectedDate.setText(sdf.format(c.getTime()));
+        // 🆕 Lưu lại ngày để truyền qua trang Add (format chuẩn DB: yyyy-MM-dd)
+        SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        selectedDate = dbFormat.format(c.getTime());
     }
 
     private void goToDate(CalendarDay date) {
@@ -86,12 +93,27 @@ List<WeekViewEntity.Event> events = new ArrayList<>();
     }
 
     // Tính ngày Monday của tuần
+//    private Calendar getStartOfWeek(CalendarDay date) {
+//        Calendar cal = Calendar.getInstance();
+//        cal.set(date.getYear(), date.getMonth(), date.getDay());
+//        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+//        int diff = Calendar.MONDAY - dayOfWeek;
+//        cal.add(Calendar.DAY_OF_MONTH, diff);
+//        return cal;
+//    }
     private Calendar getStartOfWeek(CalendarDay date) {
         Calendar cal = Calendar.getInstance();
         cal.set(date.getYear(), date.getMonth(), date.getDay());
+
+        // Set giờ, phút, giây = 0 để chính xác
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-        int diff = Calendar.MONDAY - dayOfWeek;
-        cal.add(Calendar.DAY_OF_MONTH, diff);
+        int diff = (dayOfWeek + 5) % 7; // Chủ nhật → 6, Thứ hai → 0
+        cal.add(Calendar.DAY_OF_MONTH, -diff);
         return cal;
     }
 
@@ -137,49 +159,75 @@ List<WeekViewEntity.Event> events = new ArrayList<>();
 
         // nút thêm
         btnAdd.setOnClickListener(v -> {
+            if (selectedDate == null) {
+                Toast.makeText(TimetableWeek.this, "Hãy chọn ngày trước!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Tách year - month - day từ yyyy-MM-dd
+            String[] parts = selectedDate.split("-");
+            int year = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1]) - 1; // convert về 0-11 như Calendar
+
+            // lấy học kỳ
+            TimetableDao timetableDao = new TimetableDao(new DatabaseHelper(this));
+            Integer semesterId = timetableDao.getSemesterIdBySelectedDate(year, month);
+
+            if (semesterId == null) {
+                Toast.makeText(this, "Không tìm thấy học kỳ phù hợp!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // lấy tên học kỳ từ semesterId
+            String semesterName = timetableDao.getSemesterNameById(semesterId);
+
+            if (semesterName == null) {
+                Toast.makeText(this, "Không thể lấy tên học kỳ!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Chuyển sang trang thêm môn
             Intent intent = new Intent(TimetableWeek.this, SubjectAddActivity.class);
+            intent.putExtra("selectedDate", selectedDate);
+            intent.putExtra("semesterId", semesterId);
+            intent.putExtra("SEMESTER_NAME", semesterName);
             startActivity(intent);
         });
 
-        // ds sự kiện mẫu
-//        events.add(TimetableEvent.createEvent(1, "Toán", 2025, 11, 20, 8, 0, 9, 30, "#FF5733"));
-//        events.add(TimetableEvent.createEvent(2, "Vật lý", 2025, 11, 5, 10, 0, 11, 30, "#33FF57"));
-//        events.add(TimetableEvent.createEvent(3, "Hóa học", 2025, 11, 21, 13, 0, 14, 30, "#5733FF"));
-//        events.add(TimetableEvent.createEvent(4, "Lịch sử", 2025, 11, 6, 15, 0, 16, 30, "#FF33A1"));
 
-//        Calendar start1 = Calendar.getInstance();
-//        start1.set(2025, Calendar.NOVEMBER, 20, 8, 0); // 20/11/2025 08:00
-//        Calendar end1 = Calendar.getInstance();
-//        end1.set(2025, Calendar.NOVEMBER, 20, 9, 30);  // 20/11/2025 09:30
-//
-//        WeekViewEntity.Event event1 = new WeekViewEntity.Event.Builder(start1, end1)
-//                .setId(1)
-//                .setTitle("Toán")
-//                .setColor(Color.parseColor("#FF5733"))
-//                .build();
-//
-//        events.add(event1);
 
-//        DatabaseHelper dbHelper = new DatabaseHelper(this);
-//        ArrayList<String> semesters = dbHelper.getAllSemesterNames();
-//        String selectedSemester = semesters.get(0);
-//        ArrayList<Subject> subjects = dbHelper.getSubjectsBySemester(selectedSemester);
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        TimetableDao timetableDao = new TimetableDao(dbHelper);
+        List<Subject> subjects = timetableDao.getAllSubjects();
+        // Convert sang WeekViewEntity
+        List<WeekViewEntity> events = TimetableEvent.convertSafe(subjects);
 
-//        for (Subject s : subjects) {
-//            Calendar start = Calendar.getInstance();
-//            start.set(s.getYear(), s.getMonth(), s.getDay(), s.getStartHour(), s.getStartMinute());
-//
-//            Calendar end = Calendar.getInstance();
-//            end.set(s.getYear(), s.getMonth(), s.getDay(), s.getEndHour(), s.getEndMinute());
-//
-//            WeekViewEntity.Event event = new WeekViewEntity.Event.Builder(start, end)
-//                    .setId(s.getId())
-//                    .setTitle(s.getName())
-//                    .setColor(Color.parseColor(s.getColorHex())) // giả sử Subject lưu màu
-//                    .build();
-//
-//            events.add(event);
-//        }
+        MyWeekViewAdapter adapter = new MyWeekViewAdapter(events);
+        weekView.setAdapter(adapter);
+
+        // Load vào wv
+//        weekView.setAdapter((WeekView.Adapter<?>) events);
+//        weekView.setEventLoader(period -> events);
+//        weekView.setLoadMoreHandler(period -> events);
+//        List<WeekViewEntity> events = TimetableEvent.convert(subjects);
+        // load vaof wweekview
+
+//        weekView.setOnLoadMoreListener((startDate, endDate) -> {
+//            return events; // events là list<WeekViewEntity>
+//        });
+//        weekView.setWeekViewLoader((start, end) -> events);
+//        weekView.setMonthChangeListener((start, end) -> events);
+
+//        weekView.setEventLoader(new EventLoader() {
+//            @Override
+//            public List<? extends WeekViewEntity> onLoad(DateTimeRange range) {
+//                // Trả về danh sách sự kiện nằm trong khoảng range
+//                return events;
+//            }
+//        });
+
+
+
 
 
 
@@ -198,8 +246,7 @@ List<WeekViewEntity.Event> events = new ArrayList<>();
 //            public String interpretDate(Calendar date) {
 //                SimpleDateFormat weekdayNameFormat = new SimpleDateFormat("EEE", Locale.getDefault());
 //                SimpleDateFormat dateFormat = new SimpleDateFormat("dd", Locale.getDefault());
-//                return weekdayNameFormat.format(date.getTime()).toUpperCase() + "
-//" + dateFormat.format(date.getTime());
+//                return weekdayNameFormat.format(date.getTime()).toUpperCase() + " " + dateFormat.format(date.getTime());
 //            }
 //
 //            @Override
@@ -211,7 +258,7 @@ List<WeekViewEntity.Event> events = new ArrayList<>();
 //                return timeFormat.format(calendar.getTime());
 //            }
 //        });
-        // hédae ngày giờ
+        // header ngày giờ
         weekView.setDateFormatter(date -> {
             SimpleDateFormat weekdayNameFormat = new SimpleDateFormat("EEE", Locale.getDefault());
             SimpleDateFormat dayFormat = new SimpleDateFormat("dd", Locale.getDefault());
@@ -243,13 +290,14 @@ List<WeekViewEntity.Event> events = new ArrayList<>();
 //        });
         // load sự kiên bản mới
 //        weekView.setWeekViewLoader(period -> {
-//            // Trả về tất cả event tạm thời (lọc không cần thiết nếu chỉ muốn test)
 //            List<WeekViewEntity> weekEvents = new ArrayList<>();
-//            for (WeekViewEntity.Event e : events) {
-//                weekEvents.add(e); // upcast Event -> WeekViewEntity
-//            }
+//            weekEvents.addAll(events); // copy toàn bộ events
 //            return weekEvents;
 //        });
+//        weekView.setWeekViewLoader(period -> {
+//            return new ArrayList<>(events); // copy tránh lỗi tham chiếu
+//        });
+
 
 
 
