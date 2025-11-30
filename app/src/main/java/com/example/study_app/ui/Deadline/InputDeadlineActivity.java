@@ -28,7 +28,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.study_app.R;
-import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.DeadlineDao;
 import com.example.study_app.ui.Deadline.Adapters.IconAdapter;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 
@@ -56,7 +56,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
     private ImageView imgIcon;
 
     // Data & Helpers
-    private DatabaseHelper dbHelper;
+    private DeadlineDao dbHelper;
     private String subjectMaHp;
     private Deadline deadlineToEdit = null;
     private boolean isEditMode = false;
@@ -101,7 +101,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.deadline_input);
 
-        dbHelper = new DatabaseHelper(this);
+        dbHelper = new DeadlineDao(this);
         findViews();
         handleIntent();
         setupListeners();
