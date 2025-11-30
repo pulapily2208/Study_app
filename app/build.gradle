@@ -44,7 +44,8 @@ dependencies {
 
     // them thu vien week view (hien thi tkb)
 //    implementation 'com.github.alamkanak:android-week-view:1.2.6'
-    implementation 'com.github.thellmund:android-week-view:5.3.0'
+    implementation 'com.github.thellmund:android-week-view:5.3.2'
+    // đang dùng theo 5.3.0
 
 
 
