@@ -22,6 +22,7 @@ import com.alamkanak.weekview.WeekView;
 import com.alamkanak.weekview.WeekViewEntity;
 import com.alamkanak.weekview.WeekViewEntity.Event;
 import com.alamkanak.weekview.DateTimeInterpreter;
+import com.alamkanak.weekview.WeekViewEvent;
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.data.SubjectDao;
@@ -181,13 +182,18 @@ public class TimetableWeek extends AppCompatActivity {
 
 
         DatabaseHelper dbHelper = new DatabaseHelper(this);
-        SubjectDao subjectDao = new SubjectDao(dbHelper);
-        ArrayList<String> semesters = subjectDao.getAllSemesterNames();
-//        String selectedSemester = semesters.get(0); // lấy kì 1
-//        ArrayList<Subject> subjects = subjectDao.getSubjectsBySemester(selectedSemester); // lấy ds môn theo kỳ
-
-//        events = TimetableEvent.convert(subjects);
+        TimetableDao timetableDao = new TimetableDao(dbHelper);
+        List<Subject> subjects = timetableDao.getAllSubjects();
         // Convert sang WeekViewEntity
+        List<WeekViewEntity> events = TimetableEvent.convertSafe(subjects);
+
+        MyWeekViewAdapter adapter = new MyWeekViewAdapter(events);
+        weekView.setAdapter(adapter);
+
+        // Load vào wv
+//        weekView.setAdapter((WeekView.Adapter<?>) events);
+//        weekView.setEventLoader(period -> events);
+//        weekView.setLoadMoreHandler(period -> events);
 //        List<WeekViewEntity> events = TimetableEvent.convert(subjects);
         // load vaof wweekview
 
@@ -225,8 +231,7 @@ public class TimetableWeek extends AppCompatActivity {
 //            public String interpretDate(Calendar date) {
 //                SimpleDateFormat weekdayNameFormat = new SimpleDateFormat("EEE", Locale.getDefault());
 //                SimpleDateFormat dateFormat = new SimpleDateFormat("dd", Locale.getDefault());
-//                return weekdayNameFormat.format(date.getTime()).toUpperCase() + "
-//" + dateFormat.format(date.getTime());
+//                return weekdayNameFormat.format(date.getTime()).toUpperCase() + " " + dateFormat.format(date.getTime());
 //            }
 //
 //            @Override

@@ -2,6 +2,11 @@ package com.example.study_app.data;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
+
+import com.example.study_app.ui.Subject.Model.Subject;
+
+import java.util.ArrayList;
 
 public class TimetableDao {
     private final DatabaseHelper dbHelper;
@@ -106,6 +111,51 @@ public class TimetableDao {
         }
 
         return null;
+    }
+
+
+    // lấy all môn học để hiển thi lên bảng
+    public ArrayList<Subject> getAllSubjects() {
+        ArrayList<Subject> subjectList = new ArrayList<>();
+
+        String selectQuery = "SELECT m.*, e.hoc_ky " +
+                "FROM mon_hoc m " +
+                "LEFT JOIN enrollments e ON m.ma_hp = e.ma_hp";
+
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        try (Cursor cursor = db.rawQuery(selectQuery, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    Subject subject = new Subject();
+                    subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
+                    subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
+                    subject.soTc = cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi"));
+                    subject.loaiMon = cursor.getString(cursor.getColumnIndexOrThrow("loai_hp"));
+                    subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
+                    subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
+
+                    // Chuyển String ngày/giờ sang Date
+                    subject.ngayBatDau = dbHelper.parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
+                    subject.ngayKetThuc = dbHelper.parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
+                    subject.gioBatDau = dbHelper.parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
+                    subject.gioKetThuc = dbHelper.parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
+
+                    subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
+                    subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
+                    subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
+
+                    // Tên học kỳ nếu cần
+                    int hocKyId = cursor.getInt(cursor.getColumnIndexOrThrow("hoc_ky"));
+//                    subject.tenHk = getSemesterNameById(hocKyId);
+
+                    subjectList.add(subject);
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting all subjects", e);
+        }
+
+        return subjectList;
     }
 
 
