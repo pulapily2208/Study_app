@@ -24,16 +24,16 @@ public class TimetableEvent {
         }
 
         for (Subject subject : subjects) {
-            if (subject == null || subject.ngayBatDau == null || subject.ngayKetThuc == null
-                    || subject.gioBatDau == null || subject.gioKetThuc == null) {
+            if (subject == null || subject.ngayBatDau == null || subject.gioBatDau == null
+                    || subject.gioKetThuc == null) {
                 String id = subject != null ? subject.maHp : "null";
-                Log.w("TimetableEvent", "Skipping subject with missing data: " + id + " title="
-                        + (subject != null ? subject.tenHp : "null") + " ngayBatDau="
-                        + (subject != null ? subject.ngayBatDau : "null") + " ngayKetThuc="
-                        + (subject != null ? subject.ngayKetThuc : "null") + " gioBatDau="
-                        + (subject != null ? subject.gioBatDau : "null") + " gioKetThuc="
-                        + (subject != null ? subject.gioKetThuc : "null"));
+                Log.w("TimetableEvent", "Skipping subject (thiếu dữ liệu bắt buộc) id=" + id);
                 continue;
+            }
+
+            // Nếu không có ngày kết thúc -> dùng luôn ngày bắt đầu để tạo 1 sự kiện đơn lẻ
+            if (subject.ngayKetThuc == null) {
+                subject.ngayKetThuc = subject.ngayBatDau;
             }
 
             String title = (subject.tenHp != null ? subject.tenHp : "Event") + "\n"

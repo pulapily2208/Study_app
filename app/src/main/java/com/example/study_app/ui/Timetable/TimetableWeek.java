@@ -25,9 +25,14 @@ import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.data.TimetableDao;
 import com.example.study_app.data.UserSession;
+import com.example.study_app.ui.Curriculum.CurriculumActivity;
+import com.example.study_app.ui.Deadline.MainDeadLine;
+import com.example.study_app.ui.Notes.NotesActivity;
 import com.example.study_app.ui.Subject.Model.Subject;
 import com.example.study_app.ui.Subject.SubjectAddActivity;
+import com.example.study_app.ui.Subject.SubjectListActivity;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
@@ -36,15 +41,18 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+
+// Removed adapter-specific imports (library version lacks LoadParams / SimpleAdapter usage)
 import java.util.Locale;
 
 public class TimetableWeek extends AppCompatActivity {
+    LinearLayout btnNote, btnDeadLine, btnSubject, btnCurriculum;
 
     private WeekView weekView;
     private MaterialCalendarView monthCalendar;
     private TextView tvSelectedDate;
     private LinearLayout llDateContainer;
-    private Button btnAdd;
+    private FloatingActionButton btnAdd;
 
     private String selectedDate = null;
 
@@ -70,6 +78,7 @@ public class TimetableWeek extends AppCompatActivity {
 
         setupViews();
         setupInteractions();
+        intentMenu();
 
         CalendarDay today = CalendarDay.today();
         monthCalendar.setSelectedDate(today);
@@ -105,16 +114,12 @@ public class TimetableWeek extends AppCompatActivity {
     }
 
     private void loadEvents() {
-        // With the SimpleAdapter, we don't need to load data manually here.
-        // We just need to tell the WeekView to refresh itself.
-        // This will trigger the adapter's onLoad method.
-        Log.d("TimetableWeek", "Forcing WeekView to refresh...");
-        // The WeekView in this library version doesn't expose a notifyDataSetChanged()
-        // method.
-        // Invalidate and request layout to force a redraw which will cause the view to
-        // reload data.
-        weekView.invalidate();
-        weekView.requestLayout();
+        TimetableDao dao = new TimetableDao(new DatabaseHelper(this));
+        int userId = UserSession.getCurrentUserId(this);
+        List<Subject> subjects = dao.getSubjectsForTimetable(userId);
+        List<WeekViewEntity.Event<Subject>> events = TimetableEvent.convertSubjectsToEvents(subjects);
+        weekView.setAdapter(new MyWeekViewAdapter(new ArrayList<>(events)));
+        Log.d("TimetableWeek", "Loaded " + events.size() + " events (adapter reset)");
     }
 
     private void setupInteractions() {
@@ -227,6 +232,9 @@ public class TimetableWeek extends AppCompatActivity {
     private void displayWeekChips(Calendar startOfWeek) {
         llDateContainer.removeAllViews();
         SimpleDateFormat sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
+
+        Calendar today = Calendar.getInstance();
+
         for (int i = 0; i < 7; i++) {
             Calendar day = (Calendar) startOfWeek.clone();
             day.add(Calendar.DAY_OF_MONTH, i);
@@ -235,13 +243,150 @@ public class TimetableWeek extends AppCompatActivity {
             chip.setText(sdf.format(day.getTime()));
             chip.setCheckable(true);
 
-            final Calendar finalDay = day;
+            if (selectedDate != null) {
+                SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                String dayStr = dbFormat.format(day.getTime());
+                if (dayStr.equals(selectedDate)) {
+                    chip.setChecked(true);
+                }
+            }
+
+            // bỏ chọn chip cũ
             chip.setOnClickListener(v -> {
-                monthCalendar.setSelectedDate(CalendarDay.from(finalDay.get(Calendar.YEAR),
-                        finalDay.get(Calendar.MONTH) + 1, finalDay.get(Calendar.DAY_OF_MONTH)));
-                weekView.goToDate(finalDay);
+                for (int j = 0; j < llDateContainer.getChildCount(); j++) {
+                    View child = llDateContainer.getChildAt(j);
+                    if (child instanceof Chip) {
+                        ((Chip) child).setChecked(false);
+                    }
+                }
+                chip.setChecked(true);
+
+                // Đồng bộ TextView
+                SimpleDateFormat sdfFull = new SimpleDateFormat("EEEE, dd MMM, yyyy", Locale.ENGLISH);
+                tvSelectedDate.setText(sdfFull.format(day.getTime()));
+
+                // Lưu ngày để truyền Add
+                SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                selectedDate = dbFormat.format(day.getTime());
+
+                // Đồng bộ WeekView
+                weekView.goToDate(day);
             });
+
             llDateContainer.addView(chip);
+
+
+
+//            final Calendar finalDay = day;
+//            chip.setOnClickListener(v -> {
+//                monthCalendar.setSelectedDate(CalendarDay.from(finalDay.get(Calendar.YEAR),
+//                        finalDay.get(Calendar.MONTH) + 1, finalDay.get(Calendar.DAY_OF_MONTH)));
+//                weekView.goToDate(finalDay);
+//            });
+//            llDateContainer.addView(chip);
         }
     }
+
+    public void intentMenu(){
+        btnDeadLine=findViewById(R.id.btnDeadLine);
+        btnNote = findViewById(R.id.btnNote);
+        btnSubject = findViewById(R.id.btnSubject);
+        btnCurriculum = findViewById(R.id.btnCurriculum);
+
+//        DEADLINE
+        btnDeadLine.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(TimetableWeek.this, MainDeadLine.class);
+                startActivity(intent);
+            }
+        });
+
+
+
+//        SUBJECT
+        btnSubject.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(TimetableWeek.this, SubjectListActivity.class);
+                startActivity(intent);
+            }
+        });
+
+
+//      NOTE
+        btnNote.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(TimetableWeek.this, NotesActivity.class);
+                startActivity(intent);
+            }
+        });
+
+
+
+//        CURRICULUM
+        btnCurriculum.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(TimetableWeek.this, CurriculumActivity.class);
+                startActivity(intent);
+            }
+        });
+
+    }
 }
+
+//private void displayWeekChips(Calendar startOfWeek) {
+//    llDateContainer.removeAllViews();
+//    SimpleDateFormat sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
+//
+//    Calendar today = Calendar.getInstance(); // để highlight hôm nay
+//
+//    for (int i = 0; i < 7; i++) {
+//        Calendar day = (Calendar) startOfWeek.clone();
+//        day.add(Calendar.DAY_OF_MONTH, i);
+//
+//        Chip chip = new Chip(this);
+//        chip.setText(sdf.format(day.getTime()));
+//        chip.setCheckable(true);
+//
+//        if (day.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+//                && day.get(Calendar.MONTH) == today.get(Calendar.MONTH)
+//                && day.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH)) {
+//            chip.setChecked(true);
+//        }
+//
+//        if (selectedDate != null) {
+//            SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+//            String dayStr = dbFormat.format(day.getTime());
+//            if (dayStr.equals(selectedDate)) {
+//                chip.setChecked(true);
+//            }
+//        }
+//
+//        // bỏ chọn chip cũ
+//        chip.setOnClickListener(v -> {
+//            for (int j = 0; j < llDateContainer.getChildCount(); j++) {
+//                View child = llDateContainer.getChildAt(j);
+//                if (child instanceof Chip) {
+//                    ((Chip) child).setChecked(false);
+//                }
+//            }
+//            chip.setChecked(true);
+//
+//            // Đồng bộ TextView
+//            SimpleDateFormat sdfFull = new SimpleDateFormat("EEEE, dd MMM, yyyy", Locale.ENGLISH);
+//            tvSelectedDate.setText(sdfFull.format(day.getTime()));
+//
+//            // Lưu ngày để truyền Add
+//            SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+//            selectedDate = dbFormat.format(day.getTime());
+//
+//            // Đồng bộ WeekView
+//            weekView.goToDate(day);
+//        });
+//
+//        llDateContainer.addView(chip);
+//    }
+//}
