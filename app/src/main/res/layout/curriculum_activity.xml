@@ -188,29 +188,23 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chipNotStudied"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/CustomChipChoice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@android:color/white"
-                        app:chipBackgroundColor="@color/blue"
                         android:text="Chưa học" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chipStudying"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/CustomChipChoice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@android:color/white"
-                        app:chipBackgroundColor="@color/blue"
                         android:text="Đang học" />
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/chipStudied"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/CustomChipChoice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@android:color/white"
-                        app:chipBackgroundColor="@color/blue"
                         android:text="Đã học" />
 
                 </com.google.android.material.chip.ChipGroup>

@@ -36,6 +36,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+
+// Removed adapter-specific imports (library version lacks LoadParams / SimpleAdapter usage)
 import java.util.Locale;
 
 public class TimetableWeek extends AppCompatActivity {
@@ -105,16 +107,12 @@ public class TimetableWeek extends AppCompatActivity {
     }
 
     private void loadEvents() {
-        // With the SimpleAdapter, we don't need to load data manually here.
-        // We just need to tell the WeekView to refresh itself.
-        // This will trigger the adapter's onLoad method.
-        Log.d("TimetableWeek", "Forcing WeekView to refresh...");
-        // The WeekView in this library version doesn't expose a notifyDataSetChanged()
-        // method.
-        // Invalidate and request layout to force a redraw which will cause the view to
-        // reload data.
-        weekView.invalidate();
-        weekView.requestLayout();
+        TimetableDao dao = new TimetableDao(new DatabaseHelper(this));
+        int userId = UserSession.getCurrentUserId(this);
+        List<Subject> subjects = dao.getSubjectsForTimetable(userId);
+        List<WeekViewEntity.Event<Subject>> events = TimetableEvent.convertSubjectsToEvents(subjects);
+        weekView.setAdapter(new MyWeekViewAdapter(new ArrayList<>(events)));
+        Log.d("TimetableWeek", "Loaded " + events.size() + " events (adapter reset)");
     }
 
     private void setupInteractions() {
