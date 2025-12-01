@@ -79,62 +79,97 @@ public class TimetableWeek extends AppCompatActivity {
     private void updateSelectedDate(CalendarDay date) {
         SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd MMM, yyyy", Locale.ENGLISH);
         Calendar c = Calendar.getInstance();
-        c.set(date.getYear(), date.getMonth(), date.getDay());
+        c.clear();
+        c.set(date.getYear(), date.getMonth() - 1, date.getDay());
         tvSelectedDate.setText(sdf.format(c.getTime()));
-        // 🆕 Lưu lại ngày để truyền qua trang Add (format chuẩn DB: yyyy-MM-dd)
+        // Lưu lại ngày để truyền qua trang Add (yyyy-MM-dd)
         SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         selectedDate = dbFormat.format(c.getTime());
     }
 
     private void goToDate(CalendarDay date) {
         Calendar c = Calendar.getInstance();
-        c.set(date.getYear(), date.getMonth(), date.getDay());
-        weekView.goToDate(c);  // API mới vẫn có goToDate(Calendar)
+        c.clear();
+        c.set(date.getYear(), date.getMonth() - 1, date.getDay());
+        weekView.goToDate(c);
     }
 
-    // Tính ngày Monday của tuần
-//    private Calendar getStartOfWeek(CalendarDay date) {
-//        Calendar cal = Calendar.getInstance();
-//        cal.set(date.getYear(), date.getMonth(), date.getDay());
-//        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-//        int diff = Calendar.MONDAY - dayOfWeek;
-//        cal.add(Calendar.DAY_OF_MONTH, diff);
-//        return cal;
-//    }
+    // Tính ngày đầu tuần
     private Calendar getStartOfWeek(CalendarDay date) {
         Calendar cal = Calendar.getInstance();
-        cal.set(date.getYear(), date.getMonth(), date.getDay());
+        cal.clear();
+        cal.set(date.getYear(), date.getMonth() - 1, date.getDay());
 
-        // Set giờ, phút, giây = 0 để chính xác
+        cal.setFirstDayOfWeek(Calendar.MONDAY);
+
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
 
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
-        int diff = (dayOfWeek + 5) % 7; // Chủ nhật → 6, Thứ hai → 0
+        int diff = dayOfWeek - Calendar.MONDAY;
+
+        if (diff < 0) diff += 7;
+
         cal.add(Calendar.DAY_OF_MONTH, -diff);
+
         return cal;
     }
 
-    // Tạo 7 chip tuần, click scroll WeekView
-    private void displayWeekChips(Calendar startOfWeek) {
-        llDateContainer.removeAllViews();
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
+private void displayWeekChips(Calendar startOfWeek) {
+    llDateContainer.removeAllViews();
+    SimpleDateFormat sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
 
-        for (int i = 0; i < 7; i++) {
-            Calendar day = (Calendar) startOfWeek.clone();
-            day.add(Calendar.DAY_OF_MONTH, i);
+    Calendar today = Calendar.getInstance(); // để highlight hôm nay
 
-            Chip chip = new Chip(this);
-            chip.setText(sdf.format(day.getTime()));
-            chip.setCheckable(true);
+    for (int i = 0; i < 7; i++) {
+        Calendar day = (Calendar) startOfWeek.clone();
+        day.add(Calendar.DAY_OF_MONTH, i);
 
-            chip.setOnClickListener(v -> weekView.goToDate(day));
+        Chip chip = new Chip(this);
+        chip.setText(sdf.format(day.getTime()));
+        chip.setCheckable(true);
 
-            llDateContainer.addView(chip);
+        if (day.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+                && day.get(Calendar.MONTH) == today.get(Calendar.MONTH)
+                && day.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH)) {
+            chip.setChecked(true);
         }
+
+        if (selectedDate != null) {
+            SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            String dayStr = dbFormat.format(day.getTime());
+            if (dayStr.equals(selectedDate)) {
+                chip.setChecked(true);
+            }
+        }
+
+        // bỏ chọn chip cũ
+        chip.setOnClickListener(v -> {
+            for (int j = 0; j < llDateContainer.getChildCount(); j++) {
+                View child = llDateContainer.getChildAt(j);
+                if (child instanceof Chip) {
+                    ((Chip) child).setChecked(false);
+                }
+            }
+            chip.setChecked(true);
+
+            // Đồng bộ TextView
+            SimpleDateFormat sdfFull = new SimpleDateFormat("EEEE, dd MMM, yyyy", Locale.ENGLISH);
+            tvSelectedDate.setText(sdfFull.format(day.getTime()));
+
+            // Lưu ngày để truyền Add
+            SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            selectedDate = dbFormat.format(day.getTime());
+
+            // Đồng bộ WeekView
+            weekView.goToDate(day);
+        });
+
+        llDateContainer.addView(chip);
     }
+}
 
 
     @SuppressLint({"MissingInflatedId", "ClickableViewAccessibility"})
@@ -167,7 +202,7 @@ public class TimetableWeek extends AppCompatActivity {
             // Tách year - month - day từ yyyy-MM-dd
             String[] parts = selectedDate.split("-");
             int year = Integer.parseInt(parts[0]);
-            int month = Integer.parseInt(parts[1]) - 1; // convert về 0-11 như Calendar
+            int month = Integer.parseInt(parts[1]); // convert về 0-11 như Calendar (vừa bỏ -1)
 
             // lấy học kỳ
             TimetableDao timetableDao = new TimetableDao(new DatabaseHelper(this));
@@ -205,6 +240,7 @@ public class TimetableWeek extends AppCompatActivity {
         MyWeekViewAdapter adapter = new MyWeekViewAdapter(events);
         weekView.setAdapter(adapter);
 
+
         // Load vào wv
 //        weekView.setAdapter((WeekView.Adapter<?>) events);
 //        weekView.setEventLoader(period -> events);
@@ -221,7 +257,6 @@ public class TimetableWeek extends AppCompatActivity {
 //        weekView.setEventLoader(new EventLoader() {
 //            @Override
 //            public List<? extends WeekViewEntity> onLoad(DateTimeRange range) {
-//                // Trả về danh sách sự kiện nằm trong khoảng range
 //                return events;
 //            }
 //        });
@@ -236,28 +271,9 @@ public class TimetableWeek extends AppCompatActivity {
         weekView.setNumberOfVisibleDays(7);
         weekView.setHourHeight(120);
         weekView.setColumnGap(2);
-//        weekView.setTextSize(12);
         weekView.setEventTextSize(14);
         weekView.setShowNowLine(true);
 
-        // Header: hiển thị Thứ + ngày
-//        weekView.setDateTimeInterpreter(new DateTimeInterpreter() {
-//            @Override
-//            public String interpretDate(Calendar date) {
-//                SimpleDateFormat weekdayNameFormat = new SimpleDateFormat("EEE", Locale.getDefault());
-//                SimpleDateFormat dateFormat = new SimpleDateFormat("dd", Locale.getDefault());
-//                return weekdayNameFormat.format(date.getTime()).toUpperCase() + " " + dateFormat.format(date.getTime());
-//            }
-//
-//            @Override
-//            public String interpretTime(int hour) {
-//                Calendar calendar = Calendar.getInstance();
-//                calendar.set(Calendar.HOUR_OF_DAY, hour);
-//                calendar.set(Calendar.MINUTE, 0);
-//                SimpleDateFormat timeFormat = new SimpleDateFormat("h a", Locale.getDefault());
-//                return timeFormat.format(calendar.getTime());
-//            }
-//        });
         // header ngày giờ
         weekView.setDateFormatter(date -> {
             SimpleDateFormat weekdayNameFormat = new SimpleDateFormat("EEE", Locale.getDefault());
@@ -272,32 +288,6 @@ public class TimetableWeek extends AppCompatActivity {
             SimpleDateFormat timeFormat = new SimpleDateFormat("h a", Locale.getDefault());
             return timeFormat.format(calendar.getTime());
         });
-
-
-
-        // thêm sự kiện vào WeekView bằng MonthChangeListener
-//        weekView.setMonthChangeListener((newYear, newMonth) -> {
-//            List<WeekViewEntity> monthEvents = new ArrayList<>();
-//            for (WeekViewEntity e : events) {
-//                Calendar start = e.getStartTime();
-//                int eventYear = start.get(Calendar.YEAR);
-//                int eventMonth = start.get(Calendar.MONTH); // 0-based
-//                if (eventYear == newYear && eventMonth == newMonth - 1) {
-//                    monthEvents.add(e);
-//                }
-//            }
-//            return monthEvents;
-//        });
-        // load sự kiên bản mới
-//        weekView.setWeekViewLoader(period -> {
-//            List<WeekViewEntity> weekEvents = new ArrayList<>();
-//            weekEvents.addAll(events); // copy toàn bộ events
-//            return weekEvents;
-//        });
-//        weekView.setWeekViewLoader(period -> {
-//            return new ArrayList<>(events); // copy tránh lỗi tham chiếu
-//        });
-
 
 
 
