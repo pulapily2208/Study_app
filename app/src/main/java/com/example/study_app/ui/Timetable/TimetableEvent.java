@@ -1,7 +1,5 @@
 package com.example.study_app.ui.Timetable;
 
-import static com.alamkanak.weekview.jsr310.WeekViewExtensionsKt.setStartTime;
-
 import android.graphics.Color;
 import android.util.Log;
 
@@ -15,101 +13,62 @@ import java.util.List;
 
 public class TimetableEvent {
 
-//    public static List<WeekViewEntity> convert(List<Subject> subjects) {
-//        List<WeekViewEntity> list = new ArrayList<>();
-//
-//        for (Subject s : subjects) {
-//
-//            // kiểm tra null – tránh crash
-//            if (s == null || s.ngayBatDau == null || s.ngayKetThuc == null ||
-//                    s.gioBatDau == null || s.gioKetThuc == null) {
-//
-//                Log.e("TimetableEvent",
-//                        "Subject " + s.tenHp + " missing date or time → skipped");
-//                continue;
-//            }
-//
-//            // Ngày bắt đầu - kết thúc của môn
-//            Calendar startDate = toCalendar(s.ngayBatDau);
-//            Calendar endDate = toCalendar(s.ngayKetThuc);
-//
-//            // Giờ bắt đầu - giờ kết thúc
-//            Calendar timeStart = toCalendar(s.gioBatDau);
-//            Calendar timeEnd = toCalendar(s.gioKetThuc);
-//
-//            int weeks = s.soTuan;
-//
-//            for (int w = 0; w < weeks; w++) {
-//
-//                Calendar eventStart = (Calendar) startDate.clone();
-//                eventStart.add(Calendar.WEEK_OF_YEAR, w);
-//
-//                eventStart.set(Calendar.HOUR_OF_DAY, timeStart.get(Calendar.HOUR_OF_DAY));
-//                eventStart.set(Calendar.MINUTE, timeStart.get(Calendar.MINUTE));
-//
-//                Calendar eventEnd = (Calendar) eventStart.clone();
-//                eventEnd.set(Calendar.HOUR_OF_DAY, timeEnd.get(Calendar.HOUR_OF_DAY));
-//                eventEnd.set(Calendar.MINUTE, timeEnd.get(Calendar.MINUTE));
-//
-//                long id = generateId(s, w);
-//
-//                // màu sk
-//                WeekViewEntity.Style style = new WeekViewEntity.Style.Builder()
-//                        .setBackgroundColor(Color.parseColor(s.mauSac))   // mã màu lấy từ db
-//                        .build();
-//
-//
-//                WeekViewEntity ev = new WeekViewEntity.Event.Builder(id)
-//                        .setTitle(s.tenHp)
-//                        .setStartTime(eventStart)
-//                        .setEndTime(eventEnd)
-//                        .setStyle(style)
-//                        .build();
-//                list.add(ev);
-//            }
-//        }
-//        return list;
-//    }
+    /**
+     * Converts a list of Subjects into a list of WeekViewEntity.Event<Subject>.
+     * This version is specifically tailored for the WeekView v5.3.2 API.
+     */
+    public static List<WeekViewEntity.Event<Subject>> convertSubjectsToEvents(List<Subject> subjects) {
+        List<WeekViewEntity.Event<Subject>> events = new ArrayList<>();
+        if (subjects == null) {
+            return events;
+        }
 
-    public static List<WeekViewEntity> convertSafe(List<Subject> subjects) {
-        List<WeekViewEntity> list = new ArrayList<>();
-        if (subjects == null) return list;
-
-        for (Subject s : subjects) {
-            if (s == null) continue;
-
-            String title = s.tenHp != null ? s.tenHp : "Unknown";
-            String color = (s.mauSac != null && !s.mauSac.isEmpty()) ? s.mauSac : "#3F51B5";
-            int weeks = Math.max(1, s.soTuan);
-
-            if (s.ngayBatDau == null || s.gioBatDau == null || s.gioKetThuc == null) {
-                Log.e("TimetableEvent", "Skipping subject with missing date/time: " + title);
+        for (Subject subject : subjects) {
+            if (subject == null || subject.ngayBatDau == null || subject.ngayKetThuc == null
+                    || subject.gioBatDau == null || subject.gioKetThuc == null) {
+                String id = subject != null ? subject.maHp : "null";
+                Log.w("TimetableEvent", "Skipping subject with missing data: " + id + " title="
+                        + (subject != null ? subject.tenHp : "null") + " ngayBatDau="
+                        + (subject != null ? subject.ngayBatDau : "null") + " ngayKetThuc="
+                        + (subject != null ? subject.ngayKetThuc : "null") + " gioBatDau="
+                        + (subject != null ? subject.gioBatDau : "null") + " gioKetThuc="
+                        + (subject != null ? subject.gioKetThuc : "null"));
                 continue;
             }
 
-            Calendar startDate = toCalendar(s.ngayBatDau);
-            Calendar timeStart = toCalendar(s.gioBatDau);
-            Calendar timeEnd = toCalendar(s.gioKetThuc);
+            String title = (subject.tenHp != null ? subject.tenHp : "Event") + "\n"
+                    + (subject.phongHoc != null ? subject.phongHoc : "");
+            String color = (subject.mauSac != null && !subject.mauSac.isEmpty()) ? subject.mauSac : "#3F51B5";
 
-            for (int w = 0; w < weeks; w++) {
-                Calendar eventStart = (Calendar) startDate.clone();
-                eventStart.add(Calendar.WEEK_OF_YEAR, w);
+            Calendar timeStart = toCalendar(subject.gioBatDau);
+            Calendar timeEnd = toCalendar(subject.gioKetThuc);
+
+            Calendar dayIterator = toCalendar(subject.ngayBatDau);
+            Calendar subjectEndCal = toCalendar(subject.ngayKetThuc);
+
+            while (!dayIterator.after(subjectEndCal)) {
+                Calendar eventStart = (Calendar) dayIterator.clone();
                 eventStart.set(Calendar.HOUR_OF_DAY, timeStart.get(Calendar.HOUR_OF_DAY));
                 eventStart.set(Calendar.MINUTE, timeStart.get(Calendar.MINUTE));
+                eventStart.set(Calendar.SECOND, 0);
 
-                Calendar eventEnd = (Calendar) eventStart.clone();
+                Calendar eventEnd = (Calendar) dayIterator.clone();
                 eventEnd.set(Calendar.HOUR_OF_DAY, timeEnd.get(Calendar.HOUR_OF_DAY));
                 eventEnd.set(Calendar.MINUTE, timeEnd.get(Calendar.MINUTE));
+                eventEnd.set(Calendar.SECOND, 0);
 
                 if (!eventEnd.after(eventStart)) {
-                    Log.e("TimetableEvent", "Skipping event with end <= start: " + title);
+                    dayIterator.add(Calendar.DAY_OF_YEAR, 7);
                     continue;
                 }
 
-                long id = ((s.maHp != null ? s.maHp : title.hashCode()) + "_" + w).hashCode();
+                String eventIdString = generateEventId(subject, eventStart);
+                long eventIdLong = eventIdString.hashCode();
 
                 try {
-                    WeekViewEntity ev = new WeekViewEntity.Event.Builder(id)
+                    WeekViewEntity.Event<Subject> event = (WeekViewEntity.Event<Subject>) new WeekViewEntity.Event.Builder<>(
+                            subject)
+                            .setId(eventIdLong)
                             .setTitle(title)
                             .setStartTime(eventStart)
                             .setEndTime(eventEnd)
@@ -117,24 +76,28 @@ public class TimetableEvent {
                                     .setBackgroundColor(Color.parseColor(color))
                                     .build())
                             .build();
-                    list.add(ev);
+                    events.add(event);
+                    Log.d("TimetableEvent", "Created event for subject=" + subject.maHp + " eventId=" + eventIdLong);
                 } catch (Exception e) {
-                    Log.e("TimetableEvent", "Error creating event: " + title, e);
+                    Log.e("TimetableEvent", "Error creating event with id: " + eventIdString, e);
                 }
+
+                dayIterator.add(Calendar.DAY_OF_YEAR, 7);
             }
         }
-        return list;
+        return events;
     }
 
-
-    private static long generateId(Subject s, int weekIndex) {
-        return (s.maHp + "_" + weekIndex).hashCode();
+    private static String generateEventId(Subject subject, Calendar startTime) {
+        String subjectId = subject.maHp != null ? subject.maHp : "unknown";
+        return subjectId + "_" + startTime.getTimeInMillis();
     }
 
     private static Calendar toCalendar(Date date) {
+        if (date == null)
+            return Calendar.getInstance();
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         return cal;
     }
 }
-

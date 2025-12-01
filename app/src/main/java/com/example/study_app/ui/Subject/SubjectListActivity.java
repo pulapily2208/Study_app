@@ -105,15 +105,29 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if ((requestCode == ADD_SUBJECT_REQUEST || requestCode == EDIT_SUBJECT_REQUEST || requestCode == BULK_IMPORT_REQUEST) && resultCode == RESULT_OK) {
+        if ((requestCode == ADD_SUBJECT_REQUEST || requestCode == EDIT_SUBJECT_REQUEST
+                || requestCode == BULK_IMPORT_REQUEST) && resultCode == RESULT_OK) {
             Toast.makeText(this, "Danh sách môn học đã được cập nhật.", Toast.LENGTH_SHORT).show();
+            if (data != null && data.hasExtra("UPDATED_SEMESTER_NAME")) {
+                String updatedSemester = data.getStringExtra("UPDATED_SEMESTER_NAME");
+                if (updatedSemester != null && !updatedSemester.isEmpty()) {
+                    // Set the spinner to the semester where the change happened and reload subjects
+                    selectedSemesterName = updatedSemester;
+                    loadSemesters();
+                    loadSubjectsForSelectedSemester();
+                }
+            } else {
+                // Generic refresh
+                loadSemesters();
+            }
         }
     }
 
     private void loadSemesters() {
         String previouslySelected = selectedSemesterName;
         ArrayList<String> semesterNames = subjectDao.getAllSemesterNames();
-        ArrayAdapter<String> semesterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, semesterNames);
+        ArrayAdapter<String> semesterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
+                semesterNames);
         semesterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSemesters.setAdapter(semesterAdapter);
 

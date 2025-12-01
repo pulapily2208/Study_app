@@ -41,7 +41,8 @@ import java.util.concurrent.TimeUnit;
 public class SubjectAddActivity extends AppCompatActivity {
 
     private AutoCompleteTextView etSubjectCode;
-    private EditText etSubjectName, etLecturerName, etCredits, etStartDate, etEndDate, etStartTime, etEndTime, etLocation, etNotes;
+    private EditText etSubjectName, etLecturerName, etCredits, etStartDate, etEndDate, etStartTime, etEndTime,
+            etLocation, etNotes;
     private RadioGroup rgSubjectType;
     private RadioButton rbCompulsory, rbElective;
     private TextView tvCalculatedWeeks, tvChoiceGroup;
@@ -88,6 +89,31 @@ public class SubjectAddActivity extends AppCompatActivity {
             return;
         }
 
+        // Nếu được truyền `selectedDate` từ TimetableWeek (format: yyyy-MM-dd),
+        // tiền điền `etStartDate` và set `startDateCalendar` để tránh mất ngày khi thêm
+        // môn từ timetable.
+        if (getIntent().hasExtra("selectedDate")) {
+            String selectedDateStr = getIntent().getStringExtra("selectedDate");
+            if (selectedDateStr != null && !selectedDateStr.isEmpty()) {
+                try {
+                    java.text.SimpleDateFormat dbFormat = new java.text.SimpleDateFormat("yyyy-MM-dd",
+                            java.util.Locale.getDefault());
+                    java.util.Date parsed = dbFormat.parse(selectedDateStr);
+                    if (parsed != null) {
+                        startDateCalendar = java.util.Calendar.getInstance();
+                        startDateCalendar.setTime(parsed);
+                        java.text.SimpleDateFormat displayFormat = new java.text.SimpleDateFormat("dd/MM/yyyy",
+                                java.util.Locale.getDefault());
+                        etStartDate.setText(displayFormat.format(parsed));
+                        // Tự động tính ngày kết thúc nếu có thông tin số tuần
+                        autoCalculateEndDate();
+                    }
+                } catch (java.text.ParseException e) {
+                    // Ignore invalid format
+                }
+            }
+        }
+
         checkForEditOrAddMode();
 
         if (!isEditMode) {
@@ -128,10 +154,12 @@ public class SubjectAddActivity extends AppCompatActivity {
 
         etSubjectCode.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
 
             @Override
             public void afterTextChanged(Editable s) {
@@ -161,7 +189,8 @@ public class SubjectAddActivity extends AppCompatActivity {
                 if (!TextUtils.isEmpty(currentCode)) {
                     Curriculum curriculum = curriculumDao.getCurriculumDetailsByMaHp(currentCode);
                     if (curriculum == null) {
-                        Toast.makeText(SubjectAddActivity.this, "Mã môn không tồn tại trong chương trình đào tạo!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(SubjectAddActivity.this, "Mã môn không tồn tại trong chương trình đào tạo!",
+                                Toast.LENGTH_SHORT).show();
                     }
                 }
             }
@@ -201,12 +230,12 @@ public class SubjectAddActivity extends AppCompatActivity {
             autoCalculateEndDate();
         }
     }
-    
+
     private void autoCalculateEndDate() {
         if (startDateCalendar != null && calculatedWeeks > 0) {
             endDateCalendar = (Calendar) startDateCalendar.clone();
             endDateCalendar.add(Calendar.DAY_OF_YEAR, (calculatedWeeks * 7) - 1);
-            
+
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
             etEndDate.setText(dateFormat.format(endDateCalendar.getTime()));
         } else {
@@ -269,12 +298,14 @@ public class SubjectAddActivity extends AppCompatActivity {
             endDateCalendar = Calendar.getInstance();
             endDateCalendar.setTime(subject.ngayKetThuc);
         }
-        
+
         calculatedWeeks = subject.soTuan;
         tvCalculatedWeeks.setText(String.valueOf(calculatedWeeks));
 
-        if (subject.gioBatDau != null) etStartTime.setText(timeFormat.format(subject.gioBatDau));
-        if (subject.gioKetThuc != null) etEndTime.setText(timeFormat.format(subject.gioKetThuc));
+        if (subject.gioBatDau != null)
+            etStartTime.setText(timeFormat.format(subject.gioBatDau));
+        if (subject.gioKetThuc != null)
+            etEndTime.setText(timeFormat.format(subject.gioKetThuc));
 
         Curriculum curriculum = curriculumDao.getCurriculumDetailsByMaHp(subject.maHp);
         if ("Tự chọn".equals(subject.loaiMon)) {
@@ -406,7 +437,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         subject.mauSac = selectedColor;
         subject.soTuan = calculatedWeeks;
         subject.tenHk = currentSemesterName;
-        
+
         Intent resultIntent = new Intent();
 
         if (isEditMode) {
@@ -422,6 +453,9 @@ public class SubjectAddActivity extends AppCompatActivity {
             long newRowId = subjectDao.addOrEnrollSubject(subject);
             if (newRowId != -1) {
                 Toast.makeText(this, R.string.add_subject_success, Toast.LENGTH_SHORT).show();
+                // Return the semester name and ma_hp so callers can refresh and select
+                resultIntent.putExtra("UPDATED_SEMESTER_NAME", subject.tenHk);
+                resultIntent.putExtra("UPDATED_MA_HP", subject.maHp);
                 setResult(RESULT_OK, resultIntent);
                 finish();
             } else {
@@ -448,7 +482,8 @@ public class SubjectAddActivity extends AppCompatActivity {
         int day = initialCalendar.get(Calendar.DAY_OF_MONTH);
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, year1, monthOfYear, dayOfMonth) -> {
-            String selectedDate = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, monthOfYear + 1, year1);
+            String selectedDate = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, monthOfYear + 1,
+                    year1);
             editText.setText(selectedDate);
 
             Calendar selectedCalendar = Calendar.getInstance();
@@ -501,7 +536,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             colors = getResources().getStringArray(R.array.subject_colors);
         } catch (Exception e) {
             Toast.makeText(this, R.string.error_color_picker, Toast.LENGTH_SHORT).show();
-            colors = new String[]{"#CCCCCC"};
+            colors = new String[] { "#CCCCCC" };
         }
 
         colorPickerContainer.removeAllViews();
