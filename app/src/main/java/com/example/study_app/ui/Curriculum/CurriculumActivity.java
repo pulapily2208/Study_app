@@ -22,6 +22,7 @@ import com.example.study_app.ui.Curriculum.Adapter.CurriculumAdapter;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.chip.ChipGroup;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,7 @@ public class CurriculumActivity extends AppCompatActivity {
     private SearchView searchView;
     private ImageButton buttonFilter, buttonSort;
     private MaterialCardView filtersCard;
+    private ChipGroup chipGroupStatus;
 
     // --- Adapter & Data ---
     private CurriculumAdapter adapter;
@@ -84,6 +86,7 @@ public class CurriculumActivity extends AppCompatActivity {
         buttonFilter = findViewById(R.id.buttonFilter);
         buttonSort = findViewById(R.id.buttonSort);
         filtersCard = findViewById(R.id.filtersCard);
+        chipGroupStatus = findViewById(R.id.chipGroupStatus);
     }
 
     private void setupToolbar() {
@@ -150,6 +153,8 @@ public class CurriculumActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        chipGroupStatus.setOnCheckedChangeListener((group, checkedId) -> applyAllFilters());
     }
 
     private void applyAllFilters() {
@@ -159,6 +164,7 @@ public class CurriculumActivity extends AppCompatActivity {
         String selectedFacultyName = autoCompleteFaculty.getText().toString();
         String group = autoCompleteGroup.getText().toString();
         String courseType = autoCompleteCourseType.getText().toString();
+        String status = getSelectedStatus();
 
         int facultyId = -1;
         if (!selectedFacultyName.equals(getString(R.string.all_faculties))) {
@@ -171,8 +177,20 @@ public class CurriculumActivity extends AppCompatActivity {
         if (group.equals(getString(R.string.all_groups))) {
             group = "All";
         }
-            
-        adapter.filterAndSort(searchQuery, facultyId, group, courseType, isSortAscending);
+
+        adapter.filterAndSort(searchQuery, facultyId, group, courseType, status, isSortAscending);
+    }
+
+    private String getSelectedStatus() {
+        int checkedChipId = chipGroupStatus.getCheckedChipId();
+        if (checkedChipId == R.id.chipNotStudied) {
+            return DatabaseHelper.STATUS_NOT_ENROLLED;
+        } else if (checkedChipId == R.id.chipStudying) {
+            return DatabaseHelper.STATUS_IN_PROGRESS;
+        } else if (checkedChipId == R.id.chipStudied) {
+            return DatabaseHelper.STATUS_COMPLETED;
+        }
+        return "All"; // No filter
     }
 
     private void loadCurriculumData() {
