@@ -172,6 +172,8 @@ public class SubjectDao {
                 values.put("ghi_chu", subject.ghiChu);
                 values.put("color_tag", subject.mauSac);
                 values.put("so_tuan", subject.soTuan);
+                // Cập nhật cả học kỳ của bảng mon_hoc theo spinner
+                values.put("hoc_ky", semesterId);
 
                 resultId = db.insertOrThrow("mon_hoc", null, values);
             } else {
@@ -194,6 +196,8 @@ public class SubjectDao {
                     update.put("color_tag", subject.mauSac);
                 if (subject.soTuan > 0)
                     update.put("so_tuan", subject.soTuan);
+                // Đồng bộ học kỳ của mon_hoc khi thêm ghi danh cho môn đã tồn tại
+                update.put("hoc_ky", semesterId);
                 if (update.size() > 0) {
                     db.update("mon_hoc", update, "ma_hp = ?", new String[] { subject.maHp });
                 }
@@ -273,6 +277,8 @@ public class SubjectDao {
         values.put("ghi_chu", subject.ghiChu);
         values.put("color_tag", subject.mauSac);
         values.put("so_tuan", subject.soTuan);
+        // Đồng bộ cả học kỳ trong bảng mon_hoc theo spinner khi chỉnh sửa
+        values.put("hoc_ky", semesterId);
 
         db.beginTransaction();
         try {
