@@ -1,22 +1,27 @@
 package com.example.study_app.ui.Curriculum.Adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.ScoreDao;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
+import com.example.study_app.ui.Score.InputScoreActivity;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.CurriculumViewHolder> {
 
@@ -24,10 +29,12 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
     private final List<Curriculum> courseListDisplayed;
     // Bản sao của danh sách gốc, không bao giờ thay đổi, chỉ dùng để lọc
     private final List<Curriculum> courseListFull;
+    private final ScoreDao scoreDao; // NEW
 
-    public CurriculumAdapter(List<Curriculum> courseList) {
+    public CurriculumAdapter(Context context, List<Curriculum> courseList) {
         this.courseListFull = new ArrayList<>(courseList);
         this.courseListDisplayed = new ArrayList<>(courseList);
+        this.scoreDao = new ScoreDao(context); // NEW
     }
 
     @NonNull
@@ -63,7 +70,7 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
             holder.tvNhomTuChon.setVisibility(View.GONE);
         }
 
-        // (NEW) Badge trạng thái
+        // Badge trạng thái
         String status = currentCourse.getStatus();
         if (status == null) {
             holder.tvStatusBadge.setVisibility(View.GONE);
@@ -87,6 +94,30 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
                     holder.tvStatusBadge.setTextColor(context.getColor(R.color.white));
                     break;
             }
+        }
+
+        // (NEW) Hiển thị điểm GPA nếu có
+        Float gpa = scoreDao.getGpa(currentCourse.getMaHp());
+        if (gpa != null) {
+            holder.tvGPA.setText(String.format(Locale.US, "%.1f", gpa));
+            holder.tvGPA.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvGPA.setVisibility(View.GONE);
+        }
+
+
+        // Khi bấm vào 1 môn → mở InputScoreActivity
+        if (DatabaseHelper.STATUS_COMPLETED.equals(status) || DatabaseHelper.STATUS_IN_PROGRESS.equals(status)) {
+            holder.itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(context, InputScoreActivity.class);
+                intent.putExtra("subject_code", currentCourse.getMaHp());
+                intent.putExtra("subject_name", currentCourse.getTenHp());
+                context.startActivity(intent);
+            });
+        }else {
+            holder.itemView.setOnClickListener(v -> {
+                Toast.makeText(context, "Môn này chưa học nên không thể nhập điểm", Toast.LENGTH_SHORT).show();
+            });
         }
     }
     @Override
@@ -160,7 +191,8 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
 
     static class CurriculumViewHolder extends RecyclerView.ViewHolder {
         final TextView tvMaHp, tvTenHp, tvSoTinChi, tvSoTietLyThuyet, tvSoTietThucHanh, tvHocKy, tvLoaiHp, tvNhomTuChon;
-        final TextView tvStatusBadge; // NEW
+        final TextView tvStatusBadge;
+        final TextView tvGPA; // NEW
 
         public CurriculumViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -172,7 +204,8 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
             tvHocKy = itemView.findViewById(R.id.tvHocKy);
             tvLoaiHp = itemView.findViewById(R.id.tvLoaiHp);
             tvNhomTuChon = itemView.findViewById(R.id.tvNhomTuChon);
-            tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge); // NEW
+            tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge);
+            tvGPA = itemView.findViewById(R.id.tvGPA); // NEW
         }
     }
 }

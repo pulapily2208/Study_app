@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:allowBackup="true"
@@ -41,6 +43,7 @@
         <activity android:name=".ui.Subject.SubjectAddActivity"/>
         <activity android:name=".ui.Subject.SubjectDetailActivity"/>
         <activity android:name=".ui.Subject.SubjectBulkImportActivity"/>
+        <activity android:name=".ui.Score.InputScoreActivity" />
         <activity android:name=".ui.Notes.NotesActivity" />
         <activity android:name=".ui.Notes.InputNoteActivity" />
         <activity android:name=".ui.Curriculum.CurriculumActivity" />

@@ -533,11 +533,11 @@ public class InputNoteActivity extends AppCompatActivity {
 
     private void startRecording() {
         try {
-            String fileName = "AUD_" + System.currentTimeMillis() + ".mp3";
+            String fileName = "AUD_" + System.currentTimeMillis() + ".3gp";
             File dir = new File(getFilesDir(), "audio");
             if (!dir.exists())
                 dir.mkdirs();
-            File audioFile = new File(dir, fileName);
+            audioFile = new File(dir, fileName);
             audioUri = Uri.fromFile(audioFile);
 
             mediaRecorder = new MediaRecorder();

@@ -195,6 +195,17 @@ CREATE TABLE IF NOT EXISTS mon_hoc_tu_chon_map (
     FOREIGN KEY (hoc_phan_tu_chon_id) REFERENCES hoc_phan_tu_chon(id) ON DELETE CASCADE
 );
 
+-- Bảng điểm môn học
+CREATE TABLE IF NOT EXISTS diem_mon_hoc (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ma_hp TEXT NOT NULL,
+    diem_chuyen_can REAL,
+    diem_giua_ki REAL,
+    diem_cuoi_ki REAL,
+    gpa REAL,
+    FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp) ON DELETE CASCADE
+);
+
 -- =====================
 -- SEED DATA: DỮ LIỆU GỐC
 -- =====================
