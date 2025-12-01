@@ -207,22 +207,6 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Thêm -->
-        <Button
-            android:id="@+id/btnAdd"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:text="+"
-            android:textColor="@color/white"
-            android:backgroundTint="@color/green"
-            android:textSize="28sp"
-            android:gravity="center"
-            android:elevation="8dp"
-            android:layout_marginBottom="10dp"
-            android:shape="oval" />
-
-
         <LinearLayout
             android:layout_weight="1"
             android:layout_width="0dp"
@@ -256,7 +240,37 @@
                 android:layout_height="wrap_content"
                 android:textSize="12sp" />
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/note" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:src="@drawable/ic_add"
+        android:tint="@android:color/white"
+        android:backgroundTint="@color/blue"
+        app:fabSize="normal"
+
+        app:layout_constraintBottom_toTopOf="@id/bottomBar"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 
 
