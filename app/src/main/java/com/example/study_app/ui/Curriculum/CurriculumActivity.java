@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.study_app.R;
 import com.example.study_app.data.CurriculumDao;
 import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.UserSession;
 import com.example.study_app.ui.Curriculum.Adapter.CurriculumAdapter;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -194,7 +195,7 @@ public class CurriculumActivity extends AppCompatActivity {
     }
 
     private void loadCurriculumData() {
-        List<Curriculum> allCourses = curriculumDao.getAllCoursesForCurriculumWithStatus(1);
+        List<Curriculum> allCourses = curriculumDao.getAllCoursesForCurriculumWithStatus(UserSession.getCurrentUserId(this));
         adapter = new CurriculumAdapter(allCourses);
         recyclerViewCurriculum.setAdapter(adapter);
         applyAllFilters();

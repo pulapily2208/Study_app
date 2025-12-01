@@ -278,8 +278,19 @@ public class SubjectDao {
         try {
             rowsAffected = db.update("mon_hoc", values, "ma_hp = ?", new String[] { subject.maHp });
 
-            db.delete("enrollments", "ma_hp = ?", new String[] { subject.maHp });
-            enrollSubjectInSemester(subject.maHp, semesterId);
+            // Update enrollment to new semester without deleting history
+            int currentUserId = getCurrentUserIdFromDb(db);
+            ContentValues enrollUpdate = new ContentValues();
+            enrollUpdate.put("hoc_ky", semesterId);
+            int updated = db.update(
+                    "enrollments",
+                    enrollUpdate,
+                    "ma_hp = ? AND user_id = ?",
+                    new String[] { subject.maHp, String.valueOf(currentUserId) });
+            if (updated == 0) {
+                // If no existing enrollment row, insert one
+                enrollSubjectInSemester(subject.maHp, semesterId);
+            }
 
             db.setTransactionSuccessful();
         } catch (Exception e) {

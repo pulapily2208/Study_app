@@ -23,38 +23,35 @@ public class TimetableDao {
         String schoolYear;
         String expectedName = null;
 
-        // --- THÁNG 8 → 12: kỳ lẻ ---
-        if (month >= 8 && month <= 12) {
+        // --- THÁNG 9 → 12: kỳ LẺ (1,3,5,7) ---
+        if (month >= 9 && month <= 12) {
 
             // năm học = year–(year+1)
             schoolYear = year + "-" + (year + 1);
 
             // năm học bắt đầu = số năm thứ mấy?
             int yearIndex = getYearIndex(year); // 1,2,3,4...
-
-            int semesterNumber = (yearIndex - 1) * 2 + 1; // 1,3,5,7,...
-            expectedName = "học kỳ " + semesterNumber;
+            int semesterNumber = (yearIndex - 1) * 2 + 1; // 1,3,5,7
+            expectedName = "Học kỳ " + semesterNumber;
         }
 
-        // --- THÁNG 1 → 5: kỳ chẵn ---
+        // --- THÁNG 1 → 5: kỳ CHẴN (2,4,6,8) ---
         else if (month >= 1 && month <= 5) {
 
             schoolYear = (year - 1) + "-" + year;
 
             int yearIndex = getYearIndex(year - 1);
-
-            int semesterNumber = (yearIndex - 1) * 2 + 2; // 2,4,6,8,...
-            expectedName = "học kỳ " + semesterNumber;
+            int semesterNumber = (yearIndex - 1) * 2 + 2; // 2,4,6,8
+            expectedName = "Học kỳ " + semesterNumber;
         }
 
-        // --- THÁNG 6–7: kỳ hè ---
-        else {
+        // --- THÁNG 6–8: kỳ hè ---
+        else { // months 6,7,8
 
             schoolYear = (year - 1) + "-" + year;
 
             int yearIndex = getYearIndex(year - 1);
-
-            expectedName = "học kỳ hè năm " + yearIndex;
+            expectedName = "Học kỳ hè năm " + yearIndex;
         }
 
         SQLiteDatabase db = dbHelper.getReadableDatabase();
@@ -66,13 +63,13 @@ public class TimetableDao {
         if (cursor == null)
             return null;
 
-        expectedName = expectedName.toLowerCase().trim();
+        expectedName = expectedName.trim();
 
         Integer semesterId = null;
 
         while (cursor.moveToNext()) {
             int id = cursor.getInt(0);
-            String name = cursor.getString(1).toLowerCase().trim();
+            String name = cursor.getString(1).trim();
 
             if (name.equals(expectedName)) {
                 semesterId = id;
