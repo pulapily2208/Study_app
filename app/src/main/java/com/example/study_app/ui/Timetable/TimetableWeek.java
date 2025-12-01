@@ -25,8 +25,12 @@ import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.data.TimetableDao;
 import com.example.study_app.data.UserSession;
+import com.example.study_app.ui.Curriculum.CurriculumActivity;
+import com.example.study_app.ui.Deadline.MainDeadLine;
+import com.example.study_app.ui.Notes.NotesActivity;
 import com.example.study_app.ui.Subject.Model.Subject;
 import com.example.study_app.ui.Subject.SubjectAddActivity;
+import com.example.study_app.ui.Subject.SubjectListActivity;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
@@ -42,6 +46,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class TimetableWeek extends AppCompatActivity {
+    LinearLayout btnNote, btnDeadLine, btnSubject, btnCurriculum;
 
     private WeekView weekView;
     private MaterialCalendarView monthCalendar;
@@ -73,6 +78,7 @@ public class TimetableWeek extends AppCompatActivity {
 
         setupViews();
         setupInteractions();
+        intentMenu();
 
         CalendarDay today = CalendarDay.today();
         monthCalendar.setSelectedDate(today);
@@ -279,6 +285,55 @@ public class TimetableWeek extends AppCompatActivity {
 //            });
 //            llDateContainer.addView(chip);
         }
+    }
+
+    public void intentMenu(){
+        btnDeadLine=findViewById(R.id.btnDeadLine);
+        btnNote = findViewById(R.id.btnNote);
+        btnSubject = findViewById(R.id.btnSubject);
+        btnCurriculum = findViewById(R.id.btnCurriculum);
+
+//        DEADLINE
+        btnDeadLine.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(TimetableWeek.this, MainDeadLine.class);
+                startActivity(intent);
+            }
+        });
+
+
+
+//        SUBJECT
+        btnSubject.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(TimetableWeek.this, SubjectListActivity.class);
+                startActivity(intent);
+            }
+        });
+
+
+//      NOTE
+        btnNote.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(TimetableWeek.this, NotesActivity.class);
+                startActivity(intent);
+            }
+        });
+
+
+
+//        CURRICULUM
+        btnCurriculum.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(TimetableWeek.this, CurriculumActivity.class);
+                startActivity(intent);
+            }
+        });
+
     }
 }
 
