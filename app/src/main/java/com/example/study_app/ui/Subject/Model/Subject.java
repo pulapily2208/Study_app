@@ -1,8 +1,12 @@
 package com.example.study_app.ui.Subject.Model;
 
+import com.example.study_app.ui.Deadline.Models.Deadline;
+
+import java.util.ArrayList;
 import java.util.Date;
 
 public class Subject {
+    public ArrayList<Deadline> deadline=new ArrayList<>();
 
     public String maHp;
     public String tenHp;

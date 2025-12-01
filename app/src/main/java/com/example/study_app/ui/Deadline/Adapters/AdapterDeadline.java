@@ -10,10 +10,12 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.DeadlineDao;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Subject.Model.Subject;
 
@@ -27,16 +29,30 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
     private Context context;
     private List<Deadline> deadlines;
     private AdapterWeek.OnDeadlineInteractionListener deadlineListener;
+    private DeadlineDao dbHelper;
 
     public AdapterDeadline(Context context, ArrayList<Deadline> deadlines) {
         this.context = context;
         this.deadlines = deadlines;
+        this.dbHelper = new DeadlineDao(context);
     }
 
     public void setOnDeadlineInteractionListener(AdapterWeek.OnDeadlineInteractionListener listener) {
         this.deadlineListener = listener;
     }
+    private void sortDeadlines() {
+        // Ghim lên đầu
+        deadlines.sort((d1, d2) -> {
+            if (d1.isPinned() && !d2.isPinned()) return -1;
+            if (!d1.isPinned() && d2.isPinned()) return 1;
 
+            // Nếu cùng trạng thái ghim thì sắp xếp theo ngày kết thúc
+            if (d1.getNgayKetThuc() != null && d2.getNgayKetThuc() != null) {
+                return d1.getNgayKetThuc().compareTo(d2.getNgayKetThuc());
+            }
+            return 0;
+        });
+    }
     public void updateData(List<Deadline> newDeadlines) {
         this.deadlines.clear();
         this.deadlines.addAll(newDeadlines);
@@ -54,38 +70,65 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
         Deadline deadline = deadlines.get(position);
         if (deadline == null) return;
 
-//         Lấy tên môn
-//        Subject s = new DatabaseHelper(context).getSubjectByMaHp(deadline.getMaHp());
         String displayTitle = deadline.getTieuDe();
-//        if (s != null && s.tenHp != null) {
-//            displayTitle += " (" + s.tenHp + ")";
-//        }
 
         holder.tieuDe.setText(displayTitle); // ✅ phải set displayTitle, không phải deadline.getTieuDe()
 
         holder.icon.setImageResource(deadline.getIcon());
 
-        if (!deadline.isCompleted() && deadline.getNgayKetThuc() != null) {
-            long diff = deadline.getNgayKetThuc().getTime() - new Date().getTime();
-            holder.tieuDe.setTextColor(diff <= 3600_000 ? Color.RED : Color.BLACK);
-        } else {
-            holder.tieuDe.setTextColor(Color.BLACK);
-        }
 
         holder.checkBox.setOnCheckedChangeListener(null);
         holder.checkBox.setChecked(deadline.isCompleted());
 
-        if (deadline.isCompleted()) {
-            holder.thoiGian.setText("Đã hoàn thành");
+        // Disable checkbox nếu đã hết hạn
+        boolean isExpired = deadline.getNgayKetThuc() != null &&
+                deadline.getNgayKetThuc().before(new Date());
+        boolean isCompleted = deadline.isCompleted();
+
+        // ❗ Nếu đã hoàn thành HOẶC đã quá hạn → khóa checkbox
+        holder.checkBox.setEnabled(!(isCompleted || isExpired));
+
+        long now = System.currentTimeMillis();
+        long deadlineTime = deadline.getNgayKetThuc().getTime();
+
+        int pos = holder.getAdapterPosition();
+        if (pos == RecyclerView.NO_POSITION) return;
+        Deadline d=deadlines.get(pos);
+
+        if (!deadline.isCompleted()) {
+
+            if (deadlineTime < now) {
+                d.setNote("Quá hạn");
+                holder.thoiGian.setText(d.getNote());
+            } else {
+                d.setNote("Chưa hoàn thành");
+                holder.thoiGian.setText(deadline.getConLai());
+            }
         } else {
-            holder.thoiGian.setText(deadline.getConLai());
+            d.setNote("Đã hoàn thành");
+            holder.thoiGian.setText(d.getNote());
         }
 
+
+        if (d.isPinned()) {
+            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.beige));
+        } else {
+            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.white));
+        }
+
+        // Xử lý khi checkbox thay đổi
+        // Nếu chưa hoàn thành → cho phép tick
         holder.checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (deadlineListener != null) {
-                deadlineListener.onStateChanged(deadline, isChecked);
+
+            d.setCompleted(isChecked);
+
+            // cập nhật DB
+            if (dbHelper != null) {
+                dbHelper.updateDeadline(d);
             }
-            notifyItemChanged(holder.getAdapterPosition());
+
+            // Sau khi tick → disable checkbox
+            notifyItemChanged(pos);
         });
 
         holder.itemView.setOnClickListener(v -> {
@@ -110,7 +153,7 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
 
     private void showOptionsDialog(final Deadline deadline, final int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setItems(new CharSequence[]{"Sửa", "Xóa"}, (dialog, which) -> {
+        builder.setItems(new CharSequence[]{"Sửa", "Xóa", "Ghim lên đầu"}, (dialog, which) -> {
             if (deadlineListener == null) return;
             switch (which) {
                 case 0: // Edit
@@ -131,8 +174,16 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
                             .setNegativeButton("Hủy", null)
                             .show();
                     break;
+                case 2: // Ghim lên đầu
+                    deadlines.remove(position);          // bỏ khỏi vị trí cũ
+                    deadline.setPinned(true);
+                    deadlines.add(0, deadline);          // thêm vào đầu danh sách
+                    notifyItemMoved(position, 0);        // thông báo RecyclerView
+                    notifyItemChanged(0);                // refresh item đầu
+                    break;
             }
         });
+
         builder.create().show();
     }
 

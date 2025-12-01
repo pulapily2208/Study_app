@@ -1,5 +1,6 @@
 package com.example.study_app.ui.Deadline;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -30,6 +31,7 @@ public class MainDeadLine extends AppCompatActivity {
     private DeadlineNotificationManager notificationManager;
 
     private AdapterDeadline todayAdapter;
+//    private AdapterMonHoc todayAdapter;
     private AdapterMonHoc allAdapter;
 
     @Override
@@ -70,12 +72,12 @@ public class MainDeadLine extends AppCompatActivity {
         AdapterWeek.OnDeadlineInteractionListener listener = new AdapterWeek.OnDeadlineInteractionListener() {
             @Override
             public void onDeadlineClick(Deadline deadline) {
-                // Not implemented for this overview screen
+//                Toast.makeText(MainDeadLine.this, "Bạn vừa chọn: " + deadline.getTieuDe(), Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onEditDeadline(Deadline deadline) {
-                // Not implemented for this overview screen
+                Toast.makeText(MainDeadLine.this, "Vui lòng vào môn học để chỉnh sửa", Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -105,10 +107,11 @@ public class MainDeadLine extends AppCompatActivity {
         allAdapter.setOnDeadlineInteractionListener(listener);
         rvAll.setAdapter(allAdapter);
     }
-
     private void loadData() {
-        // Load and display today's deadlines
-        ArrayList<Deadline> todayDeadlines = dbHelper.getTodaysDeadlines();
+
+        // ==== Hôm nay ====
+        List<Deadline> todayDeadlines = dbHelper.getTodaysDeadlines();
+
         if (todayDeadlines.isEmpty()) {
             rvToday.setVisibility(View.GONE);
             tvTodayEmpty.setVisibility(View.VISIBLE);
@@ -124,15 +127,17 @@ public class MainDeadLine extends AppCompatActivity {
             todayAdapter.updateData(todayDeadlines);
         }
 
-        // Load and display all subjects that have deadlines
-        List<Subject> subjectsWithDeadlines = dbHelper.getSubjectsWithDeadlines();
-        if (subjectsWithDeadlines.isEmpty()) {
+        // ==== Tất cả deadline ====
+        List<Subject> allSubjects = dbHelper.getSubjectsWithDeadlines();
+
+        if (allSubjects.isEmpty()) {
             rvAll.setVisibility(View.GONE);
             tvAllEmpty.setVisibility(View.VISIBLE);
         } else {
             rvAll.setVisibility(View.VISIBLE);
             tvAllEmpty.setVisibility(View.GONE);
-            allAdapter.updateData(subjectsWithDeadlines);
+            allAdapter.updateData(allSubjects);
         }
     }
+
 }

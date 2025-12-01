@@ -67,21 +67,12 @@ public class DeadlineDao extends SQLiteOpenHelper {
             db.execSQL("UPDATE deadline SET reminder_time = reminder_time_old;");
             db.execSQL("ALTER TABLE deadline DROP COLUMN reminder_time_old;");
         }
-        db.execSQL("DROP TABLE IF EXISTS hoc_ky");
-        db.execSQL("DROP TABLE IF EXISTS khoa");
-        db.execSQL("DROP TABLE IF EXISTS hoc_phan_tu_chon");
         db.execSQL("DROP TABLE IF EXISTS mon_hoc");
-        db.execSQL("DROP TABLE IF EXISTS hoc_phan_tien_quyet");
-        db.execSQL("DROP TABLE IF EXISTS users");
         db.execSQL("DROP TABLE IF EXISTS deadline");
-        db.execSQL("DROP TABLE IF EXISTS notes");
-        db.execSQL("DROP TABLE IF EXISTS attachments");
-        db.execSQL("DROP TABLE IF EXISTS timetable_sessions");
-        db.execSQL("DROP TABLE IF EXISTS enrollments");
-        db.execSQL("DROP TABLE IF EXISTS notification_schedules");
-        db.execSQL("DROP TABLE IF EXISTS mon_hoc_tu_chon_map");
+
         onCreate(db);
     }
+
 
     private Date parseDate(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return null;
@@ -125,33 +116,36 @@ public class DeadlineDao extends SQLiteOpenHelper {
         if (date == null) return null;
         return dateTimeFormat.format(date);
     }
+    private void sortDeadlines(ArrayList<Deadline> list) {
+        Date now = new Date();
 
-    public Subject getSubjectByMaHp(String maHp) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Subject subject = null;
-        String query = "SELECT * FROM mon_hoc WHERE ma_hp = ?";
-        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
-            if (cursor != null && cursor.moveToFirst()) {
-                subject = new Subject();
-                subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
-                subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
-                subject.soTc = cursor.getInt(cursor.getColumnIndexOrThrow("so_tin_chi"));
-                subject.loaiMon = cursor.getString(cursor.getColumnIndexOrThrow("loai_hp"));
-                subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
-                subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
-                subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
-                subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
-                subject.gioBatDau = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
-                subject.gioKetThuc = parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
-                subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
-                subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
-                subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
+        list.sort((d1, d2) -> {
+            int prio1 = getPriority(d1, now);
+            int prio2 = getPriority(d2, now);
+
+            // So sánh theo độ ưu tiên 3 nhóm
+            if (prio1 != prio2) {
+                return Integer.compare(prio1, prio2);
             }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting subject detail", e);
-        }
-        return subject;
+
+            // Nếu cùng nhóm thì so theo ngày kết thúc
+            if (d1.getNgayKetThuc() != null && d2.getNgayKetThuc() != null) {
+                return d1.getNgayKetThuc().compareTo(d2.getNgayKetThuc());
+            }
+
+            return 0;
+        });
     }
+
+    private int getPriority(Deadline d, Date now) {
+        boolean completed = d.isCompleted();
+        boolean expired = d.getNgayKetThuc() != null && d.getNgayKetThuc().before(now);
+
+        if (completed) return 3;      // thấp nhất
+        if (expired) return 2;        // giữa
+        return 1;                     // cao nhất
+    }
+
 
     private void runSqlFromRaw(SQLiteDatabase db, int resId) {
         try (InputStream inputStream = context.getResources().openRawResource(resId);
@@ -180,32 +174,25 @@ public class DeadlineDao extends SQLiteOpenHelper {
         }
     }
 
-
-    //    DEADLINE
-//    public ArrayList<Deadline> getAllDeadlines() {
-//        ArrayList<Deadline> list = new ArrayList<>();
-//        SQLiteDatabase db = this.getReadableDatabase();
-//
-//        String query = "SELECT * FROM deadline ORDER BY ngay_ket_thuc ASC";
-//
-//        try (Cursor cursor = db.rawQuery(query, null)) {
-//            if (cursor != null && cursor.moveToFirst()) {
-//                do {
-//                    Deadline d = cursorToDeadline(cursor); // Hàm chuyển Cursor → Deadline
-//                    list.add(d);
-//                } while (cursor.moveToNext());
-//            }
-//        } catch (Exception e) {
-//            Log.e("DatabaseHelper", "Error getting all deadlines", e);
-//        } finally {
-//            db.close();
-//        }
-//
-//        return list;
-//    }
-
-
-    public ArrayList<Deadline> getDeadlinesByMaHp(String maHp) {
+    public Subject getSubjectByMaHp(String maHp) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Subject subject = null;
+        String query = "SELECT * FROM mon_hoc WHERE ma_hp = ? ";
+        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
+            if (cursor != null && cursor.moveToFirst()) {
+                subject = new Subject();
+                subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
+                subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
+                subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
+                subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
+                subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting subject detail", e);
+        }
+        return subject;
+    }
+  public ArrayList<Deadline> getDeadlinesByMaHp(String maHp) {
         ArrayList<Deadline> deadlineList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         String query = "SELECT * FROM deadline WHERE ma_hp = ? ORDER BY ngay_ket_thuc ASC";
@@ -220,6 +207,9 @@ public class DeadlineDao extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e("DatabaseHelper", "Error getting deadlines for maHp: " + maHp, e);
         }
+
+        sortDeadlines(deadlineList);
+
         return deadlineList;
     }
 
@@ -249,6 +239,9 @@ public class DeadlineDao extends SQLiteOpenHelper {
         } catch (Exception e) {
             Log.e("DatabaseHelper", "Error getting deadlines by week", e);
         }
+
+        sortDeadlines(list);
+
         return list;
     }
 
@@ -305,34 +298,72 @@ public class DeadlineDao extends SQLiteOpenHelper {
         values.put("repeat_type", deadline.getRepeatText());
         values.put("reminder_time", deadline.getReminderText());
         values.put("icon", deadline.getIcon());
-        values.put("notes", deadline.getNote());
         values.put("weekIndex", deadline.getWeekIndex());
 
         return values;
     }
 
+
+    public ArrayList<Subject> getSubjectsWithDeadlines() {
+    ArrayList<Subject> list = new ArrayList<>();
+    SQLiteDatabase db = this.getReadableDatabase();
+
+    // Chỉ lấy môn học có deadline chưa hoàn thành
+    String distinctMaHpQuery =
+            "SELECT DISTINCT ma_hp FROM deadline WHERE completed = 0";
+//        String query = "SELECT * FROM mon_hoc m JOIN deadline d ON m.ma_hp = d.ma_hp WHERE m.ma_hp = ? AND d.completed = 0";
+    try (Cursor maHpCursor = db.rawQuery(distinctMaHpQuery, null)) {
+        if (maHpCursor != null && maHpCursor.moveToFirst()) {
+            do {
+                String maHp = maHpCursor.getString(0);
+                Subject subject = getSubjectByMaHp(maHp);
+                if (subject != null) {
+                    list.add(subject);
+                }
+            } while (maHpCursor.moveToNext());
+        }
+    } catch (Exception e) {
+        Log.e("DatabaseHelper", "Error getting subjects with deadlines", e);
+    }
+
+    return list;
+}
     public ArrayList<Deadline> getTodaysDeadlines() {
         ArrayList<Deadline> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
 
-        // Lấy thời điểm kết thúc hôm nay
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        String endOfTodayStr = formatDateTime(cal.getTime());
+        // Bắt đầu hôm nay 00:00:00
+        Calendar calStart = Calendar.getInstance();
+        calStart.set(Calendar.HOUR_OF_DAY, 0);
+        calStart.set(Calendar.MINUTE, 0);
+        calStart.set(Calendar.SECOND, 0);
+        String startOfTodayStr = formatDateTime(calStart.getTime());
 
-        String query = "SELECT d.*, s.name AS ten_mon " +
+        // Kết thúc hôm nay 23:59:59
+        Calendar calEnd = Calendar.getInstance();
+        calEnd.set(Calendar.HOUR_OF_DAY, 23);
+        calEnd.set(Calendar.MINUTE, 59);
+        calEnd.set(Calendar.SECOND, 59);
+        String endOfTodayStr = formatDateTime(calEnd.getTime());
+
+        String query = "SELECT d.*, s.ten_hp " +
                 "FROM deadline d " +
-                "LEFT JOIN subject s ON d.ma_hp = s.ma_hp " +
-                "WHERE d.completed = 0 AND d.ngay_ket_thuc = ? " +
+                "LEFT JOIN mon_hoc s ON d.ma_hp = s.ma_hp " +
+                "WHERE d.completed = 0 AND d.ngay_ket_thuc BETWEEN ? AND ? " +
                 "ORDER BY d.ngay_ket_thuc ASC";
 
-
-        try (Cursor cursor = db.rawQuery(query, new String[]{endOfTodayStr})) {
+        try (Cursor cursor = db.rawQuery(query, new String[]{startOfTodayStr, endOfTodayStr})) {
             if (cursor != null && cursor.moveToFirst()) {
                 do {
                     Deadline d = cursorToDeadline(cursor);
+
+                    // Gán tên môn học vào Deadline nếu muốn
+                    int tenHpIndex = cursor.getColumnIndex("ten_hp");
+                    if (tenHpIndex != -1) {
+                        d.setTieuDe(cursor.getString(tenHpIndex)+"\nDeadline: "+d.getTieuDe()); // thêm setter setTenMon trong Deadline
+
+                    }
+
                     list.add(d);
                 } while (cursor.moveToNext());
             }
@@ -342,60 +373,7 @@ public class DeadlineDao extends SQLiteOpenHelper {
             db.close();
         }
 
-        return list;
-    }
-
-    public ArrayList<Subject> getSubjectsWithDeadlines() {
-        ArrayList<Subject> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        // Get distinct ma_hp from deadlines, then get subject info for each ma_hp
-        String distinctMaHpQuery = "SELECT DISTINCT ma_hp FROM deadline";
-        try (Cursor maHpCursor = db.rawQuery(distinctMaHpQuery, null)) {
-            if (maHpCursor != null && maHpCursor.moveToFirst()) {
-                do {
-                    String maHp = maHpCursor.getString(0);
-                    Subject subject = getSubjectByMaHp(maHp);
-                    if (subject != null) {
-                        list.add(subject);
-                    }
-                } while (maHpCursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting subjects with deadlines", e);
-        }
-        return list;
-    }
-
-    public ArrayList<Subject> getSubjectsWithTodaysDeadlines() {
-        ArrayList<Subject> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        String startOfTodayStr = formatDateTime(cal.getTime());
-
-        cal.set(Calendar.HOUR_OF_DAY, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        String endOfTodayStr = formatDateTime(cal.getTime());
-
-        String distinctMaHpQuery = "SELECT DISTINCT ma_hp FROM deadline WHERE completed = 0 AND ngay_ket_thuc BETWEEN ? AND ?";
-
-        try (Cursor maHpCursor = db.rawQuery(distinctMaHpQuery, new String[]{startOfTodayStr, endOfTodayStr})) {
-            if (maHpCursor != null && maHpCursor.moveToFirst()) {
-                do {
-                    String maHp = maHpCursor.getString(0);
-                    Subject subject = getSubjectByMaHp(maHp);
-                    if (subject != null) {
-                        list.add(subject);
-                    }
-                } while (maHpCursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting subjects with today's deadlines", e);
-        }
+        sortDeadlines(list);
         return list;
     }
 }

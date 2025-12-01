@@ -119,5 +119,46 @@
             android:text="+"
             android:textColor="@color/white" />
     </LinearLayout>
+<!--    &lt;!&ndash; Floating Action Button (nút +) &ndash;&gt;-->
+<!--    <com.google.android.material.floatingactionbutton.FloatingActionButton-->
+<!--        android:id="@+id/fabAdd"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:src="@drawable/ic_add"-->
+<!--        android:contentDescription="Add"-->
+<!--        app:tint="@android:color/white"-->
+<!--        app:backgroundTint="@color/green"-->
+<!--        app:layout_anchor="@id/bottomBar"-->
+<!--        app:layout_anchorGravity="center"-->
+<!--        tools:ignore="MissingConstraints" />-->
+
+<!--    &lt;!&ndash; Bottom App Bar với khe lõm (cutout) cho FAB &ndash;&gt;-->
+<!--    <com.google.android.material.bottomappbar.BottomAppBar-->
+<!--        android:id="@+id/bottomBar"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="70dp"-->
+<!--        android:backgroundTint="@color/white"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+
+<!--        app:fabAlignmentMode="center"-->
+<!--        app:fabCradleMargin="10dp"-->
+<!--        app:fabCradleRoundedCornerRadius="35dp"-->
+<!--        app:fabCradleVerticalOffset="12dp"-->
+<!--        tools:ignore="BottomAppBar">-->
+
+<!--        &lt;!&ndash; Menu bên trong bottom bar &ndash;&gt;-->
+<!--        <com.google.android.material.bottomnavigation.BottomNavigationView-->
+<!--            android:id="@+id/bottomNav"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:background="@android:color/transparent"-->
+<!--            app:itemIconTint="@color/nav_selector"-->
+<!--            app:itemTextColor="@color/nav_selector"-->
+<!--            app:menu="@menu/bottom_nav_menu" />-->
+
+<!--    </com.google.android.material.bottomappbar.BottomAppBar>-->
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
