@@ -27,6 +27,7 @@ public class Deadline implements Serializable {
     private String note;
     private int weekIndex;
     private String tenMon;
+    private boolean isPinned = false;
     private long duration; // Kept for compatibility
 
     public Deadline() {}
@@ -44,7 +45,13 @@ public class Deadline implements Serializable {
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
+    public boolean isPinned() {
+        return isPinned;
+    }
 
+    public void setPinned(boolean pinned) {
+        this.isPinned = pinned;
+    }
     public String getReminder() {
         return reminder;
     }

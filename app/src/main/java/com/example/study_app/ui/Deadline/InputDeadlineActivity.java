@@ -248,7 +248,19 @@ public class InputDeadlineActivity extends AppCompatActivity {
             return;
         }
 
+        Date now = new Date();
         Date tu = calendarTu.getTime();
+        Date den = calendarDen.getTime();
+
+        if(tu.before(now)){
+            Toast.makeText(this, "Thời gian bắt đầu phải lớn hơn thời gian hiện tại!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if(den.before(tu)){
+            Toast.makeText(this, "Thời gian kết thúc phải lớn hơn thời gian bắt đầu!", Toast.LENGTH_SHORT).show();
+            return; // dừng không lưu
+        }
+
         Deadline deadlineToReturn = isEditMode ? deadlineToEdit : new Deadline();
 
         deadlineToReturn.setTieuDe(ten);
