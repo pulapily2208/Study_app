@@ -1,6 +1,5 @@
 package com.example.study_app.ui.Deadline;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -241,11 +240,9 @@ public class MainDeadLineMonHoc extends AppCompatActivity {
         adapterWeek.setOnDeadlineInteractionListener(new AdapterWeek.OnDeadlineInteractionListener() {
             @Override
             public void onDeadlineClick(Deadline deadline) {
-                new AlertDialog.Builder(MainDeadLineMonHoc.this)
-                        .setTitle(deadline.getTieuDe())
-                        .setMessage("Ghi chú: " + deadline.getNoiDung())
-                        .setPositiveButton("Đóng", null)
-                        .show();
+                Intent intent = new Intent(MainDeadLineMonHoc.this, InfoDeadlineActivity.class);
+                intent.putExtra(InfoDeadlineActivity.EXTRA_DEADLINE, deadline);
+                startActivity(intent);
             }
 
             @Override
