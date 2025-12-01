@@ -28,6 +28,7 @@ import com.example.study_app.data.UserSession;
 import com.example.study_app.ui.Subject.Model.Subject;
 import com.example.study_app.ui.Subject.SubjectAddActivity;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
@@ -46,7 +47,7 @@ public class TimetableWeek extends AppCompatActivity {
     private MaterialCalendarView monthCalendar;
     private TextView tvSelectedDate;
     private LinearLayout llDateContainer;
-    private Button btnAdd;
+    private FloatingActionButton btnAdd;
 
     private String selectedDate = null;
 
