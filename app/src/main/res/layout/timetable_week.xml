@@ -7,6 +7,47 @@
     android:background="@color/beige"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- TOP NAVBAR -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/topBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/beige"
+        android:elevation="6dp"
+        android:paddingHorizontal="12dp"
+        app:titleTextColor="@color/black"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+<!--        <TextView-->
+<!--            android:id="@+id/tvTitle"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="Study App"-->
+<!--            android:textSize="20sp"-->
+<!--            android:textColor="@color/black"-->
+<!--            android:layout_gravity="center_vertical"/>-->
+
+        <ImageView
+            android:id="@+id/tvTitle"
+            android:layout_width="150dp"
+            android:layout_height="30dp"
+            android:src="@drawable/tranh_study"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="100dp"
+          />
+
+        <!-- SEARCH ICON BÊN PHẢI -->
+        <ImageView
+            android:id="@+id/btnSearch"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/search"
+            android:layout_gravity="end|center_vertical"
+            android:padding="6dp"
+            android:layout_marginRight="20dp"/>
+    </com.google.android.material.appbar.MaterialToolbar>
+
     <!-- LỊCH THÁNG -->
     <com.prolificinteractive.materialcalendarview.MaterialCalendarView
         android:id="@+id/monthCalendar"
@@ -15,24 +56,11 @@
         android:background="@color/beige"
         android:padding="8dp"
         app:mcv_showOtherDates="all"
-        app:layout_constraintTop_toTopOf="parent"
+
+        app:layout_constraintTop_toBottomOf="@id/topBar"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-
-    <!-- header thang -->
-    <!--    <TextView-->
-    <!--        android:id="@+id/tvMonth"-->
-    <!--        android:layout_width="0dp"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:padding="8dp"-->
-    <!--        android:text="Jan 2024"-->
-    <!--        android:textColor="@color/black"-->
-    <!--        android:textSize="23sp"-->
-    <!--        android:textStyle="bold"-->
-    <!--        app:layout_constraintStart_toStartOf="parent"-->
-    <!--        app:layout_constraintEnd_toEndOf="parent"-->
-    <!--        app:layout_constraintTop_toTopOf="parent" /> -->
+        app:layout_constraintEnd_toEndOf="parent"
+        />
 
     <!-- ngay duoc chon  -->
     <TextView
@@ -81,84 +109,163 @@
 
 
     <!-- bottom bar-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/bottomBar"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:background="@color/white"-->
+<!--        android:gravity="center_vertical"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:padding="16dp"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent">-->
+<!--        <ImageView-->
+<!--            android:layout_width="24dp"-->
+<!--            android:layout_height="24dp"-->
+<!--            android:contentDescription="Calendar Icon"-->
+<!--            android:src="@drawable/calendar" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_gravity="center_vertical"-->
+<!--            android:layout_margin="8dp"-->
+<!--            android:text="Thời khóa biểu"-->
+<!--            android:textSize="16sp" />-->
+
+<!--        <View-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="0dp"-->
+<!--            android:layout_weight="1" />-->
+
+<!--        <Button-->
+<!--            android:id="@+id/btnAdd"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:backgroundTint="@color/green"-->
+<!--            android:text="+"-->
+<!--            android:textColor="@color/white" />-->
+<!--        <com.google.android.material.floatingactionbutton.FloatingActionButton-->
+<!--            android:id="@+id/fab_add_subject"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_margin="16dp"-->
+<!--            android:src="@drawable/ic_add"-->
+<!--            app:fabSize="normal"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            app:tint="@android:color/white"-->
+<!--            android:backgroundTint="@color/blue"/>-->
+<!--    </LinearLayout>-->
+
+
     <LinearLayout
         android:id="@+id/bottomBar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:orientation="horizontal"
         android:background="@color/white"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="16dp"
+        android:paddingHorizontal="16dp"
+        android:weightSum="5"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:contentDescription="Calendar Icon"
-            android:src="@drawable/calendar" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_margin="8dp"
-            android:text="Thời khóa biểu"
-            android:textSize="16sp" />
-
-        <View
+        <LinearLayout
+            android:layout_weight="1"
             android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center">
 
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/calendar" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/add" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Thêm -->
         <Button
             android:id="@+id/btnAdd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/green"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
             android:text="+"
-            android:textColor="@color/white" />
+            android:textColor="@color/white"
+            android:backgroundTint="@color/green"
+            android:textSize="28sp"
+            android:gravity="center"
+            android:elevation="8dp"
+            android:layout_marginBottom="10dp"
+            android:shape="oval" />
+
+
+        <LinearLayout
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/add" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/note" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
-<!--    &lt;!&ndash; Floating Action Button (nút +) &ndash;&gt;-->
-<!--    <com.google.android.material.floatingactionbutton.FloatingActionButton-->
-<!--        android:id="@+id/fabAdd"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:src="@drawable/ic_add"-->
-<!--        android:contentDescription="Add"-->
-<!--        app:tint="@android:color/white"-->
-<!--        app:backgroundTint="@color/green"-->
-<!--        app:layout_anchor="@id/bottomBar"-->
-<!--        app:layout_anchorGravity="center"-->
-<!--        tools:ignore="MissingConstraints" />-->
 
-<!--    &lt;!&ndash; Bottom App Bar với khe lõm (cutout) cho FAB &ndash;&gt;-->
-<!--    <com.google.android.material.bottomappbar.BottomAppBar-->
-<!--        android:id="@+id/bottomBar"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="70dp"-->
-<!--        android:backgroundTint="@color/white"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
 
-<!--        app:fabAlignmentMode="center"-->
-<!--        app:fabCradleMargin="10dp"-->
-<!--        app:fabCradleRoundedCornerRadius="35dp"-->
-<!--        app:fabCradleVerticalOffset="12dp"-->
-<!--        tools:ignore="BottomAppBar">-->
 
-<!--        &lt;!&ndash; Menu bên trong bottom bar &ndash;&gt;-->
-<!--        <com.google.android.material.bottomnavigation.BottomNavigationView-->
-<!--            android:id="@+id/bottomNav"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:background="@android:color/transparent"-->
-<!--            app:itemIconTint="@color/nav_selector"-->
-<!--            app:itemTextColor="@color/nav_selector"-->
-<!--            app:menu="@menu/bottom_nav_menu" />-->
 
-<!--    </com.google.android.material.bottomappbar.BottomAppBar>-->
+
+
+
+
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

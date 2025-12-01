@@ -227,6 +227,9 @@ public class TimetableWeek extends AppCompatActivity {
     private void displayWeekChips(Calendar startOfWeek) {
         llDateContainer.removeAllViews();
         SimpleDateFormat sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
+
+        Calendar today = Calendar.getInstance();
+
         for (int i = 0; i < 7; i++) {
             Calendar day = (Calendar) startOfWeek.clone();
             day.add(Calendar.DAY_OF_MONTH, i);
@@ -235,13 +238,101 @@ public class TimetableWeek extends AppCompatActivity {
             chip.setText(sdf.format(day.getTime()));
             chip.setCheckable(true);
 
-            final Calendar finalDay = day;
+            if (selectedDate != null) {
+                SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                String dayStr = dbFormat.format(day.getTime());
+                if (dayStr.equals(selectedDate)) {
+                    chip.setChecked(true);
+                }
+            }
+
+            // bỏ chọn chip cũ
             chip.setOnClickListener(v -> {
-                monthCalendar.setSelectedDate(CalendarDay.from(finalDay.get(Calendar.YEAR),
-                        finalDay.get(Calendar.MONTH) + 1, finalDay.get(Calendar.DAY_OF_MONTH)));
-                weekView.goToDate(finalDay);
+                for (int j = 0; j < llDateContainer.getChildCount(); j++) {
+                    View child = llDateContainer.getChildAt(j);
+                    if (child instanceof Chip) {
+                        ((Chip) child).setChecked(false);
+                    }
+                }
+                chip.setChecked(true);
+
+                // Đồng bộ TextView
+                SimpleDateFormat sdfFull = new SimpleDateFormat("EEEE, dd MMM, yyyy", Locale.ENGLISH);
+                tvSelectedDate.setText(sdfFull.format(day.getTime()));
+
+                // Lưu ngày để truyền Add
+                SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                selectedDate = dbFormat.format(day.getTime());
+
+                // Đồng bộ WeekView
+                weekView.goToDate(day);
             });
+
             llDateContainer.addView(chip);
+
+
+
+//            final Calendar finalDay = day;
+//            chip.setOnClickListener(v -> {
+//                monthCalendar.setSelectedDate(CalendarDay.from(finalDay.get(Calendar.YEAR),
+//                        finalDay.get(Calendar.MONTH) + 1, finalDay.get(Calendar.DAY_OF_MONTH)));
+//                weekView.goToDate(finalDay);
+//            });
+//            llDateContainer.addView(chip);
         }
     }
 }
+
+//private void displayWeekChips(Calendar startOfWeek) {
+//    llDateContainer.removeAllViews();
+//    SimpleDateFormat sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
+//
+//    Calendar today = Calendar.getInstance(); // để highlight hôm nay
+//
+//    for (int i = 0; i < 7; i++) {
+//        Calendar day = (Calendar) startOfWeek.clone();
+//        day.add(Calendar.DAY_OF_MONTH, i);
+//
+//        Chip chip = new Chip(this);
+//        chip.setText(sdf.format(day.getTime()));
+//        chip.setCheckable(true);
+//
+//        if (day.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+//                && day.get(Calendar.MONTH) == today.get(Calendar.MONTH)
+//                && day.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH)) {
+//            chip.setChecked(true);
+//        }
+//
+//        if (selectedDate != null) {
+//            SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+//            String dayStr = dbFormat.format(day.getTime());
+//            if (dayStr.equals(selectedDate)) {
+//                chip.setChecked(true);
+//            }
+//        }
+//
+//        // bỏ chọn chip cũ
+//        chip.setOnClickListener(v -> {
+//            for (int j = 0; j < llDateContainer.getChildCount(); j++) {
+//                View child = llDateContainer.getChildAt(j);
+//                if (child instanceof Chip) {
+//                    ((Chip) child).setChecked(false);
+//                }
+//            }
+//            chip.setChecked(true);
+//
+//            // Đồng bộ TextView
+//            SimpleDateFormat sdfFull = new SimpleDateFormat("EEEE, dd MMM, yyyy", Locale.ENGLISH);
+//            tvSelectedDate.setText(sdfFull.format(day.getTime()));
+//
+//            // Lưu ngày để truyền Add
+//            SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+//            selectedDate = dbFormat.format(day.getTime());
+//
+//            // Đồng bộ WeekView
+//            weekView.goToDate(day);
+//        });
+//
+//        llDateContainer.addView(chip);
+//    }
+//}
