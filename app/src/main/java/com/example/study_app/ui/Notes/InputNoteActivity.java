@@ -31,6 +31,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -41,7 +42,10 @@ import androidx.appcompat.widget.PopupMenu;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.graphics.Insets;
 import androidx.core.text.HtmlCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.example.study_app.R;
@@ -64,10 +68,12 @@ public class InputNoteActivity extends AppCompatActivity {
 
     private EditText edtTitle, edtContent;
     private Button btnSave, btnBack;
-    private ImageView btnUndo, btnRedo, btnText, btnAttach, btnShowColorPalette, btnChooseFromGallery, btnTakePhoto, btnChecklist;
+    private ImageView btnUndo, btnRedo, btnText, btnAttach, btnShowColorPalette, btnChooseFromGallery, btnTakePhoto,
+            btnChecklist;
 
     private LinearLayout textFormattingToolbar, imageSourceChooserLayout, imageContainer;
-    private ImageView btnBold, btnItalic, btnHighlight, btnAlignLeft, btnAlignCenter, btnAlignRight, btnUploadPdf, btnAudio, btnRecordVoice, btnCancelVoice, btnFinishVoice;
+    private ImageView btnBold, btnItalic, btnHighlight, btnAlignLeft, btnAlignCenter, btnAlignRight, btnUploadPdf,
+            btnAudio, btnRecordVoice, btnCancelVoice, btnFinishVoice;
     private LinearLayout colorPalette, voiceContainer;
     private ImageView color1, color2, color3, color4, color5;
 
@@ -91,19 +97,23 @@ public class InputNoteActivity extends AppCompatActivity {
     private File audioFile;
     private Uri audioUri;
 
-
-
     private final Stack<String> undoStack = new Stack<>();
     private final Stack<String> redoStack = new Stack<>();
     private boolean isUndoingOrRedoing = false;
 
     private static final int REQUEST_AUDIO_PERMISSION = 1001;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.note_add);
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         dbHelper = new NotesDao(this);
 
@@ -122,14 +132,17 @@ public class InputNoteActivity extends AppCompatActivity {
 
         edtContent.addTextChangedListener(new android.text.TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (isUndoingOrRedoing) return;
+                if (isUndoingOrRedoing)
+                    return;
 
                 makeCheckboxesClickable();
 
@@ -149,7 +162,7 @@ public class InputNoteActivity extends AppCompatActivity {
 
     private void requestAudioPermission() {
         ActivityCompat.requestPermissions(this,
-                new String[]{Manifest.permission.RECORD_AUDIO},
+                new String[] { Manifest.permission.RECORD_AUDIO },
                 REQUEST_AUDIO_PERMISSION);
     }
 
@@ -191,8 +204,6 @@ public class InputNoteActivity extends AppCompatActivity {
         btnCancelVoice = findViewById(R.id.btnCancelVoice);
         btnFinishVoice = findViewById(R.id.btnFinishVoice);
 
-
-
         colorPalette = findViewById(R.id.colorPalette);
         color1 = findViewById(R.id.color1);
         color2 = findViewById(R.id.color2);
@@ -229,7 +240,7 @@ public class InputNoteActivity extends AppCompatActivity {
                 uri -> {
                     if (uri != null) {
                         Uri savedUri = savePdfToAppFolder(uri);
-                        if (savedUri != null){
+                        if (savedUri != null) {
                             pdfPaths.add(savedUri.getPath());
                             addPdfToContainer(savedUri);
                         }
@@ -240,22 +251,23 @@ public class InputNoteActivity extends AppCompatActivity {
     private Uri saveImageToAppFolder(Uri sourceUri) {
         try {
             InputStream inputStream = getContentResolver().openInputStream(sourceUri);
-            if (inputStream == null) return null;
+            if (inputStream == null)
+                return null;
 
             File dir = new File(getFilesDir(), "images");
-            if (!dir.exists()) dir.mkdirs();
+            if (!dir.exists())
+                dir.mkdirs();
 
             String fileName = "IMG_" + System.currentTimeMillis() + ".jpg";
             File destFile = new File(dir, fileName);
 
-            FileOutputStream out = new FileOutputStream(destFile);
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = inputStream.read(buffer)) > 0) {
-                out.write(buffer, 0, length);
+            try (InputStream in = inputStream; FileOutputStream out = new FileOutputStream(destFile)) {
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, length);
+                }
             }
-            out.close();
-            inputStream.close();
 
             return Uri.fromFile(destFile);
 
@@ -268,24 +280,23 @@ public class InputNoteActivity extends AppCompatActivity {
     private Uri savePdfToAppFolder(Uri sourceUri) {
         try {
             String originalName = getFileNameFromUri(sourceUri);
-
             InputStream inputStream = getContentResolver().openInputStream(sourceUri);
-            if (inputStream == null) return null;
+            if (inputStream == null)
+                return null;
 
             File dir = new File(getFilesDir(), "pdfs");
-            if (!dir.exists()) dir.mkdirs();
+            if (!dir.exists())
+                dir.mkdirs();
 
             File destFile = new File(dir, originalName);
 
-            FileOutputStream out = new FileOutputStream(destFile);
-            byte[] buffer = new byte[1024];
-            int length;
-
-            while ((length = inputStream.read(buffer)) > 0) {
-                out.write(buffer, 0, length);
+            try (InputStream in = inputStream; FileOutputStream out = new FileOutputStream(destFile)) {
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, length);
+                }
             }
-            out.close();
-            inputStream.close();
             return Uri.fromFile(destFile);
 
         } catch (Exception e) {
@@ -296,16 +307,15 @@ public class InputNoteActivity extends AppCompatActivity {
 
     private String getFileNameFromUri(Uri sourceUri) {
         String result = null;
-        Cursor cursor = getContentResolver().query(sourceUri, null, null, null, null);
-        if (cursor != null){
-            if(cursor.moveToFirst()){
-                int nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
-                result = cursor.getString(nameIndex);
-
+        try (Cursor cursor = getContentResolver().query(sourceUri, null, null, null, null)) {
+            if (cursor != null) {
+                if (cursor.moveToFirst()) {
+                    int nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    result = cursor.getString(nameIndex);
+                }
             }
-            cursor.close();
         }
-        if (result == null){
+        if (result == null) {
             result = sourceUri.getLastPathSegment();
         }
         return result;
@@ -315,8 +325,7 @@ public class InputNoteActivity extends AppCompatActivity {
         ImageView imageView = new ImageView(this);
         imageView.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        ));
+                LinearLayout.LayoutParams.WRAP_CONTENT));
         imageView.setAdjustViewBounds(true);
         imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
@@ -352,7 +361,7 @@ public class InputNoteActivity extends AppCompatActivity {
         imageContainer.addView(imageView);
     }
 
-    private void addPdfToContainer (Uri uri){
+    private void addPdfToContainer(Uri uri) {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.HORIZONTAL);
         layout.setPadding(8, 8, 8, 8);
@@ -372,19 +381,17 @@ public class InputNoteActivity extends AppCompatActivity {
         fileName.setLayoutParams(new LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f  // Chiếm không gian còn lại
+                1f // Chiếm không gian còn lại
         ));
 
         ImageView btnMenu = new ImageView(this);
         btnMenu.setImageResource(R.drawable.note_ic_more);
         LinearLayout.LayoutParams menuParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
+                LinearLayout.LayoutParams.WRAP_CONTENT);
 
         menuParams.setMargins(0, 20, 5, 0);
         btnMenu.setLayoutParams(menuParams);
-
 
         layout.addView(icon);
         layout.addView(fileName);
@@ -424,7 +431,8 @@ public class InputNoteActivity extends AppCompatActivity {
                                         file.delete();
                                     }
 
-                                    Toast.makeText(InputNoteActivity.this, "PDF đã được xóa", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(InputNoteActivity.this, "PDF đã được xóa", Toast.LENGTH_SHORT)
+                                            .show();
                                 }
                             });
                             builder.setNegativeButton("Hủy", null);
@@ -440,7 +448,6 @@ public class InputNoteActivity extends AppCompatActivity {
 
         imageContainer.addView(layout);
     }
-
 
     private void showVoiceContainer() {
         voiceContainer.setVisibility(View.VISIBLE);
@@ -488,16 +495,13 @@ public class InputNoteActivity extends AppCompatActivity {
         color4.setOnClickListener(v -> selectColor("#80DEEA"));
         color5.setOnClickListener(v -> selectColor("#CF94DA"));
 
-        btnChooseFromGallery.setOnClickListener(v ->
-                pickMultiple.launch(new PickVisualMediaRequest.Builder()
-                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
-                        .build())
-        );
+        btnChooseFromGallery.setOnClickListener(v -> pickMultiple.launch(new PickVisualMediaRequest.Builder()
+                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                .build()));
 
         btnTakePhoto.setOnClickListener(v -> openCamera());
 
         btnChecklist.setOnClickListener(v -> insertCheckboxAtCurrentLine());
-
 
         btnUploadPdf.setOnClickListener(v -> pickPdf.launch("application/pdf"));
 
@@ -521,7 +525,8 @@ public class InputNoteActivity extends AppCompatActivity {
             // Xoá file nếu đã tạo
             if (audioFile != null) {
                 File f = new File(audioFile.toURI());
-                if (f.exists()) f.delete();
+                if (f.exists())
+                    f.delete();
             }
         });
     }
@@ -530,7 +535,8 @@ public class InputNoteActivity extends AppCompatActivity {
         try {
             String fileName = "AUD_" + System.currentTimeMillis() + ".mp3";
             File dir = new File(getFilesDir(), "audio");
-            if (!dir.exists()) dir.mkdirs();
+            if (!dir.exists())
+                dir.mkdirs();
             File audioFile = new File(dir, fileName);
             audioUri = Uri.fromFile(audioFile);
 
@@ -590,11 +596,15 @@ public class InputNoteActivity extends AppCompatActivity {
                 mediaPlayer.setDataSource(audioUri.getPath());
                 mediaPlayer.prepare();
                 mediaPlayer.start();
+                mediaPlayer.setOnCompletionListener(mp -> mp.release());
             } catch (Exception e) {
                 e.printStackTrace();
+                try {
+                    mediaPlayer.release();
+                } catch (Exception ignored) {
+                }
             }
         });
-
 
         layout.setOnLongClickListener(v -> {
             AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
@@ -625,20 +635,19 @@ public class InputNoteActivity extends AppCompatActivity {
         imageContainer.addView(layout);
     }
 
-
     private void insertCheckboxAtCurrentLine() {
         int start = Math.max(edtContent.getSelectionStart(), 0);
         Editable editable = edtContent.getText();
         String text = editable.toString();
         int lineStart = start;
-        while (lineStart > 0 && text.charAt(lineStart - 1) != '\n') lineStart--;
+        while (lineStart > 0 && text.charAt(lineStart - 1) != '\n')
+            lineStart--;
 
         // Chỉ thêm checkbox nếu dòng chưa có
         if (!text.startsWith("☐", lineStart) && !text.startsWith("☑", lineStart)) {
             editable.insert(lineStart, "☐ ");
         }
     }
-
 
     private int toggle(View v) {
         return v.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE;
@@ -650,8 +659,7 @@ public class InputNoteActivity extends AppCompatActivity {
         cameraImageUri = FileProvider.getUriForFile(
                 this,
                 getPackageName() + ".provider",
-                file
-        );
+                file);
         takePhoto.launch(cameraImageUri);
     }
 
@@ -663,7 +671,8 @@ public class InputNoteActivity extends AppCompatActivity {
     private void toggleStyle(int style) {
         int s = edtContent.getSelectionStart();
         int e = edtContent.getSelectionEnd();
-        if (s >= e) return;
+        if (s >= e)
+            return;
 
         StyleSpan[] spans = edtContent.getText().getSpans(s, e, StyleSpan.class);
         boolean exists = false;
@@ -681,21 +690,24 @@ public class InputNoteActivity extends AppCompatActivity {
     private void toggleHighlight() {
         int s = edtContent.getSelectionStart();
         int e = edtContent.getSelectionEnd();
-        if (s >= e) return;
+        if (s >= e)
+            return;
         edtContent.getText().setSpan(new BackgroundColorSpan(Color.YELLOW), s, e, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
     }
 
     private void applyAlignment(Layout.Alignment alignment) {
         int s = edtContent.getSelectionStart();
         int e = edtContent.getSelectionEnd();
-        if (s >= e) return;
+        if (s >= e)
+            return;
         edtContent.getText().setSpan(new AlignmentSpan.Standard(alignment), s, e, Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
     }
 
     private void makeCheckboxesClickable() {
         Editable editable = edtContent.getText();
         ClickableSpan[] oldSpans = editable.getSpans(0, editable.length(), ClickableSpan.class);
-        for (ClickableSpan span : oldSpans) editable.removeSpan(span);
+        for (ClickableSpan span : oldSpans)
+            editable.removeSpan(span);
 
         String text = editable.toString();
         for (int i = 0; i < text.length(); i++) {
@@ -708,10 +720,13 @@ public class InputNoteActivity extends AppCompatActivity {
                         Editable e = edtContent.getText();
                         if (index < e.length()) {
                             char current = e.charAt(index);
-                            if (current == '☐') e.replace(index, index + 1, "☑");
-                            else if (current == '☑') e.replace(index, index + 1, "☐");
+                            if (current == '☐')
+                                e.replace(index, index + 1, "☑");
+                            else if (current == '☑')
+                                e.replace(index, index + 1, "☐");
                         }
                     }
+
                     @Override
                     public void updateDrawState(@NonNull android.text.TextPaint ds) {
                         ds.setColor(ds.linkColor); // giữ màu text mặc định
@@ -772,7 +787,6 @@ public class InputNoteActivity extends AppCompatActivity {
         currentNote.setPdfPaths(pdfPaths);
         currentNote.setAudioPaths(audioPaths);
 
-
         if (currentNote.getId() == 0) {
             dbHelper.insertNote(currentNote);
             Toast.makeText(this, "Note saved", Toast.LENGTH_SHORT).show();
@@ -819,7 +833,7 @@ public class InputNoteActivity extends AppCompatActivity {
             }
         }
 
-        if(currentNote.getAudioPaths() != null) {
+        if (currentNote.getAudioPaths() != null) {
             for (String path : currentNote.getAudioPaths()) {
                 File file = new File(path);
                 if (file.exists()) {

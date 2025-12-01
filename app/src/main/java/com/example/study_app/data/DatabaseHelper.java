@@ -31,7 +31,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private final Context context;
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
     private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
-    private static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+    private static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",
+            Locale.getDefault());
 
     public static final String STATUS_NOT_ENROLLED = "NOT_ENROLLED";
     public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
@@ -40,6 +41,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
         this.context = context;
+    }
+
+    /**
+     * Expose the application context used by this helper so DAOs can resolve
+     * the current user via helpers like UserSession without keeping extra
+     * Context fields elsewhere.
+     */
+    public Context getContext() {
+        return context;
     }
 
     @Override
@@ -64,7 +74,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.w("DatabaseHelper", "Upgrading database from version " + oldVersion + " to " + newVersion + ", which will destroy all old data");
+        Log.w("DatabaseHelper", "Upgrading database from version " + oldVersion + " to " + newVersion
+                + ", which will destroy all old data");
         if (oldVersion < 11) {
             db.execSQL("ALTER TABLE deadline RENAME COLUMN reminder_time TO reminder_time_old;");
             db.execSQL("ALTER TABLE deadline ADD COLUMN reminder_time TEXT;");
@@ -89,35 +100,72 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     // Package-private so DAOs can use them
     Date parseDate(String dateStr) {
-        if (dateStr == null || dateStr.isEmpty()) return null;
+        if (dateStr == null || dateStr.isEmpty())
+            return null;
+
+        // Try the primary app format first (dd/MM/yyyy)
         try {
             return dateFormat.parse(dateStr);
+        } catch (ParseException ignored) {
+        }
+
+        // Try ISO-like yyyy-MM-dd which may come from some inputs
+        try {
+            SimpleDateFormat isoDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            return isoDate.parse(dateStr);
+        } catch (ParseException ignored) {
+        }
+
+        // Try full datetime format
+        try {
+            return dateTimeFormat.parse(dateStr);
         } catch (ParseException e) {
+            Log.w("DatabaseHelper", "Could not parse date string: '" + dateStr + "'");
             return null;
         }
     }
 
     Date parseTime(String timeStr) {
-        if (timeStr == null || timeStr.isEmpty()) return null;
+        if (timeStr == null || timeStr.isEmpty())
+            return null;
+
+        // Prefer HH:mm
         try {
             return timeFormat.parse(timeStr);
+        } catch (ParseException ignored) {
+        }
+
+        // Try variants like HH:mm:ss or H:mm
+        try {
+            SimpleDateFormat withSeconds = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
+            return withSeconds.parse(timeStr);
+        } catch (ParseException ignored) {
+        }
+
+        try {
+            SimpleDateFormat singleHour = new SimpleDateFormat("H:mm", Locale.getDefault());
+            return singleHour.parse(timeStr);
         } catch (ParseException e) {
+            Log.w("DatabaseHelper", "Could not parse time string: '" + timeStr + "'");
             return null;
         }
     }
 
     String formatDate(Date date) {
-        if (date == null) return null;
+        if (date == null)
+            return null;
         return dateFormat.format(date);
     }
 
     String formatTime(Date time) {
-        if (time == null) return null;
+        if (time == null)
+            return null;
         return timeFormat.format(time);
     }
 
     Date parseDateTime(String dateTimeStr) {
-        if (dateTimeStr == null || dateTimeStr.isEmpty()) return null;
+        if (dateTimeStr == null || dateTimeStr.isEmpty())
+            return null;
         try {
             return dateTimeFormat.parse(dateTimeStr);
         } catch (ParseException e) {
@@ -127,19 +175,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     String formatDateTime(Date date) {
-        if (date == null) return null;
+        if (date == null)
+            return null;
         return dateTimeFormat.format(date);
     }
 
     private void runSqlFromRaw(SQLiteDatabase db, int resId) {
         try (InputStream inputStream = context.getResources().openRawResource(resId);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             StringBuilder sqlBuilder = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty() || line.startsWith("--")) {
+                if (line.isEmpty())
                     continue;
+                // Remove inline SQL comments that start with --
+                int commentIndex = line.indexOf("--");
+                if (commentIndex >= 0) {
+                    line = line.substring(0, commentIndex).trim();
+                    if (line.isEmpty())
+                        continue;
                 }
                 sqlBuilder.append(line);
                 if (line.endsWith(";")) {

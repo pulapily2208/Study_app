@@ -37,8 +37,10 @@ public class SubjectDao {
     public int getSemesterIdByName(String semesterName) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         int semesterId = -1;
-        if (semesterName == null) return semesterId;
-        try (Cursor cursor = db.query("hoc_ky", new String[]{"id"}, "ten_hoc_ky = ?", new String[]{semesterName}, null, null, null)) {
+        if (semesterName == null)
+            return semesterId;
+        try (Cursor cursor = db.query("hoc_ky", new String[] { "id" }, "ten_hoc_ky = ?", new String[] { semesterName },
+                null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 semesterId = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
             }
@@ -51,14 +53,15 @@ public class SubjectDao {
     public ArrayList<Subject> getSubjectsBySemester(String semesterName) {
         ArrayList<Subject> subjectList = new ArrayList<>();
         int semesterId = getSemesterIdByName(semesterName);
-        if (semesterId == -1) return subjectList;
+        if (semesterId == -1)
+            return subjectList;
 
         String selectQuery = "SELECT m.* FROM mon_hoc m " +
                 "INNER JOIN enrollments e ON m.ma_hp = e.ma_hp " +
                 "WHERE e.hoc_ky = ?";
 
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        try (Cursor cursor = db.rawQuery(selectQuery, new String[]{String.valueOf(semesterId)})) {
+        try (Cursor cursor = db.rawQuery(selectQuery, new String[] { String.valueOf(semesterId) })) {
             if (cursor != null && cursor.moveToFirst()) {
                 do {
                     Subject subject = new Subject();
@@ -68,10 +71,14 @@ public class SubjectDao {
                     subject.loaiMon = cursor.getString(cursor.getColumnIndexOrThrow("loai_hp"));
                     subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
                     subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
-                    subject.ngayBatDau = dbHelper.parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
-                    subject.ngayKetThuc = dbHelper.parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
-                    subject.gioBatDau = dbHelper.parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
-                    subject.gioKetThuc = dbHelper.parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
+                    subject.ngayBatDau = dbHelper
+                            .parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
+                    subject.ngayKetThuc = dbHelper
+                            .parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
+                    subject.gioBatDau = dbHelper
+                            .parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
+                    subject.gioKetThuc = dbHelper
+                            .parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
                     subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
                     subject.mauSac = cursor.getString(cursor.getColumnIndexOrThrow("color_tag"));
                     subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
@@ -92,7 +99,7 @@ public class SubjectDao {
                 "INNER JOIN enrollments e ON m.ma_hp = e.ma_hp " +
                 "INNER JOIN hoc_ky hk ON e.hoc_ky = hk.id " +
                 "WHERE m.ma_hp = ?";
-        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
+        try (Cursor cursor = db.rawQuery(query, new String[] { maHp })) {
             if (cursor != null && cursor.moveToFirst()) {
                 subject = new Subject();
                 subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
@@ -102,7 +109,8 @@ public class SubjectDao {
                 subject.tenGv = cursor.getString(cursor.getColumnIndexOrThrow("giang_vien"));
                 subject.phongHoc = cursor.getString(cursor.getColumnIndexOrThrow("phong_hoc"));
                 subject.ngayBatDau = dbHelper.parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
-                subject.ngayKetThuc = dbHelper.parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
+                subject.ngayKetThuc = dbHelper
+                        .parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
                 subject.gioBatDau = dbHelper.parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_bat_dau")));
                 subject.gioKetThuc = dbHelper.parseTime(cursor.getString(cursor.getColumnIndexOrThrow("gio_ket_thuc")));
                 subject.ghiChu = cursor.getString(cursor.getColumnIndexOrThrow("ghi_chu"));
@@ -123,7 +131,8 @@ public class SubjectDao {
     private Subject getSubjectDefinition(String maHp) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Subject subject = null;
-        try (Cursor cursor = db.query("mon_hoc", new String[]{"ma_hp", "ten_hp"}, "ma_hp = ?", new String[]{maHp}, null, null, null)) {
+        try (Cursor cursor = db.query("mon_hoc", new String[] { "ma_hp", "ten_hp" }, "ma_hp = ?", new String[] { maHp },
+                null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 subject = new Subject();
                 subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
@@ -134,7 +143,6 @@ public class SubjectDao {
         }
         return subject;
     }
-
 
     public long addOrEnrollSubject(Subject subject) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -164,21 +172,34 @@ public class SubjectDao {
                 values.put("ghi_chu", subject.ghiChu);
                 values.put("color_tag", subject.mauSac);
                 values.put("so_tuan", subject.soTuan);
+                // Cập nhật cả học kỳ của bảng mon_hoc theo spinner
+                values.put("hoc_ky", semesterId);
 
                 resultId = db.insertOrThrow("mon_hoc", null, values);
             } else {
                 ContentValues update = new ContentValues();
-                if (subject.tenGv != null && !subject.tenGv.isEmpty()) update.put("giang_vien", subject.tenGv);
-                if (subject.phongHoc != null && !subject.phongHoc.isEmpty()) update.put("phong_hoc", subject.phongHoc);
-                if (subject.ngayBatDau != null) update.put("ngay_bat_dau", dbHelper.formatDate(subject.ngayBatDau));
-                if (subject.ngayKetThuc != null) update.put("ngay_ket_thuc", dbHelper.formatDate(subject.ngayKetThuc));
-                if (subject.gioBatDau != null) update.put("gio_bat_dau", dbHelper.formatTime(subject.gioBatDau));
-                if (subject.gioKetThuc != null) update.put("gio_ket_thuc", dbHelper.formatTime(subject.gioKetThuc));
-                if (subject.ghiChu != null) update.put("ghi_chu", subject.ghiChu);
-                if (subject.mauSac != null) update.put("color_tag", subject.mauSac);
-                if (subject.soTuan > 0) update.put("so_tuan", subject.soTuan);
+                if (subject.tenGv != null && !subject.tenGv.isEmpty())
+                    update.put("giang_vien", subject.tenGv);
+                if (subject.phongHoc != null && !subject.phongHoc.isEmpty())
+                    update.put("phong_hoc", subject.phongHoc);
+                if (subject.ngayBatDau != null)
+                    update.put("ngay_bat_dau", dbHelper.formatDate(subject.ngayBatDau));
+                if (subject.ngayKetThuc != null)
+                    update.put("ngay_ket_thuc", dbHelper.formatDate(subject.ngayKetThuc));
+                if (subject.gioBatDau != null)
+                    update.put("gio_bat_dau", dbHelper.formatTime(subject.gioBatDau));
+                if (subject.gioKetThuc != null)
+                    update.put("gio_ket_thuc", dbHelper.formatTime(subject.gioKetThuc));
+                if (subject.ghiChu != null)
+                    update.put("ghi_chu", subject.ghiChu);
+                if (subject.mauSac != null)
+                    update.put("color_tag", subject.mauSac);
+                if (subject.soTuan > 0)
+                    update.put("so_tuan", subject.soTuan);
+                // Đồng bộ học kỳ của mon_hoc khi thêm ghi danh cho môn đã tồn tại
+                update.put("hoc_ky", semesterId);
                 if (update.size() > 0) {
-                    db.update("mon_hoc", update, "ma_hp = ?", new String[]{subject.maHp});
+                    db.update("mon_hoc", update, "ma_hp = ?", new String[] { subject.maHp });
                 }
                 resultId = 1; // Đánh dấu thành công
             }
@@ -198,10 +219,40 @@ public class SubjectDao {
     public void enrollSubjectInSemester(String maHp, int semesterId) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("user_id", 1);
+        // Resolve current user id using the already-open database to avoid
+        // opening a second DB connection while a transaction is in progress.
+        int currentUserId = getCurrentUserIdFromDb(db);
+        values.put("user_id", currentUserId);
         values.put("ma_hp", maHp);
         values.put("hoc_ky", semesterId);
         db.insertWithOnConflict("enrollments", null, values, SQLiteDatabase.CONFLICT_IGNORE);
+    }
+
+    /**
+     * Resolve current user id using the provided SQLiteDatabase instance.
+     * This prevents creating another DatabaseHelper / SQLiteDatabase while
+     * a transaction is active on the caller's DB.
+     */
+    private int getCurrentUserIdFromDb(SQLiteDatabase db) {
+        int userId = 1; // fallback
+        try (android.database.Cursor c = db.rawQuery("SELECT id FROM users WHERE is_active = 1 LIMIT 1", null)) {
+            if (c != null && c.moveToFirst()) {
+                userId = c.getInt(0);
+                return userId;
+            }
+        } catch (Exception e) {
+            Log.w("SubjectDao", "Could not query active user", e);
+        }
+
+        try (android.database.Cursor c2 = db.rawQuery("SELECT id FROM users ORDER BY id LIMIT 1", null)) {
+            if (c2 != null && c2.moveToFirst()) {
+                userId = c2.getInt(0);
+            }
+        } catch (Exception e) {
+            Log.w("SubjectDao", "Could not query fallback user", e);
+        }
+
+        return userId;
     }
 
     public int updateSubject(Subject subject) {
@@ -226,13 +277,26 @@ public class SubjectDao {
         values.put("ghi_chu", subject.ghiChu);
         values.put("color_tag", subject.mauSac);
         values.put("so_tuan", subject.soTuan);
+        // Đồng bộ cả học kỳ trong bảng mon_hoc theo spinner khi chỉnh sửa
+        values.put("hoc_ky", semesterId);
 
         db.beginTransaction();
         try {
-            rowsAffected = db.update("mon_hoc", values, "ma_hp = ?", new String[]{subject.maHp});
+            rowsAffected = db.update("mon_hoc", values, "ma_hp = ?", new String[] { subject.maHp });
 
-            db.delete("enrollments", "ma_hp = ?", new String[]{subject.maHp});
-            enrollSubjectInSemester(subject.maHp, semesterId);
+            // Update enrollment to new semester without deleting history
+            int currentUserId = getCurrentUserIdFromDb(db);
+            ContentValues enrollUpdate = new ContentValues();
+            enrollUpdate.put("hoc_ky", semesterId);
+            int updated = db.update(
+                    "enrollments",
+                    enrollUpdate,
+                    "ma_hp = ? AND user_id = ?",
+                    new String[] { subject.maHp, String.valueOf(currentUserId) });
+            if (updated == 0) {
+                // If no existing enrollment row, insert one
+                enrollSubjectInSemester(subject.maHp, semesterId);
+            }
 
             db.setTransactionSuccessful();
         } catch (Exception e) {
@@ -246,6 +310,6 @@ public class SubjectDao {
 
     public void deleteSubject(String maHp) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        db.delete("mon_hoc", "ma_hp = ?", new String[]{maHp});
+        db.delete("mon_hoc", "ma_hp = ?", new String[] { maHp });
     }
 }

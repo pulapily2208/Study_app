@@ -6,18 +6,24 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageButton;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
 import com.example.study_app.data.CurriculumDao;
 import com.example.study_app.data.DatabaseHelper;
+import com.example.study_app.data.UserSession;
 import com.example.study_app.ui.Curriculum.Adapter.CurriculumAdapter;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.chip.ChipGroup;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +37,7 @@ public class CurriculumActivity extends AppCompatActivity {
     private SearchView searchView;
     private ImageButton buttonFilter, buttonSort;
     private MaterialCardView filtersCard;
+    private ChipGroup chipGroupStatus;
 
     // --- Adapter & Data ---
     private CurriculumAdapter adapter;
@@ -45,7 +52,14 @@ public class CurriculumActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.curriculum_activity);
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         dbHelper = new DatabaseHelper(this);
         curriculumDao = new CurriculumDao(dbHelper);
@@ -73,6 +87,7 @@ public class CurriculumActivity extends AppCompatActivity {
         buttonFilter = findViewById(R.id.buttonFilter);
         buttonSort = findViewById(R.id.buttonSort);
         filtersCard = findViewById(R.id.filtersCard);
+        chipGroupStatus = findViewById(R.id.chipGroupStatus);
     }
 
     private void setupToolbar() {
@@ -139,6 +154,8 @@ public class CurriculumActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        chipGroupStatus.setOnCheckedChangeListener((group, checkedId) -> applyAllFilters());
     }
 
     private void applyAllFilters() {
@@ -148,6 +165,7 @@ public class CurriculumActivity extends AppCompatActivity {
         String selectedFacultyName = autoCompleteFaculty.getText().toString();
         String group = autoCompleteGroup.getText().toString();
         String courseType = autoCompleteCourseType.getText().toString();
+        String status = getSelectedStatus();
 
         int facultyId = -1;
         if (!selectedFacultyName.equals(getString(R.string.all_faculties))) {
@@ -160,12 +178,24 @@ public class CurriculumActivity extends AppCompatActivity {
         if (group.equals(getString(R.string.all_groups))) {
             group = "All";
         }
-            
-        adapter.filterAndSort(searchQuery, facultyId, group, courseType, isSortAscending);
+
+        adapter.filterAndSort(searchQuery, facultyId, group, courseType, status, isSortAscending);
+    }
+
+    private String getSelectedStatus() {
+        int checkedChipId = chipGroupStatus.getCheckedChipId();
+        if (checkedChipId == R.id.chipNotStudied) {
+            return DatabaseHelper.STATUS_NOT_ENROLLED;
+        } else if (checkedChipId == R.id.chipStudying) {
+            return DatabaseHelper.STATUS_IN_PROGRESS;
+        } else if (checkedChipId == R.id.chipStudied) {
+            return DatabaseHelper.STATUS_COMPLETED;
+        }
+        return "All"; // No filter
     }
 
     private void loadCurriculumData() {
-        List<Curriculum> allCourses = curriculumDao.getAllCoursesForCurriculumWithStatus(1);
+        List<Curriculum> allCourses = curriculumDao.getAllCoursesForCurriculumWithStatus(UserSession.getCurrentUserId(this));
         adapter = new CurriculumAdapter(allCourses);
         recyclerViewCurriculum.setAdapter(adapter);
         applyAllFilters();

@@ -2,9 +2,9 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
     tools:context=".ui.Curriculum.CurriculumActivity">
 
     <!-- APP BAR -->
@@ -137,7 +137,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="6dp"
-                        android:hint="@string/filter_by_group"
+                        android.hint="@string/filter_by_group"
                         app:hintTextColor="@color/blue"
                         app:boxStrokeColor="@color/blue">
 
@@ -170,6 +170,44 @@
                         android:paddingVertical="8dp"
                         android:inputType="none"/>
                 </com.google.android.material.textfield.TextInputLayout>
+                
+                <!-- TRẠNG THÁI MÔN HỌC -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Trạng thái"
+                    android:textColor="@color/blue"
+                    android:textSize="12sp" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipNotStudied"
+                        style="@style/CustomChipChoice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Chưa học" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipStudying"
+                        style="@style/CustomChipChoice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Đang học" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipStudied"
+                        style="@style/CustomChipChoice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Đã học" />
+
+                </com.google.android.material.chip.ChipGroup>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

@@ -8,10 +8,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.study_app.R;
+import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 
 import java.util.ArrayList;
@@ -70,17 +70,17 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
         } else {
             holder.tvStatusBadge.setVisibility(View.VISIBLE);
             switch (status) {
-                case com.example.study_app.data.DatabaseHelper.STATUS_IN_PROGRESS:
+                case DatabaseHelper.STATUS_IN_PROGRESS:
                     holder.tvStatusBadge.setText("Đang học");
                     holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(context.getColor(R.color.yellow)));
                     holder.tvStatusBadge.setTextColor(context.getColor(R.color.white));
                     break;
-                case com.example.study_app.data.DatabaseHelper.STATUS_COMPLETED:
+                case DatabaseHelper.STATUS_COMPLETED:
                     holder.tvStatusBadge.setText("Đã học");
                     holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(context.getColor(R.color.green)));
                     holder.tvStatusBadge.setTextColor(context.getColor(R.color.white));
                     break;
-                case com.example.study_app.data.DatabaseHelper.STATUS_NOT_ENROLLED:
+                case DatabaseHelper.STATUS_NOT_ENROLLED:
                 default:
                     holder.tvStatusBadge.setText("Chưa học");
                     holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(context.getColor(R.color.red)));
@@ -100,12 +100,14 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
      * @param facultyId ID của khoa (-1 nếu là 'Tất cả').
      * @param group Tên nhóm tự chọn ("All" nếu là 'Tất cả').
      * @param courseType Loại học phần ("Tất cả" nếu là 'Tất cả').
+     * @param status Trạng thái môn học ("All" nếu không lọc).
      * @param isAscending True để sắp xếp A-Z, false để sắp xếp Z-A.
      */
-    public void filterAndSort(String query, int facultyId, String group, String courseType, boolean isAscending) {
+    public void filterAndSort(String query, int facultyId, String group, String courseType, String status, boolean isAscending) {
         List<Curriculum> filteredList = new ArrayList<>();
         String allGroups = "All";
         String allTypes = "Tất cả";
+        String allStatus = "All";
 
         // BƯỚC 1: LỌC
         for (Curriculum item : courseListFull) {
@@ -118,12 +120,16 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
             // Lọc theo Loại môn học
             final boolean courseTypeMatch = allTypes.equals(courseType) || (item.getLoaiHp() != null && item.getLoaiHp().equalsIgnoreCase(courseType));
 
+            // Lọc theo trạng thái
+            String itemStatus = item.getStatus() == null ? DatabaseHelper.STATUS_NOT_ENROLLED : item.getStatus();
+            final boolean statusMatch = allStatus.equals(status) || itemStatus.equals(status);
+
             // Lọc theo ô tìm kiếm (query) - kiểm tra cả tên và mã học phần
             final boolean searchMatch = query == null || query.isEmpty() ||
                     (item.getTenHp() != null && item.getTenHp().toLowerCase().contains(query.toLowerCase())) ||
                     (item.getMaHp() != null && item.getMaHp().toLowerCase().contains(query.toLowerCase()));
 
-            if (facultyMatch && groupMatch && courseTypeMatch && searchMatch) {
+            if (facultyMatch && groupMatch && courseTypeMatch && statusMatch && searchMatch) {
                 filteredList.add(item);
             }
         }

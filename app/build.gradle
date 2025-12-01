@@ -33,7 +33,7 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation libs.constraintlayout
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity
@@ -51,6 +51,9 @@ dependencies {
 
     // Material Calendar View (lich thang)
     implementation 'com.github.prolificinteractive:material-calendarview:2.0.1'
+
+    // ThreeTenABP for org.threeten.bp compatibility used by some date libraries
+    implementation 'com.jakewharton.threetenabp:threetenabp:1.4.4'
 
     // workmanager (tb trươc gio hoc)
     implementation "androidx.work:work-runtime-ktx:2.9.0"
