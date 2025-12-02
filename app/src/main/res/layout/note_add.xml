@@ -20,7 +20,7 @@
             android:layout_height="match_parent"
             android:layout_marginTop="30dp"
             android:text=" Back"
-            android:textColor="#007AFF"
+            android:textColor="@color/blue"
             android:textSize="20dp"
             android:backgroundTint="#FFF9EB"/>
         <ImageView

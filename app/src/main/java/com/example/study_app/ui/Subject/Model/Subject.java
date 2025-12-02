@@ -10,18 +10,18 @@ public class Subject {
 
     public String maHp;
     public String tenHp;
-    public String tenGv; // Tên giảng viên
-    public int soTc; // Số tín chỉ
-    public String ghiChu; // Ghi chú
-    public String phongHoc; // Phòng học
-    public Date ngayBatDau; // Ngày bắt đầu
-    public Date ngayKetThuc; // Ngày kết thúc
-    public Date gioBatDau; // Giờ bắt đầu
-    public Date gioKetThuc; // Giờ kết thúc
-    public String loaiMon; // Loại môn (Chuyên ngành, Đại cương)
-    public String mauSac; // Màu sắc (VD: #FFFFFF)
-    public String tenHk; // Tên học kỳ (Khóa ngoại)
-    public int soTuan; // Số tuần học
+    public String tenGv;
+    public int soTc;
+    public String ghiChu;
+    public String phongHoc;
+    public Date ngayBatDau;
+    public Date ngayKetThuc;
+    public Date gioBatDau;
+    public Date gioKetThuc;
+    public String loaiMon;
+    public String mauSac;
+    public String tenHk;
+    public int soTuan;
 
 
     // Default constructor

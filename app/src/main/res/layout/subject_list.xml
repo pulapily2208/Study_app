@@ -81,11 +81,11 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:backgroundTint="@color/blue"
+        app:tint="@android:color/white"
         android:src="@drawable/ic_add"
         app:fabSize="normal"
         app:layout_constraintBottom_toTopOf="@id/navbar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:tint="@android:color/white" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <include
         android:id="@+id/navbar"
