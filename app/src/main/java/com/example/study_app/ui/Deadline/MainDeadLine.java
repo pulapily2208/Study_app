@@ -32,7 +32,7 @@ import java.util.List;
 public class MainDeadLine extends AppCompatActivity {
 
     private RecyclerView rvToday, rvAll;
-    private Toolbar toolbar;
+//    private Toolbar toolbar;
     private TextView tvTodayEmpty, tvAllEmpty;
     private DeadlineDao dbHelper;
     private DeadlineNotificationManager notificationManager;
@@ -53,7 +53,7 @@ public class MainDeadLine extends AppCompatActivity {
         });
 
         // --- Init Views ---
-        toolbar = findViewById(R.id.toolbar);
+//        toolbar = findViewById(R.id.toolbar);
         rvToday = findViewById(R.id.rvTodayDeadlines);
         rvAll = findViewById(R.id.rvAllDeadlines);
         tvTodayEmpty = findViewById(R.id.tvTodayEmpty);
@@ -63,8 +63,8 @@ public class MainDeadLine extends AppCompatActivity {
         notificationManager = new DeadlineNotificationManager(this);
 
         // --- Toolbar Setup ---
-        toolbar.setTitle("Tổng quan Deadline");
-        toolbar.setNavigationOnClickListener(v -> finish());
+//        toolbar.setTitle("Tổng quan Deadline");
+//        toolbar.setNavigationOnClickListener(v -> finish());
 
         // --- RecyclerViews Setup ---
         rvToday.setLayoutManager(new LinearLayoutManager(this));
@@ -137,12 +137,6 @@ public class MainDeadLine extends AppCompatActivity {
         } else {
             rvToday.setVisibility(View.VISIBLE);
             tvTodayEmpty.setVisibility(View.GONE);
-            for (Deadline d : todayDeadlines) {
-                Subject subject = dbHelper.getSubjectByMaHp(d.getMaHp());
-                if (subject != null) {
-                    d.setTenMon(subject.tenHp);
-                }
-            }
             todayAdapter.updateData(todayDeadlines);
         }
 

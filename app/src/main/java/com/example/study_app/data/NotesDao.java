@@ -300,6 +300,7 @@ public class NotesDao extends SQLiteOpenHelper {
             }
         }
 
+        db.delete("note_audios", "note_id=?", new String[]{String.valueOf(note.getId())});
         if(note.getAudioPaths() != null) {
             for (String path : note.getAudioPaths()) {
                 ContentValues audio = new ContentValues();
@@ -317,6 +318,57 @@ public class NotesDao extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         int rowsDeleted = db.delete("notes", "id = ?", new String[]{String.valueOf(id)});
         return rowsDeleted > 0;
+    }
+
+    public void deleteNotesBySubject(String maHp) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        List<Integer> noteIds = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = db.query("notes", new String[]{"id"}, "ma_hp = ?", new String[]{maHp}, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    noteIds.add(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                } while (cursor.moveToNext());
+            }
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
+        if (noteIds.isEmpty()) {
+            return;
+        }
+
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < noteIds.size(); i++) {
+            placeholders.append("?");
+            if (i < noteIds.size() - 1) {
+                placeholders.append(",");
+            }
+        }
+
+        String[] noteIdArgs = new String[noteIds.size()];
+        for (int i = 0; i < noteIds.size(); i++) {
+            noteIdArgs[i] = String.valueOf(noteIds.get(i));
+        }
+
+        db.beginTransaction();
+        try {
+            String whereClause = "note_id IN (" + placeholders.toString() + ")";
+            db.delete("note_audios", whereClause, noteIdArgs);
+            db.delete("note_pdfs", whereClause, noteIdArgs);
+            db.delete("note_images", whereClause, noteIdArgs);
+
+            db.delete("notes", "ma_hp = ?", new String[]{maHp});
+
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            Log.e("NotesDao", "Error while trying to delete all notes for subject " + maHp, e);
+        } finally {
+            db.endTransaction();
+        }
     }
 
     public List<String> getNoteImages(int noteId) {
@@ -366,5 +418,102 @@ public class NotesDao extends SQLiteOpenHelper {
         cursor.close();
         return audios;
     }
+
+    public ArrayList<Note> getNotesBySubjectCode(String maHp) {
+        ArrayList<Note> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String query = "SELECT * FROM notes WHERE ma_hp = ?";
+        Cursor cursor = db.rawQuery(query, new String[]{maHp});
+
+        if (cursor.moveToFirst()) {
+            do {
+                Note note = new Note();
+                note.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                note.setUser_id(cursor.getInt(cursor.getColumnIndexOrThrow("user_id")));
+                note.setMa_hp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
+                note.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
+                note.setBody(cursor.getString(cursor.getColumnIndexOrThrow("body")));
+                note.setPinned(cursor.getInt(cursor.getColumnIndexOrThrow("pinned")));
+                note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
+                note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
+                note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
+                note.setImagePaths(getNoteImages(note.getId()));
+                note.setPdfPaths(getNotePdfs(note.getId()));
+                note.setAudioPaths(getNoteAudios(note.getId()));
+                list.add(note);
+            } while (cursor.moveToNext());
+        }
+        if (cursor != null) {
+            cursor.close();
+        }
+        return list;
+    }
+
+    public ArrayList<Note> searchNotes(String keyword) {
+        ArrayList<Note> list = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+
+        String sql = "SELECT * FROM notes WHERE title LIKE ? OR body LIKE ?"; // sửa content -> body
+        String[] args = new String[]{"%" + keyword + "%", "%" + keyword + "%"};
+
+        Cursor cursor = db.rawQuery(sql, args);
+
+        while (cursor.moveToNext()) {
+            list.add(createNoteFromCursor(cursor));
+        }
+
+        cursor.close();
+        return list;
+    }
+
+    public ArrayList<Note> searchNotesBySubject(String maHp, String keyword) {
+        if (maHp == null) {
+            // Nếu maHp null thì chỉ search theo keyword
+            return searchNotes(keyword);
+        }
+
+        ArrayList<Note> list = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+
+        String sql = "SELECT * FROM notes WHERE ma_hp = ? AND (title LIKE ? OR body LIKE ?)";
+        String[] args = new String[]{
+                maHp,
+                "%" + keyword + "%",
+                "%" + keyword + "%"
+        };
+
+        Cursor cursor = db.rawQuery(sql, args);
+
+        while (cursor.moveToNext()) {
+            list.add(createNoteFromCursor(cursor));
+        }
+
+        cursor.close();
+        return list;
+    }
+
+
+
+    private Note createNoteFromCursor(Cursor cursor) {
+        Note note = new Note();
+        note.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+        note.setUser_id(cursor.getInt(cursor.getColumnIndexOrThrow("user_id")));
+        note.setMa_hp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
+        note.setTitle(cursor.getString(cursor.getColumnIndexOrThrow("title")));
+        note.setBody(cursor.getString(cursor.getColumnIndexOrThrow("body")));
+        note.setPinned(cursor.getInt(cursor.getColumnIndexOrThrow("pinned")));
+        note.setColor_tag(cursor.getString(cursor.getColumnIndexOrThrow("color_tag")));
+        note.setCreated_at(cursor.getString(cursor.getColumnIndexOrThrow("created_at")));
+        note.setUpdated_at(cursor.getString(cursor.getColumnIndexOrThrow("updated_at")));
+
+        // Lấy dữ liệu liên quan
+        note.setImagePaths(getNoteImages(note.getId()));
+        note.setPdfPaths(getNotePdfs(note.getId()));
+        note.setAudioPaths(getNoteAudios(note.getId()));
+
+        return note;
+    }
+
 
 }

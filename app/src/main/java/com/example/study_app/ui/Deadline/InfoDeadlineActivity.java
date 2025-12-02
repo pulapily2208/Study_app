@@ -7,6 +7,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.example.study_app.R;
 import com.example.study_app.ui.Deadline.Models.Deadline;
@@ -17,7 +18,7 @@ import java.util.Locale;
 public class InfoDeadlineActivity extends AppCompatActivity {
 
     public static final String EXTRA_DEADLINE = "extra_deadline";
-
+    private Toolbar toolbar;
     private ImageView imgDeadlineIcon;
     private TextView tvTitle, tvNote, tvStart, tvEnd, tvRepeat, tvReminder;
 
@@ -33,14 +34,15 @@ public class InfoDeadlineActivity extends AppCompatActivity {
         tvEnd = findViewById(R.id.tvDeadlineEnd);
         tvRepeat = findViewById(R.id.tvDeadlineRepeat);
         tvReminder = findViewById(R.id.tvDeadlineReminder);
+        toolbar= findViewById(R.id.toolbar);
+
 
         Deadline deadline = (Deadline) getIntent().getSerializableExtra(EXTRA_DEADLINE);
         if (deadline != null) {
-            // Icon
             imgDeadlineIcon.setImageResource(deadline.getIcon());
 
-            // Tiêu đề & ghi chú
             tvTitle.setText("Tên Deadline: "+deadline.getTieuDe());
+            toolbar.setNavigationOnClickListener(v -> finish());
             if(!TextUtils.isEmpty(deadline.getNoiDung())){
                 tvNote.setText("Ghi chú: "+deadline.getNoiDung());
                 tvNote.setVisibility(View.VISIBLE);
@@ -48,12 +50,10 @@ public class InfoDeadlineActivity extends AppCompatActivity {
                 tvNote.setVisibility(View.GONE);
             }
 
-            // Định dạng ngày giờ
             SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm", Locale.getDefault());
             tvStart.setText(sdf.format(deadline.getNgayBatDau()));
             tvEnd.setText(sdf.format(deadline.getNgayKetThuc()));
 
-            // Lặp lại & nhắc nhở
             tvRepeat.setText(deadline.getRepeatText());
             tvReminder.setText(deadline.getReminderText());
         }

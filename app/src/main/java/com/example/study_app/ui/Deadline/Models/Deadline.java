@@ -27,8 +27,6 @@ public class Deadline implements Serializable {
     private String note;
     private int weekIndex;
     private String tenMon;
-    private boolean isPinned = false;
-    private long duration; // Kept for compatibility
 
     public Deadline() {}
 
@@ -45,13 +43,6 @@ public class Deadline implements Serializable {
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
-    public boolean isPinned() {
-        return isPinned;
-    }
-
-    public void setPinned(boolean pinned) {
-        this.isPinned = pinned;
-    }
     public String getReminder() {
         return reminder;
     }
@@ -98,17 +89,10 @@ public class Deadline implements Serializable {
     public String getRepeatText() { return repeat != null ? repeat : REPEAT_TYPE_NONE; }
     public void setRepeat(String repeat) { this.repeat = repeat; }
 
-    public long getDuration() { return duration; }
-    public void setDuration(long duration) { this.duration = duration; }
 
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
 
-    public String getNgayText() {
-        if (ngayBatDau == null || ngayKetThuc == null) return "";
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm", Locale.getDefault());
-        return sdf.format(ngayBatDau) + " - " + sdf.format(ngayKetThuc);
-    }
 
     public String getConLai() {
         if (ngayKetThuc == null) return "Không có ngày hết hạn";

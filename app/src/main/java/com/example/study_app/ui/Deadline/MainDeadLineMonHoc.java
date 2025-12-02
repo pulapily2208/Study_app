@@ -297,7 +297,7 @@ public class MainDeadLineMonHoc extends AppCompatActivity {
         }
         long diffMillis = new Date().getTime() - currentSubject.ngayBatDau.getTime();
         if (diffMillis < 0) {
-            return 0; // Course hasn't started
+            return 0;
         }
         long diffDays = TimeUnit.MILLISECONDS.toDays(diffMillis);
         return (int) (diffDays / 7);

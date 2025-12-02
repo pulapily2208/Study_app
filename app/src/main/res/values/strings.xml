@@ -93,4 +93,7 @@
     <string name="curriculum_practice">TH: %d</string>
     <string name="curriculum_semester">Học kỳ: %d</string>
     <string name="curriculum_group">Nhóm: %s</string>
+    
+    <!-- Title for MaterialDatePicker -->
+    <string name="select_date">Chọn ngày</string>
 </resources>

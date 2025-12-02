@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:src="@android:drawable/ic_menu_more"
             android:padding="8dp"
-            app:tint="?android:attr/textColorSecondary"
+            app:tint="@color/black"
             android:contentDescription="Tùy chọn"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />

@@ -37,15 +37,15 @@ import java.util.Collections;
 
 public class SubjectListActivity extends AppCompatActivity implements SubjectAdapter.OnSubjectActionClickListener {
 
-    private RecyclerView recyclerViewSubjects;
-    private SubjectAdapter subjectAdapter;
+    private RecyclerView recyclerViewMonHoc;
+    private SubjectAdapter adapterMonHoc;
     private SubjectDao subjectDao;
-    private ArrayList<Subject> subjectList;
-    private Spinner spinnerSemesters;
-    private TextView tvEmptyList;
-    private String selectedSemesterName;
-    private FloatingActionButton fabAddSubject;
-    private ImageButton btnBulkAddSubject;
+    private ArrayList<Subject> danhSachMonHoc;
+    private Spinner spinnerHocKy;
+    private TextView tvDanhSachRong;
+    private String tenHocKyDuocChon;
+    private FloatingActionButton fabThemMonHoc;
+    private ImageButton btnNhapHangLoatMonHoc;
     private DatabaseHelper dbHelper;
 
     private static final int ADD_SUBJECT_REQUEST = 1;
@@ -64,48 +64,48 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
             return insets;
         });
 
-        recyclerViewSubjects = findViewById(R.id.recyclerViewSubjects);
-        spinnerSemesters = findViewById(R.id.spinnerSemesters);
-        tvEmptyList = findViewById(R.id.tvEmptyList);
-        fabAddSubject = findViewById(R.id.fab_add_subject);
-        btnBulkAddSubject = findViewById(R.id.btn_bulk_add_subject);
+        recyclerViewMonHoc = findViewById(R.id.recyclerViewSubjects);
+        spinnerHocKy = findViewById(R.id.spinnerSemesters);
+        tvDanhSachRong = findViewById(R.id.tvEmptyList);
+        fabThemMonHoc = findViewById(R.id.fab_add_subject);
+        btnNhapHangLoatMonHoc = findViewById(R.id.btn_bulk_add_subject);
 
         dbHelper = new DatabaseHelper(this);
         subjectDao = new SubjectDao(dbHelper);
 
-        subjectList = new ArrayList<>();
+        danhSachMonHoc = new ArrayList<>();
 
-        subjectAdapter = new SubjectAdapter(subjectList, this);
-        recyclerViewSubjects.setLayoutManager(new LinearLayoutManager(this));
-        recyclerViewSubjects.setAdapter(subjectAdapter);
+        adapterMonHoc = new SubjectAdapter(danhSachMonHoc, this);
+        recyclerViewMonHoc.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewMonHoc.setAdapter(adapterMonHoc);
 
-        spinnerSemesters.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        spinnerHocKy.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedSemesterName = parent.getItemAtPosition(position).toString();
-                loadSubjectsForSelectedSemester();
+                tenHocKyDuocChon = parent.getItemAtPosition(position).toString();
+                taiDanhSachMonHocTheoHocKy();
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                selectedSemesterName = null;
+                tenHocKyDuocChon = null;
             }
         });
 
-        fabAddSubject.setOnClickListener(v -> {
-            if (selectedSemesterName != null && !selectedSemesterName.isEmpty()) {
+        fabThemMonHoc.setOnClickListener(v -> {
+            if (tenHocKyDuocChon != null && !tenHocKyDuocChon.isEmpty()) {
                 Intent intent = new Intent(this, SubjectAddActivity.class);
-                intent.putExtra("SEMESTER_NAME", selectedSemesterName);
+                intent.putExtra("SEMESTER_NAME", tenHocKyDuocChon);
                 startActivityForResult(intent, ADD_SUBJECT_REQUEST);
             } else {
                 Toast.makeText(this, "Vui lòng chọn một học kỳ trước khi thêm.", Toast.LENGTH_SHORT).show();
             }
         });
 
-        btnBulkAddSubject.setOnClickListener(v -> {
-            if (selectedSemesterName != null && !selectedSemesterName.isEmpty()) {
+        btnNhapHangLoatMonHoc.setOnClickListener(v -> {
+            if (tenHocKyDuocChon != null && !tenHocKyDuocChon.isEmpty()) {
                 Intent intent = new Intent(this, SubjectBulkImportActivity.class);
-                intent.putExtra("SEMESTER_NAME", selectedSemesterName);
+                intent.putExtra("SEMESTER_NAME", tenHocKyDuocChon);
                 startActivityForResult(intent, BULK_IMPORT_REQUEST);
             } else {
                 Toast.makeText(this, "Vui lòng chọn một học kỳ trước.", Toast.LENGTH_SHORT).show();
@@ -121,7 +121,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
     @Override
     protected void onResume() {
         super.onResume();
-        loadSemesters();
+        taiDanhSachHocKy();
     }
 
     @Override
@@ -134,14 +134,14 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
                 String updatedSemester = data.getStringExtra("UPDATED_SEMESTER_NAME");
                 if (updatedSemester != null && !updatedSemester.isEmpty()) {
                     // Set the spinner to the semester where the change happened and reload subjects
-                    selectedSemesterName = updatedSemester;
-                    loadSemesters(); // Reload semesters to ensure list is fresh
+                    tenHocKyDuocChon = updatedSemester;
+                    taiDanhSachHocKy(); // Reload semesters to ensure list is fresh
                     // No need to call loadSubjectsForSelectedSemester here, as setSelection in
                     // loadSemesters will trigger it
                 }
             } else {
                 // Generic refresh, maintain current selection
-                loadSemesters();
+                taiDanhSachHocKy();
             }
         }
     }
@@ -158,7 +158,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
      * 
      * @return The calculated current semester number (e.g., 6).
      */
-    private int calculateCurrentSemesterOrdinal() {
+    private int tinhThuTuHocKyHienTai() {
         int startYear = 2021;
         int startMonth = 9; // September
 
@@ -189,7 +189,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
      * 
      * @return Semester name like "Học kỳ 6" or null if not found.
      */
-    private String resolveCurrentSemesterNameFromDb() {
+    private String layTenHocKyHienTaiTuDb() {
         Calendar now = Calendar.getInstance();
         int year = now.get(Calendar.YEAR);
         int monthZeroBased = now.get(Calendar.MONTH); // 0-11
@@ -201,25 +201,25 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
         return timetableDao.getSemesterNameById(semesterId);
     }
 
-    private void loadSemesters() {
-        String previouslySelected = selectedSemesterName;
+    private void taiDanhSachHocKy() {
+        String previouslySelected = tenHocKyDuocChon;
         ArrayList<String> semesterNames = subjectDao.getAllSemesterNames();
 
         if (semesterNames.isEmpty()) {
-            subjectList.clear();
-            subjectAdapter.notifyDataSetChanged();
-            checkEmptyState();
+            danhSachMonHoc.clear();
+            adapterMonHoc.notifyDataSetChanged();
+            kiemTraTrangThaiRong();
             // Also clear the spinner
             ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
                     new ArrayList<>());
-            spinnerSemesters.setAdapter(emptyAdapter);
+            spinnerHocKy.setAdapter(emptyAdapter);
             return;
         }
 
         ArrayAdapter<String> semesterAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
                 semesterNames);
         semesterAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerSemesters.setAdapter(semesterAdapter);
+        spinnerHocKy.setAdapter(semesterAdapter);
 
         int selectionIndex = -1;
 
@@ -229,7 +229,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
             selectionIndex = semesterAdapter.getPosition(previouslySelected);
         } else {
             // 2. Prefer to select the current semester resolved from DB/calendar.
-            String currentSemesterName = resolveCurrentSemesterNameFromDb();
+            String currentSemesterName = layTenHocKyHienTaiTuDb();
             if (currentSemesterName != null && semesterNames.contains(currentSemesterName)) {
                 selectionIndex = semesterAdapter.getPosition(currentSemesterName);
             } else {
@@ -260,31 +260,31 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
         }
 
         if (selectionIndex != -1) {
-            spinnerSemesters.setSelection(selectionIndex);
+            spinnerHocKy.setSelection(selectionIndex);
         }
     }
 
-    private void loadSubjectsForSelectedSemester() {
-        if (selectedSemesterName != null) {
-            ArrayList<Subject> updatedSubjects = subjectDao.getSubjectsBySemester(selectedSemesterName);
-            subjectList.clear();
-            subjectList.addAll(updatedSubjects);
-            subjectAdapter.notifyDataSetChanged();
-            checkEmptyState();
+    private void taiDanhSachMonHocTheoHocKy() {
+        if (tenHocKyDuocChon != null) {
+            ArrayList<Subject> updatedSubjects = subjectDao.getSubjectsBySemester(tenHocKyDuocChon);
+            danhSachMonHoc.clear();
+            danhSachMonHoc.addAll(updatedSubjects);
+            adapterMonHoc.notifyDataSetChanged();
+            kiemTraTrangThaiRong();
         } else {
-            subjectList.clear();
-            subjectAdapter.notifyDataSetChanged();
-            checkEmptyState();
+            danhSachMonHoc.clear();
+            adapterMonHoc.notifyDataSetChanged();
+            kiemTraTrangThaiRong();
         }
     }
 
-    private void checkEmptyState() {
-        if (subjectList.isEmpty()) {
-            recyclerViewSubjects.setVisibility(View.GONE);
-            tvEmptyList.setVisibility(View.VISIBLE);
+    private void kiemTraTrangThaiRong() {
+        if (danhSachMonHoc.isEmpty()) {
+            recyclerViewMonHoc.setVisibility(View.GONE);
+            tvDanhSachRong.setVisibility(View.VISIBLE);
         } else {
-            recyclerViewSubjects.setVisibility(View.VISIBLE);
-            tvEmptyList.setVisibility(View.GONE);
+            recyclerViewMonHoc.setVisibility(View.VISIBLE);
+            tvDanhSachRong.setVisibility(View.GONE);
         }
     }
 
@@ -292,8 +292,8 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
     public void onEdit(Subject subject) {
         Intent intent = new Intent(this, SubjectAddActivity.class);
         intent.putExtra("SUBJECT_ID", subject.maHp);
-        if (selectedSemesterName != null && !selectedSemesterName.isEmpty()) {
-            intent.putExtra("SEMESTER_NAME", selectedSemesterName);
+        if (tenHocKyDuocChon != null && !tenHocKyDuocChon.isEmpty()) {
+            intent.putExtra("SEMESTER_NAME", tenHocKyDuocChon);
         }
         startActivityForResult(intent, EDIT_SUBJECT_REQUEST);
     }
@@ -306,7 +306,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
                 .setPositiveButton("Xóa", (dialog, which) -> {
                     subjectDao.deleteSubject(subject.maHp);
                     Toast.makeText(this, "Đã xóa môn học", Toast.LENGTH_SHORT).show();
-                    loadSubjectsForSelectedSemester();
+                    taiDanhSachMonHocTheoHocKy();
                 })
                 .setNegativeButton("Hủy", null)
                 .show();
