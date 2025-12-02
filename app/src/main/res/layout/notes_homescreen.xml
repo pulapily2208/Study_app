@@ -8,6 +8,7 @@
     android:layout_height="match_parent"
     android:background="#FFF9EB">
 
+    <!-- TOP BAR -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
@@ -31,19 +32,41 @@
             android:layout_height="1dp"
             android:layout_weight="1" />
 
-        <ImageView
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:src="@drawable/note_ic_search" />
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/searchViewNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:queryHint="Tìm kiếm ghi chú"
+            android:iconifiedByDefault="false"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginStart="16dp"
-            android:src="@drawable/note_ic_more" />
+
     </LinearLayout>
 
-<!--    Danh sách các ghi chú-->
+    <!-- CHIP LIST -->
+    <HorizontalScrollView
+        android:id="@+id/chipScroll"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupMonHoc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            app:singleSelection="true"
+            app:selectionRequired="false"
+            app:singleLine="true" />
+    </HorizontalScrollView>
+
+    <!-- LIST NOTES -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/notesRecyclerView"
         android:layout_width="0dp"
@@ -53,38 +76,35 @@
         android:visibility="gone"
         app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
         app:spanCount="2"
-        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintTop_toBottomOf="@id/chipScroll"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         tools:visibility="visible" />
 
+    <!-- EMPTY IMAGE -->
     <ImageView
         android:id="@+id/emptyImage"
-        android:layout_width="394dp"
-        android:layout_height="298dp"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
         android:adjustViewBounds="true"
         android:src="@drawable/note_empty_art"
+        app:layout_constraintTop_toBottomOf="@id/chipScroll"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.47"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/topBar"
-        app:layout_constraintVertical_bias="0.388" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- ADD BUTTON -->
     <Button
         android:id="@+id/btnAdd"
         android:layout_width="65dp"
         android:layout_height="65dp"
         android:background="@drawable/note_bg_circle_ic_add"
         app:backgroundTint="@color/blue"
-
         android:foreground="@drawable/note_ic_add"
         android:padding="18dp"
-
+        android:layout_margin="26dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_margin="26dp" />
-
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
