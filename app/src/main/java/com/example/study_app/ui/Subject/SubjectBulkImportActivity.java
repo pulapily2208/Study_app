@@ -56,7 +56,6 @@ public class SubjectBulkImportActivity extends AppCompatActivity {
         subjectDao = new SubjectDao(dbHelper);
         curriculumDao = new CurriculumDao(dbHelper);
 
-
         recyclerView = findViewById(R.id.recycler_view_bulk_import);
         btnAddRow = findViewById(R.id.btn_add_row);
         btnSave = findViewById(R.id.btn_save_bulk);
@@ -89,22 +88,48 @@ public class SubjectBulkImportActivity extends AppCompatActivity {
         // --- Start of new logic ---
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
-            // Step 1: Validate and fetch subject names
+            // Step 1: Validate, fetch curriculum, and compute weeks/end date
             for (Subject subject : subjectsToSave) {
                 if (subject.maHp == null || subject.maHp.trim().isEmpty()) {
-                    runOnUiThread(() -> Toast.makeText(this, "Mã học phần không được để trống.", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(
+                            () -> Toast.makeText(this, "Mã học phần không được để trống.", Toast.LENGTH_SHORT).show());
                     return; // Stop the process
                 }
 
                 Curriculum curriculumDetails = curriculumDao.getCurriculumDetailsByMaHp(subject.maHp.trim());
                 if (curriculumDetails == null) {
-                    runOnUiThread(() -> Toast.makeText(this, "Mã học phần không hợp lệ: " + subject.maHp, Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> Toast
+                            .makeText(this, "Mã học phần không hợp lệ: " + subject.maHp, Toast.LENGTH_SHORT).show());
                     return; // Stop the process
                 }
 
                 // Auto-fill subject name and assign semester
                 subject.tenHp = curriculumDetails.getTenHp();
                 subject.tenHk = tenHocKy;
+
+                // Compute weeks based on rules: DEFE -> 4, PHYE -> 7, else totalPeriods/credits
+                int weeks = 0;
+                String code = subject.maHp != null ? subject.maHp.trim().toUpperCase() : "";
+                if (code.startsWith("DEFE")) {
+                    weeks = 4;
+                } else if (code.startsWith("PHYE")) {
+                    weeks = 7;
+                } else {
+                    int credits = curriculumDetails.getSoTinChi();
+                    int totalPeriods = curriculumDetails.getSoTietLyThuyet() + curriculumDetails.getSoTietThucHanh();
+                    if (credits > 0) {
+                        weeks = totalPeriods / credits; // theo logic ở màn thêm đơn lẻ
+                    }
+                }
+                subject.soTuan = weeks;
+
+                // Auto-calc end date if start date provided and weeks > 0
+                if (subject.ngayBatDau != null && weeks > 0) {
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.setTime(subject.ngayBatDau);
+                    cal.add(java.util.Calendar.DAY_OF_YEAR, (weeks * 7) - 1);
+                    subject.ngayKetThuc = cal.getTime();
+                }
             }
 
             // Step 2: Save subjects to the database
@@ -124,13 +149,14 @@ public class SubjectBulkImportActivity extends AppCompatActivity {
                     setResult(RESULT_OK);
                     finish();
                 } else {
-                    Toast.makeText(SubjectBulkImportActivity.this, "Đã xảy ra lỗi trong quá trình lưu. Có thể một số môn học đã tồn tại.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(SubjectBulkImportActivity.this,
+                            "Đã xảy ra lỗi trong quá trình lưu. Có thể một số môn học đã tồn tại.", Toast.LENGTH_LONG)
+                            .show();
                 }
             });
         });
         // --- End of new logic ---
     }
-
 
     @Override
     public boolean onSupportNavigateUp() {
