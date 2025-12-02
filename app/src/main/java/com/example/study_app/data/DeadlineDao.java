@@ -29,13 +29,39 @@ public class DeadlineDao extends SQLiteOpenHelper {
 
     private final Context context;
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-    private static final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
     private static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-
 
     public DeadlineDao(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
         this.context = context;
+    }
+
+
+    private void runSqlFromRaw(SQLiteDatabase db, int resId) {
+        try (InputStream inputStream = context.getResources().openRawResource(resId);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            StringBuilder sqlBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("--")) {
+                    continue;
+                }
+                sqlBuilder.append(line);
+                if (line.endsWith(";")) {
+                    try {
+                        db.execSQL(sqlBuilder.toString());
+                    } catch (Exception e) {
+                        Log.e("DatabaseHelper", "SQL Error: " + sqlBuilder.toString(), e);
+                    }
+                    sqlBuilder.setLength(0);
+                } else {
+                    sqlBuilder.append(" ");
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading SQL file", e);
+        }
     }
 
     @Override
@@ -52,7 +78,8 @@ public class DeadlineDao extends SQLiteOpenHelper {
                 "reminder_time TEXT," +
                 "icon INTEGER," +
                 "notes TEXT," +
-                "weekIndex INTEGER" +
+                "weekIndex INTEGER," +
+                "FOREIGN KEY (ma_hp) REFERENCES mon_hoc(ma_hp) ON DELETE SET NULL" +
                 ")";
         db.execSQL(CREATE_DEADLINE_TABLE);
         runSqlFromRaw(db, R.raw.study_app);
@@ -67,11 +94,43 @@ public class DeadlineDao extends SQLiteOpenHelper {
             db.execSQL("UPDATE deadline SET reminder_time = reminder_time_old;");
             db.execSQL("ALTER TABLE deadline DROP COLUMN reminder_time_old;");
         }
-        db.execSQL("DROP TABLE IF EXISTS mon_hoc");
-        db.execSQL("DROP TABLE IF EXISTS deadline");
-
-        onCreate(db);
     }
+
+    private Deadline cursorToDeadline(Cursor cursor) {
+        Deadline d = new Deadline();
+        d.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+        d.setTieuDe(cursor.getString(cursor.getColumnIndexOrThrow("tieu_de")));
+        d.setNoiDung(cursor.getString(cursor.getColumnIndexOrThrow("noi_dung")));
+        d.setNgayBatDau(parseDateTime(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
+        d.setNgayKetThuc(parseDateTime(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
+        d.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
+        d.setRepeat(cursor.getString(cursor.getColumnIndexOrThrow("repeat_type")));
+        d.setReminder(cursor.getString(cursor.getColumnIndexOrThrow("reminder_time")));
+        d.setIcon(cursor.getInt(cursor.getColumnIndexOrThrow("icon")));
+        d.setNote(cursor.getString(cursor.getColumnIndexOrThrow("notes")));
+        d.setWeekIndex(cursor.getInt(cursor.getColumnIndexOrThrow("weekIndex")));
+        d.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
+        return d;
+    }
+
+    private ContentValues deadlineToContentValues(Deadline deadline) {
+
+        ContentValues values = new ContentValues();
+
+        values.put("tieu_de", deadline.getTieuDe());
+        values.put("noi_dung", deadline.getNoiDung());
+        values.put("ngay_bat_dau", formatDateTime(deadline.getNgayBatDau()));
+        values.put("ngay_ket_thuc", formatDateTime(deadline.getNgayKetThuc()));
+        values.put("completed", deadline.isCompleted() ? 1 : 0);
+        values.put("repeat_type", deadline.getRepeatText());
+        values.put("reminder_time", deadline.getReminderText());
+        values.put("icon", deadline.getIcon());
+        values.put("weekIndex", deadline.getWeekIndex());
+
+        return values;
+    }
+
+
 
 
     private Date parseDate(String dateStr) {
@@ -81,25 +140,6 @@ public class DeadlineDao extends SQLiteOpenHelper {
         } catch (ParseException e) {
             return null;
         }
-    }
-
-    private Date parseTime(String timeStr) {
-        if (timeStr == null || timeStr.isEmpty()) return null;
-        try {
-            return timeFormat.parse(timeStr);
-        } catch (ParseException e) {
-            return null;
-        }
-    }
-
-    private String formatDate(Date date) {
-        if (date == null) return null;
-        return dateFormat.format(date);
-    }
-
-    private String formatTime(Date time) {
-        if (time == null) return null;
-        return timeFormat.format(time);
     }
 
     private Date parseDateTime(String dateTimeStr) {
@@ -147,71 +187,33 @@ public class DeadlineDao extends SQLiteOpenHelper {
     }
 
 
-    private void runSqlFromRaw(SQLiteDatabase db, int resId) {
-        try (InputStream inputStream = context.getResources().openRawResource(resId);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
-            StringBuilder sqlBuilder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("--")) {
-                    continue;
-                }
-                sqlBuilder.append(line);
-                if (line.endsWith(";")) {
-                    try {
-                        db.execSQL(sqlBuilder.toString());
-                    } catch (Exception e) {
-                        Log.e("DatabaseHelper", "SQL Error: " + sqlBuilder.toString(), e);
-                    }
-                    sqlBuilder.setLength(0);
-                } else {
-                    sqlBuilder.append(" ");
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading SQL file", e);
-        }
-    }
 
-    public Subject getSubjectByMaHp(String maHp) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Subject subject = null;
-        String query = "SELECT * FROM mon_hoc WHERE ma_hp = ? ";
-        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
-            if (cursor != null && cursor.moveToFirst()) {
-                subject = new Subject();
-                subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
-                subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
-                subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
-                subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
-                subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
-            }
+
+    public long addDeadline(Deadline deadline, String maHp) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = deadlineToContentValues(deadline);
+        values.put("ma_hp", maHp);
+        try {
+            return db.insertOrThrow("deadline", null, values);
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting subject detail", e);
+            Log.e("DatabaseHelper", "Failed to add deadline", e);
+            return -1;
         }
-        return subject;
     }
-  public ArrayList<Deadline> getDeadlinesByMaHp(String maHp) {
-        ArrayList<Deadline> deadlineList = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        String query = "SELECT * FROM deadline WHERE ma_hp = ? ORDER BY ngay_ket_thuc ASC";
 
-        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
-            if (cursor != null && cursor.moveToFirst()) {
-                do {
-                    Deadline deadline = cursorToDeadline(cursor);
-                    deadlineList.add(deadline);
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e("DatabaseHelper", "Error getting deadlines for maHp: " + maHp, e);
-        }
-
-        sortDeadlines(deadlineList);
-
-        return deadlineList;
+    public int updateDeadline(Deadline deadline) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = deadlineToContentValues(deadline);
+        return db.update("deadline", values, "id = ?", new String[]{String.valueOf(deadline.getId())});
     }
+
+    public boolean deleteDeadline(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete("deadline", "id = ?", new String[]{String.valueOf(id)}) > 0;
+    }
+
+
+
 
     public ArrayList<Deadline> getDeadlinesByWeek(String maHp, Date subjectStartDate, int weekIndex) {
         ArrayList<Deadline> list = new ArrayList<>();
@@ -244,90 +246,68 @@ public class DeadlineDao extends SQLiteOpenHelper {
 
         return list;
     }
-
-    public long addDeadline(Deadline deadline, String maHp) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = deadlineToContentValues(deadline);
-        values.put("ma_hp", maHp);
-        try {
-            return db.insertOrThrow("deadline", null, values);
+    public Subject getSubjectByMaHp(String maHp) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Subject subject = null;
+        String query = "SELECT * FROM mon_hoc WHERE ma_hp = ? ";
+        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
+            if (cursor != null && cursor.moveToFirst()) {
+                subject = new Subject();
+                subject.maHp = cursor.getString(cursor.getColumnIndexOrThrow("ma_hp"));
+                subject.tenHp = cursor.getString(cursor.getColumnIndexOrThrow("ten_hp"));
+                subject.ngayBatDau = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau")));
+                subject.ngayKetThuc = parseDate(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc")));
+                subject.soTuan = cursor.getInt(cursor.getColumnIndexOrThrow("so_tuan"));
+            }
         } catch (Exception e) {
-            Log.e("DatabaseHelper", "Failed to add deadline", e);
-            return -1;
+            Log.e("DatabaseHelper", "Error getting subject detail", e);
         }
+        return subject;
     }
+    public ArrayList<Deadline> getDeadlinesByMaHp(String maHp) {
+        ArrayList<Deadline> deadlineList = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT * FROM deadline WHERE ma_hp = ? ORDER BY ngay_ket_thuc ASC";
 
-    public int updateDeadline(Deadline deadline) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = deadlineToContentValues(deadline);
-        return db.update("deadline", values, "id = ?", new String[]{String.valueOf(deadline.getId())});
+        try (Cursor cursor = db.rawQuery(query, new String[]{maHp})) {
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    Deadline deadline = cursorToDeadline(cursor);
+                    deadlineList.add(deadline);
+                } while (cursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting deadlines for maHp: " + maHp, e);
+        }
+
+        sortDeadlines(deadlineList);
+
+        return deadlineList;
     }
-
-    public boolean deleteDeadline(int id) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete("deadline", "id = ?", new String[]{String.valueOf(id)}) > 0;
-    }
-
-    // Helper Methods
-    private Deadline cursorToDeadline(Cursor cursor) {
-        Deadline d = new Deadline();
-        d.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id")));
-        d.setTieuDe(cursor.getString(cursor.getColumnIndexOrThrow("tieu_de")));
-        d.setNoiDung(cursor.getString(cursor.getColumnIndexOrThrow("noi_dung")));
-        d.setNgayBatDau(parseDateTime(cursor.getString(cursor.getColumnIndexOrThrow("ngay_bat_dau"))));
-        d.setNgayKetThuc(parseDateTime(cursor.getString(cursor.getColumnIndexOrThrow("ngay_ket_thuc"))));
-        d.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) == 1);
-        d.setRepeat(cursor.getString(cursor.getColumnIndexOrThrow("repeat_type")));
-        d.setReminder(cursor.getString(cursor.getColumnIndexOrThrow("reminder_time")));
-        d.setIcon(cursor.getInt(cursor.getColumnIndexOrThrow("icon")));
-        d.setNote(cursor.getString(cursor.getColumnIndexOrThrow("notes")));
-        d.setWeekIndex(cursor.getInt(cursor.getColumnIndexOrThrow("weekIndex")));
-        d.setMaHp(cursor.getString(cursor.getColumnIndexOrThrow("ma_hp")));
-        return d;
-    }
-
-    private ContentValues deadlineToContentValues(Deadline deadline) {
-
-        ContentValues values = new ContentValues();
-
-        values.put("tieu_de", deadline.getTieuDe());
-        values.put("noi_dung", deadline.getNoiDung());
-        values.put("ngay_bat_dau", formatDateTime(deadline.getNgayBatDau()));
-        values.put("ngay_ket_thuc", formatDateTime(deadline.getNgayKetThuc()));
-        values.put("completed", deadline.isCompleted() ? 1 : 0);
-        values.put("repeat_type", deadline.getRepeatText());
-        values.put("reminder_time", deadline.getReminderText());
-        values.put("icon", deadline.getIcon());
-        values.put("weekIndex", deadline.getWeekIndex());
-
-        return values;
-    }
-
-
     public ArrayList<Subject> getSubjectsWithDeadlines() {
-    ArrayList<Subject> list = new ArrayList<>();
-    SQLiteDatabase db = this.getReadableDatabase();
+        ArrayList<Subject> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
 
-    // Chỉ lấy môn học có deadline chưa hoàn thành
-    String distinctMaHpQuery =
-            "SELECT DISTINCT ma_hp FROM deadline WHERE completed = 0";
-//        String query = "SELECT * FROM mon_hoc m JOIN deadline d ON m.ma_hp = d.ma_hp WHERE m.ma_hp = ? AND d.completed = 0";
-    try (Cursor maHpCursor = db.rawQuery(distinctMaHpQuery, null)) {
-        if (maHpCursor != null && maHpCursor.moveToFirst()) {
-            do {
-                String maHp = maHpCursor.getString(0);
-                Subject subject = getSubjectByMaHp(maHp);
-                if (subject != null) {
-                    list.add(subject);
-                }
-            } while (maHpCursor.moveToNext());
+        // Chỉ lấy môn học có deadline chưa hoàn thành
+        String distinctMaHpQuery =
+                "SELECT DISTINCT ma_hp FROM deadline WHERE completed = 0";
+    //        String query = "SELECT * FROM mon_hoc m JOIN deadline d ON m.ma_hp = d.ma_hp WHERE m.ma_hp = ? AND d.completed = 0";
+        try (Cursor maHpCursor = db.rawQuery(distinctMaHpQuery, null)) {
+            if (maHpCursor != null && maHpCursor.moveToFirst()) {
+                do {
+                    String maHp = maHpCursor.getString(0);
+                    Subject subject = getSubjectByMaHp(maHp);
+                    if (subject != null) {
+                        list.add(subject);
+                    }
+                } while (maHpCursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting subjects with deadlines", e);
         }
-    } catch (Exception e) {
-        Log.e("DatabaseHelper", "Error getting subjects with deadlines", e);
-    }
 
-    return list;
-}
+        return list;
+    }
     public ArrayList<Deadline> getTodaysDeadlines() {
         ArrayList<Deadline> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();

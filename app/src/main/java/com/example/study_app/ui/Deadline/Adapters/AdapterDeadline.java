@@ -40,24 +40,18 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
     public void setOnDeadlineInteractionListener(AdapterWeek.OnDeadlineInteractionListener listener) {
         this.deadlineListener = listener;
     }
-    private void sortDeadlines() {
-        // Ghim lên đầu
-        deadlines.sort((d1, d2) -> {
-            if (d1.isPinned() && !d2.isPinned()) return -1;
-            if (!d1.isPinned() && d2.isPinned()) return 1;
 
-            // Nếu cùng trạng thái ghim thì sắp xếp theo ngày kết thúc
-            if (d1.getNgayKetThuc() != null && d2.getNgayKetThuc() != null) {
-                return d1.getNgayKetThuc().compareTo(d2.getNgayKetThuc());
-            }
-            return 0;
-        });
-    }
     public void updateData(List<Deadline> newDeadlines) {
         this.deadlines.clear();
         this.deadlines.addAll(newDeadlines);
         notifyDataSetChanged();
     }
+
+    @Override
+    public int getItemCount() {
+        return deadlines != null ? deadlines.size() : 0;
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -70,67 +64,45 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
         Deadline deadline = deadlines.get(position);
         if (deadline == null) return;
 
-        String displayTitle = deadline.getTieuDe();
-
-        holder.tieuDe.setText(displayTitle); // ✅ phải set displayTitle, không phải deadline.getTieuDe()
-
+        holder.tieuDe.setText(deadline.getTieuDe());
         holder.icon.setImageResource(deadline.getIcon());
-
 
         holder.checkBox.setOnCheckedChangeListener(null);
         holder.checkBox.setChecked(deadline.isCompleted());
 
-        // Disable checkbox nếu đã hết hạn
-        boolean isExpired = deadline.getNgayKetThuc() != null &&
-                deadline.getNgayKetThuc().before(new Date());
-        boolean isCompleted = deadline.isCompleted();
 
-        // ❗ Nếu đã hoàn thành HOẶC đã quá hạn → khóa checkbox
+        boolean isCompleted = deadline.isCompleted();
+        boolean isExpired = false;
+
+        if (deadline.getNgayKetThuc() != null) {
+            long now = System.currentTimeMillis();
+            long ddl = deadline.getNgayKetThuc().getTime();
+            isExpired = ddl < now;
+        }
+
         holder.checkBox.setEnabled(!(isCompleted || isExpired));
 
-        long now = System.currentTimeMillis();
-        long deadlineTime = deadline.getNgayKetThuc().getTime();
 
-        int pos = holder.getAdapterPosition();
-        if (pos == RecyclerView.NO_POSITION) return;
-        Deadline d=deadlines.get(pos);
-
-        if (!deadline.isCompleted()) {
-
-            if (deadlineTime < now) {
-                d.setNote("Quá hạn");
-                holder.thoiGian.setText(d.getNote());
-            } else {
-                d.setNote("Chưa hoàn thành");
-                holder.thoiGian.setText(deadline.getConLai());
-            }
+        if (isCompleted) {
+            holder.thoiGian.setText("Đã hoàn thành");
+        } else if (isExpired) {
+            holder.thoiGian.setText("Quá hạn");
         } else {
-            d.setNote("Đã hoàn thành");
-            holder.thoiGian.setText(d.getNote());
+            holder.thoiGian.setText(deadline.getConLai());
         }
 
 
-        if (d.isPinned()) {
-            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.beige));
-        } else {
-            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.white));
-        }
-
-        // Xử lý khi checkbox thay đổi
-        // Nếu chưa hoàn thành → cho phép tick
         holder.checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            deadline.setCompleted(isChecked);
 
-            d.setCompleted(isChecked);
-
-            // cập nhật DB
             if (dbHelper != null) {
-                dbHelper.updateDeadline(d);
+                dbHelper.updateDeadline(deadline);
             }
 
-            // Sau khi tick → disable checkbox
-            notifyItemChanged(pos);
+            notifyItemChanged(position);
         });
 
+        // --- Click item ---
         holder.itemView.setOnClickListener(v -> {
             if (deadlineListener != null) {
                 deadlineListener.onDeadlineClick(deadline);
@@ -139,27 +111,22 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
 
         holder.itemView.setOnLongClickListener(v -> {
             if (deadlineListener != null) {
-                showOptionsDialog(deadline, holder.getAdapterPosition());
+                showOptionsDialog(deadline, position);
                 return true;
             }
             return false;
         });
     }
 
-    @Override
-    public int getItemCount() {
-        return deadlines != null ? deadlines.size() : 0;
-    }
-
     private void showOptionsDialog(final Deadline deadline, final int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setItems(new CharSequence[]{"Sửa", "Xóa", "Ghim lên đầu"}, (dialog, which) -> {
+        builder.setItems(new CharSequence[]{"Sửa", "Xóa" }, (dialog, which) -> {
             if (deadlineListener == null) return;
             switch (which) {
-                case 0: // Edit
+                case 0:
                     deadlineListener.onEditDeadline(deadline);
                     break;
-                case 1: // Delete
+                case 1:
                     new AlertDialog.Builder(context)
                             .setTitle("Xác nhận xóa")
                             .setMessage("Bạn có chắc muốn xóa deadline này?")
@@ -173,13 +140,6 @@ public class AdapterDeadline extends RecyclerView.Adapter<AdapterDeadline.ViewHo
                             })
                             .setNegativeButton("Hủy", null)
                             .show();
-                    break;
-                case 2: // Ghim lên đầu
-                    deadlines.remove(position);          // bỏ khỏi vị trí cũ
-                    deadline.setPinned(true);
-                    deadlines.add(0, deadline);          // thêm vào đầu danh sách
-                    notifyItemMoved(position, 0);        // thông báo RecyclerView
-                    notifyItemChanged(0);                // refresh item đầu
                     break;
             }
         });

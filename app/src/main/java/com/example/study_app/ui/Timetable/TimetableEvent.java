@@ -6,6 +6,7 @@ import android.util.Log;
 import com.alamkanak.weekview.WeekViewEntity;
 import com.example.study_app.ui.Subject.Model.Subject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -56,6 +57,13 @@ public class TimetableEvent {
                 eventEnd.set(Calendar.HOUR_OF_DAY, timeEnd.get(Calendar.HOUR_OF_DAY));
                 eventEnd.set(Calendar.MINUTE, timeEnd.get(Calendar.MINUTE));
                 eventEnd.set(Calendar.SECOND, 0);
+
+                SimpleDateFormat f = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
+                Log.d("DEBUG_MERGE",
+                        "SUBJECT=" + subject.maHp +
+                                " | mergedStart=" + f.format(eventStart.getTime()) +
+                                " | mergedEnd=" + f.format(eventEnd.getTime()));
 
                 if (!eventEnd.after(eventStart)) {
                     dayIterator.add(Calendar.DAY_OF_YEAR, 7);

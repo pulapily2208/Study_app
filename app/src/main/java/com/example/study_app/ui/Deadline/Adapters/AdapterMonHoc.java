@@ -111,4 +111,5 @@ public class AdapterMonHoc extends RecyclerView.Adapter<AdapterMonHoc.ViewHolder
             btnExpandCollapse.setOnClickListener(expandCollapseListener);
         }
     }
+
 }

@@ -5,7 +5,7 @@ import java.io.Serializable;
 public class Icon implements Serializable {
     private int id_icon;
     private String name_icon;
-    private String src_icon; // Corresponds to `icon_path` in DB
+    private String src_icon;
 
     public Icon() {}
 

@@ -22,6 +22,7 @@ import com.example.study_app.ui.Notes.Model.Note;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -36,6 +37,13 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
     // Click menu sửa/xoá
     private OnNoteMenuClickListener menuClickListener;
+
+    public void updateData(ArrayList<Note> newList) {
+        notes.clear();
+        notes.addAll(newList);
+        notifyDataSetChanged();
+    }
+
 
     public interface OnNoteClickListener {
         void onNoteClick(Note note);

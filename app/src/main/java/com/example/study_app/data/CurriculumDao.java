@@ -260,4 +260,15 @@ public class CurriculumDao {
         }
         return true;
     }
+
+    public ArrayList<Curriculum> getSubjectsForNote(int userId) {
+        ArrayList<Curriculum> list = new ArrayList<>();
+        for (Curriculum c : getAllCoursesForCurriculumWithStatus(userId)) {
+            if ("IN_PROGRESS".equals(c.getStatus()) || "COMPLETED".equals(c.getStatus())) {
+                list.add(c);
+            }
+        }
+        return list;
+    }
+
 }
