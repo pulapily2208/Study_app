@@ -66,8 +66,8 @@ public class NavbarHelper {
         LinearLayout btnKetQua = activity.findViewById(R.id.btnKetQuaHocTap);
         if (btnKetQua != null)
             btnKetQua.setOnClickListener(v -> {
-                if (!(activity instanceof CurriculumActivity)) {
-                    Intent i = new Intent(activity, CurriculumActivity.class);
+                if (!(activity instanceof com.example.study_app.ui.Score.ScoreSummaryActivity)) {
+                    Intent i = new Intent(activity, com.example.study_app.ui.Score.ScoreSummaryActivity.class);
                     activity.startActivity(i);
                 }
             });

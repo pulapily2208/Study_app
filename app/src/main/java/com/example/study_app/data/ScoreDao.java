@@ -114,6 +114,114 @@ public class ScoreDao {
     }
 
     /**
+     * Hàng điểm kèm thông tin môn học cho màn tổng quan
+     */
+    public static class ScoreRow {
+        public String maHp;
+        public String tenHp;
+        public int credits;
+        public Float gpa;
+    }
+
+    /** Row điểm kèm thông tin học kỳ */
+    public static class ScoreWithSemester extends ScoreRow {
+        public int semesterId;
+        public String semesterName;
+    }
+
+    /**
+     * Lấy tất cả điểm kèm tên môn và số tín chỉ.
+     */
+    public java.util.List<ScoreRow> getAllScoresWithSubject() {
+        java.util.List<ScoreRow> list = new java.util.ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        String sql = "SELECT d.ma_hp, d.gpa, m.ten_hp, m.so_tin_chi " +
+                "FROM diem_mon_hoc d LEFT JOIN mon_hoc m ON d.ma_hp = m.ma_hp " +
+                "ORDER BY m.ten_hp ASC";
+        try (Cursor c = db.rawQuery(sql, null)) {
+            if (c != null && c.moveToFirst()) {
+                do {
+                    ScoreRow r = new ScoreRow();
+                    r.maHp = c.getString(0);
+                    if (!c.isNull(1))
+                        r.gpa = c.getFloat(1);
+                    r.tenHp = c.getString(2);
+                    r.credits = c.isNull(3) ? 0 : c.getInt(3);
+                    if (r.tenHp == null)
+                        r.tenHp = r.maHp;
+                    list.add(r);
+                } while (c.moveToNext());
+            }
+        }
+        return list;
+    }
+
+    /** Lấy điểm kèm học kỳ dựa trên enrollments của người dùng hiện tại */
+    public java.util.List<ScoreWithSemester> getScoresWithSemester() {
+        java.util.List<ScoreWithSemester> list = new java.util.ArrayList<>();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        int userId = getCurrentUserIdFromDb(db);
+        String sql = "SELECT d.ma_hp, d.gpa, m.ten_hp, m.so_tin_chi, hk.id, hk.ten_hoc_ky " +
+                "FROM enrollments e " +
+                "INNER JOIN hoc_ky hk ON e.hoc_ky = hk.id " +
+                "LEFT JOIN mon_hoc m ON e.ma_hp = m.ma_hp " +
+                "LEFT JOIN diem_mon_hoc d ON d.ma_hp = e.ma_hp " +
+                "WHERE e.user_id = ? " +
+                "ORDER BY hk.id ASC, m.ten_hp ASC";
+        try (Cursor c = db.rawQuery(sql, new String[] { String.valueOf(userId) })) {
+            if (c != null && c.moveToFirst()) {
+                do {
+                    ScoreWithSemester r = new ScoreWithSemester();
+                    r.maHp = c.getString(0);
+                    if (!c.isNull(1))
+                        r.gpa = c.getFloat(1);
+                    r.tenHp = c.getString(2);
+                    r.credits = c.isNull(3) ? 0 : c.getInt(3);
+                    r.semesterId = c.isNull(4) ? -1 : c.getInt(4);
+                    r.semesterName = c.getString(5);
+                    if (r.tenHp == null)
+                        r.tenHp = r.maHp;
+                    list.add(r);
+                } while (c.moveToNext());
+            }
+            return list;
+        } catch (Exception e) {
+            Log.e("ScoreDao", "getScoresWithSemester failed, fallback to simple list", e);
+            // Fallback: không có enrollments/hoc_ky, trả về danh sách không nhóm
+            for (ScoreRow r0 : getAllScoresWithSubject()) {
+                ScoreWithSemester r = new ScoreWithSemester();
+                r.maHp = r0.maHp;
+                r.tenHp = r0.tenHp;
+                r.credits = r0.credits;
+                r.gpa = r0.gpa;
+                r.semesterId = -1;
+                r.semesterName = "Khác";
+                list.add(r);
+            }
+            return list;
+        }
+    }
+
+    /** Lấy user đang hoạt động từ cùng kết nối DB */
+    private int getCurrentUserIdFromDb(SQLiteDatabase db) {
+        int userId = 1; // fallback
+        try (Cursor c = db.rawQuery("SELECT id FROM users WHERE is_active = 1 LIMIT 1", null)) {
+            if (c != null && c.moveToFirst()) {
+                return c.getInt(0);
+            }
+        } catch (Exception ignored) {
+        }
+
+        try (Cursor c2 = db.rawQuery("SELECT id FROM users ORDER BY id LIMIT 1", null)) {
+            if (c2 != null && c2.moveToFirst()) {
+                userId = c2.getInt(0);
+            }
+        } catch (Exception ignored) {
+        }
+        return userId;
+    }
+
+    /**
      * Lấy toàn bộ GPA của các môn đã có.
      */
     public java.util.Map<String, Float> getAllGpaMap() {
