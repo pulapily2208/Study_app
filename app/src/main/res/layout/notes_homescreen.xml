@@ -12,37 +12,54 @@
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
-        android:layout_height="60dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:paddingHorizontal="16dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:id="@+id/btnBack"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@drawable/note_ic_back"
-            android:padding="4dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp">
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
+            <ImageView
+                android:id="@+id/btnBack"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/note_ic_back"
+                android:padding="4dp" />
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:text="NOTES"
+                android:textSize="25dp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:textColor="@android:color/black" />
+
+        </LinearLayout>
 
         <androidx.appcompat.widget.SearchView
             android:id="@+id/searchViewNote"
+            android:background="@drawable/note_bg_searchview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:queryHint="Tìm kiếm ghi chú"
-            android:iconifiedByDefault="false"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"/>
-
+            app:queryHint="Tìm kiếm ghi chú"
+            app:iconifiedByDefault="false"
+            android:textColorHint="#6F6D6D"
+            android:layout_marginTop="3dp"
+            app:queryBackground="@android:color/transparent"/>
 
     </LinearLayout>
+
 
     <!-- CHIP LIST -->
     <HorizontalScrollView
@@ -97,11 +114,11 @@
     <!-- ADD BUTTON -->
     <Button
         android:id="@+id/btnAdd"
-        android:layout_width="65dp"
-        android:layout_height="65dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:background="@drawable/note_bg_circle_ic_add"
         app:backgroundTint="@color/blue"
-        android:foreground="@drawable/note_ic_add"
+        android:foreground="@drawable/ic_add"
         android:padding="18dp"
         android:layout_margin="26dp"
         app:layout_constraintBottom_toBottomOf="parent"
