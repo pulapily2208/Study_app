@@ -67,7 +67,7 @@ public class SubjectBulkImportAdapter extends RecyclerView.Adapter<SubjectBulkIm
     class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvIndex;
         EditText etMaHP, etTenGV, etPhongHoc;
-        TextView tvNgayBatDau;
+        TextView tvNgayBatDau, tvGioBatDau, tvGioKetThuc;
         CardView viewMauSac;
         View innerViewMauSac;
 
@@ -77,6 +77,8 @@ public class SubjectBulkImportAdapter extends RecyclerView.Adapter<SubjectBulkIm
             etMaHP = itemView.findViewById(R.id.et_ma_hp);
             etTenGV = itemView.findViewById(R.id.et_ten_gv);
             tvNgayBatDau = itemView.findViewById(R.id.tv_ngay_bat_dau);
+            tvGioBatDau = itemView.findViewById(R.id.tv_gio_bat_dau);
+            tvGioKetThuc = itemView.findViewById(R.id.tv_gio_ket_thuc);
             etPhongHoc = itemView.findViewById(R.id.et_phong_hoc);
             viewMauSac = itemView.findViewById(R.id.view_mau_sac);
             innerViewMauSac = itemView.findViewById(R.id.inner_view_mau_sac);
@@ -101,25 +103,68 @@ public class SubjectBulkImportAdapter extends RecyclerView.Adapter<SubjectBulkIm
                 }
             }
 
+            // Bind times if already set
+            java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm",
+                    java.util.Locale.getDefault());
+            if (subject.gioBatDau != null) {
+                tvGioBatDau.setText(timeFormat.format(subject.gioBatDau));
+            } else {
+                tvGioBatDau.setText("");
+            }
+            if (subject.gioKetThuc != null) {
+                tvGioKetThuc.setText(timeFormat.format(subject.gioKetThuc));
+            } else {
+                tvGioKetThuc.setText("");
+            }
+
             etMaHP.addTextChangedListener(new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-                @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
-                @Override public void afterTextChanged(Editable s) { subject.maHp = s.toString(); }
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    subject.maHp = s.toString();
+                }
             });
 
             etTenGV.addTextChangedListener(new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-                @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
-                @Override public void afterTextChanged(Editable s) { subject.tenGv = s.toString(); }
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    subject.tenGv = s.toString();
+                }
             });
 
             etPhongHoc.addTextChangedListener(new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-                @Override public void onTextChanged(CharSequence s, int start, int before, int count) { }
-                @Override public void afterTextChanged(Editable s) { subject.phongHoc = s.toString(); }
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    subject.phongHoc = s.toString();
+                }
             });
 
             tvNgayBatDau.setOnClickListener(v -> showDatePickerDialog(v.getContext(), subject, tvNgayBatDau));
+            tvGioBatDau.setOnClickListener(v -> showTimePickerDialog(v.getContext(), subject, true, tvGioBatDau));
+            tvGioKetThuc.setOnClickListener(v -> showTimePickerDialog(v.getContext(), subject, false, tvGioKetThuc));
             viewMauSac.setOnClickListener(v -> showColorPickerDialog(v.getContext(), subject, innerViewMauSac));
         }
 
@@ -158,7 +203,7 @@ public class SubjectBulkImportAdapter extends RecyclerView.Adapter<SubjectBulkIm
                 colors = context.getResources().getStringArray(R.array.subject_colors);
             } catch (Exception e) {
                 Toast.makeText(context, "Lỗi tải danh sách màu", Toast.LENGTH_SHORT).show();
-                colors = new String[]{"#CCCCCC"};
+                colors = new String[] { "#CCCCCC" };
             }
 
             for (String colorHex : colors) {
@@ -190,6 +235,29 @@ public class SubjectBulkImportAdapter extends RecyclerView.Adapter<SubjectBulkIm
                 colorGrid.addView(colorSwatch);
             }
 
+            dialog.show();
+        }
+
+        private void showTimePickerDialog(Context context, final Subject subject, final boolean isStart,
+                final TextView target) {
+            java.util.Calendar calendar = java.util.Calendar.getInstance();
+            int hour = calendar.get(java.util.Calendar.HOUR_OF_DAY);
+            int minute = calendar.get(java.util.Calendar.MINUTE);
+
+            android.app.TimePickerDialog dialog = new android.app.TimePickerDialog(context, (view, h, m) -> {
+                String value = String.format(java.util.Locale.getDefault(), "%02d:%02d", h, m);
+                target.setText(value);
+                try {
+                    java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat("HH:mm",
+                            java.util.Locale.getDefault());
+                    java.util.Date d = fmt.parse(value);
+                    if (isStart)
+                        subject.gioBatDau = d;
+                    else
+                        subject.gioKetThuc = d;
+                } catch (java.text.ParseException ignored) {
+                }
+            }, hour, minute, true);
             dialog.show();
         }
     }

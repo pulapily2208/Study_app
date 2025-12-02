@@ -230,7 +230,13 @@ public class SubjectAddActivity extends AppCompatActivity {
 
         int totalPeriods = curriculum.getSoTietLyThuyet() + curriculum.getSoTietThucHanh();
         int credits = curriculum.getSoTinChi();
-        if (credits > 0) {
+        String codeUpper = etSubjectCode.getText() != null ? etSubjectCode.getText().toString().trim().toUpperCase()
+                : "";
+        if (codeUpper.startsWith("DEFE")) {
+            calculatedWeeks = 4;
+        } else if (codeUpper.startsWith("PHYE")) {
+            calculatedWeeks = 7;
+        } else if (credits > 0) {
             calculatedWeeks = totalPeriods / credits;
         } else {
             calculatedWeeks = 0;

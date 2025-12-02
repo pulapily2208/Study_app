@@ -58,6 +58,28 @@
             android:textSize="14sp"
             android:textColor="#000000"/>
 
+        <TextView
+            android:id="@+id/tv_gio_bat_dau"
+            android:layout_width="90dp"
+            android:layout_height="36dp"
+            android:hint="Giờ BĐ"
+            android:padding="8dp"
+            android:background="@drawable/edittext_background"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:textColor="#000000"/>
+
+        <TextView
+            android:id="@+id/tv_gio_ket_thuc"
+            android:layout_width="90dp"
+            android:layout_height="36dp"
+            android:hint="Giờ KT"
+            android:padding="8dp"
+            android:background="@drawable/edittext_background"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:textColor="#000000"/>
+
         <EditText
             android:id="@+id/et_phong_hoc"
             android:layout_width="100dp"
