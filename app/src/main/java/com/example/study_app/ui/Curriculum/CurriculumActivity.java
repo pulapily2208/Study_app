@@ -196,7 +196,7 @@ public class CurriculumActivity extends AppCompatActivity {
 
     private void loadCurriculumData() {
         List<Curriculum> allCourses = curriculumDao.getAllCoursesForCurriculumWithStatus(UserSession.getCurrentUserId(this));
-        adapter = new CurriculumAdapter(allCourses);
+        adapter = new CurriculumAdapter(this, allCourses);
         recyclerViewCurriculum.setAdapter(adapter);
         applyAllFilters();
     }
