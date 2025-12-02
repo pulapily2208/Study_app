@@ -1,3 +1,4 @@
+
 package com.example.study_app.ui.Notes;
 
 import android.Manifest;
@@ -127,6 +128,15 @@ public class InputNoteActivity extends AppCompatActivity {
             loadNoteData(noteId);
         } else {
             currentNote = new Note();
+        }
+
+        String maHpSelected = getIntent().getStringExtra("maHpSelected");
+        if (maHpSelected != null) {
+            currentNote.setMa_hp(maHpSelected);
+        }
+
+
+        if (!intent.hasExtra("note_id")) {
             undoStack.push(Html.toHtml(edtContent.getText(), Html.FROM_HTML_MODE_LEGACY));
         }
 
@@ -779,6 +789,7 @@ public class InputNoteActivity extends AppCompatActivity {
             return;
         }
 
+
         currentNote.setTitle(title);
         currentNote.setBody(content);
         currentNote.setTimestamp();
@@ -786,7 +797,7 @@ public class InputNoteActivity extends AppCompatActivity {
         currentNote.setImagePaths(new ArrayList<>(imagePaths));
         currentNote.setPdfPaths(pdfPaths);
         currentNote.setAudioPaths(audioPaths);
-
+        
         if (currentNote.getId() == 0) {
             dbHelper.insertNote(currentNote);
             Toast.makeText(this, "Note saved", Toast.LENGTH_SHORT).show();

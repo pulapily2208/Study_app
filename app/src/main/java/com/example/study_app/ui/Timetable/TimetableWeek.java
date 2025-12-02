@@ -120,8 +120,35 @@ public class TimetableWeek extends AppCompatActivity {
         TimetableDao dao = new TimetableDao(new DatabaseHelper(this));
         int userId = UserSession.getCurrentUserId(this);
         List<Subject> subjects = dao.getSubjectsForTimetable(userId);
+
+        Log.d("DEBUG_Timetable", "Subjects returned: " + subjects.size());
+        for (Subject s : subjects) {
+            Log.d("DEBUG_Timetable", "Subject: " + s.getTenHp()
+                    + " | Date=" + s.getNgayBatDau()
+                    + " | Start=" + s.getGioBatDau()
+                    + " | End=" + s.getGioKetThuc());
+        }
+        Log.d("DEBUG_Timetable", "userId = " + userId);
+
+        if (subjects == null) {
+            Log.e("DEBUG_Timetable", "subjects == NULL !!!");
+        } else {
+            Log.d("DEBUG_Timetable", "subjects size = " + subjects.size());
+        }
+
+        for (int i = 0; i < subjects.size(); i++) {
+            Subject s = subjects.get(i);
+            Log.d("DEBUG_Timetable", "[" + i + "] tenHp=" + s.getTenHp());
+        }
+
         List<WeekViewEntity.Event<Subject>> events = TimetableEvent.convertSubjectsToEvents(subjects);
-        weekView.setAdapter(new MyWeekViewAdapter(new ArrayList<>(events)));
+//        weekView.setAdapter(new MyWeekViewAdapter(new ArrayList<>(events)));
+        // Set adapter inline, không cần tạo class riêng
+        weekView.setAdapter(new WeekView.SimpleAdapter<WeekViewEntity.Event<Subject>>() {
+            private List<? extends WeekViewEntity> onLoad() {
+                return events; // Trả về danh sách sự kiện
+            }
+        });
         Log.d("TimetableWeek", "Loaded " + events.size() + " events (adapter reset)");
     }
 

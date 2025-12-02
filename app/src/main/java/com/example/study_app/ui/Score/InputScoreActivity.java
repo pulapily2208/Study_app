@@ -45,6 +45,13 @@ public class InputScoreActivity extends AppCompatActivity {
 
     private void receiveData() {
         String maMon = getIntent().getStringExtra("subject_code");
+
+        if (maMon == null || maMon.isEmpty()) {
+            Toast.makeText(this, "Lỗi: Không tìm thấy thông tin môn học.", Toast.LENGTH_LONG).show();
+            finish(); // Đóng activity lại vì không thể hoạt động nếu không có dữ liệu
+            return;
+        }
+
         String tenMonHoc = getIntent().getStringExtra("subject_name");
 
         tvMaMon.setText(maMon);
