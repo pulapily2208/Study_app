@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class TimetableWeek extends AppCompatActivity {
-    LinearLayout btnNote, btnDeadLine, btnSubject, btnCurriculum;
+    LinearLayout btnNote, btnDeadLine, btnSubject, btnCurriculum, btnTimetable, btnKetQuaHocTap;
 
     private WeekView weekView;
     private MaterialCalendarView monthCalendar;
@@ -85,6 +85,9 @@ public class TimetableWeek extends AppCompatActivity {
         updateSelectedDate(today);
         goToDate(today);
         displayWeekChips(getStartOfWeek(today));
+
+        // Set navbar active state to Timetable
+        setActiveNavbarItem(R.id.btnTimetable);
     }
 
     @Override
@@ -275,36 +278,37 @@ public class TimetableWeek extends AppCompatActivity {
 
             llDateContainer.addView(chip);
 
-
-
-//            final Calendar finalDay = day;
-//            chip.setOnClickListener(v -> {
-//                monthCalendar.setSelectedDate(CalendarDay.from(finalDay.get(Calendar.YEAR),
-//                        finalDay.get(Calendar.MONTH) + 1, finalDay.get(Calendar.DAY_OF_MONTH)));
-//                weekView.goToDate(finalDay);
-//            });
-//            llDateContainer.addView(chip);
+            // final Calendar finalDay = day;
+            // chip.setOnClickListener(v -> {
+            // monthCalendar.setSelectedDate(CalendarDay.from(finalDay.get(Calendar.YEAR),
+            // finalDay.get(Calendar.MONTH) + 1, finalDay.get(Calendar.DAY_OF_MONTH)));
+            // weekView.goToDate(finalDay);
+            // });
+            // llDateContainer.addView(chip);
         }
     }
 
-    public void intentMenu(){
-        btnDeadLine=findViewById(R.id.btnDeadLine);
+    public void intentMenu() {
+        btnDeadLine = findViewById(R.id.btnDeadLine);
         btnNote = findViewById(R.id.btnNote);
         btnSubject = findViewById(R.id.btnSubject);
         btnCurriculum = findViewById(R.id.btnCurriculum);
+        btnTimetable = findViewById(R.id.btnTimetable);
+        btnKetQuaHocTap = findViewById(R.id.btnKetQuaHocTap);
 
-//        DEADLINE
+        // Default active state for this screen
+        setActiveNavbarItem(R.id.btnTimetable);
+
+        // DEADLINE
         btnDeadLine.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent=new Intent(TimetableWeek.this, MainDeadLine.class);
+                Intent intent = new Intent(TimetableWeek.this, MainDeadLine.class);
                 startActivity(intent);
             }
         });
 
-
-
-//        SUBJECT
+        // SUBJECT
         btnSubject.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -313,8 +317,7 @@ public class TimetableWeek extends AppCompatActivity {
             }
         });
 
-
-//      NOTE
+        // NOTE
         btnNote.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -323,9 +326,7 @@ public class TimetableWeek extends AppCompatActivity {
             }
         });
 
-
-
-//        CURRICULUM
+        // CURRICULUM
         btnCurriculum.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -334,59 +335,90 @@ public class TimetableWeek extends AppCompatActivity {
             }
         });
 
+        // TIMETABLE
+        btnTimetable.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Already on Timetable; keep active highlight
+                setActiveNavbarItem(R.id.btnTimetable);
+            }
+        });
+
+        // KET QUA HOC TAP (Scores)
+        btnKetQuaHocTap.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(TimetableWeek.this, com.example.study_app.ui.Score.InputScoreActivity.class);
+                startActivity(intent);
+            }
+        });
+
+    }
+
+    private void setActiveNavbarItem(int activeId) {
+        int[] ids = new int[] { R.id.btnSubject, R.id.btnNote, R.id.btnDeadLine, R.id.btnTimetable,
+                R.id.btnKetQuaHocTap, R.id.btnCurriculum };
+        for (int id : ids) {
+            View v = findViewById(id);
+            if (v != null)
+                v.setSelected(id == activeId);
+        }
     }
 }
 
-//private void displayWeekChips(Calendar startOfWeek) {
-//    llDateContainer.removeAllViews();
-//    SimpleDateFormat sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
+// private void displayWeekChips(Calendar startOfWeek) {
+// llDateContainer.removeAllViews();
+// SimpleDateFormat sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
 //
-//    Calendar today = Calendar.getInstance(); // để highlight hôm nay
+// Calendar today = Calendar.getInstance(); // để highlight hôm nay
 //
-//    for (int i = 0; i < 7; i++) {
-//        Calendar day = (Calendar) startOfWeek.clone();
-//        day.add(Calendar.DAY_OF_MONTH, i);
+// for (int i = 0; i < 7; i++) {
+// Calendar day = (Calendar) startOfWeek.clone();
+// day.add(Calendar.DAY_OF_MONTH, i);
 //
-//        Chip chip = new Chip(this);
-//        chip.setText(sdf.format(day.getTime()));
-//        chip.setCheckable(true);
+// Chip chip = new Chip(this);
+// chip.setText(sdf.format(day.getTime()));
+// chip.setCheckable(true);
 //
-//        if (day.get(Calendar.YEAR) == today.get(Calendar.YEAR)
-//                && day.get(Calendar.MONTH) == today.get(Calendar.MONTH)
-//                && day.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH)) {
-//            chip.setChecked(true);
-//        }
+// if (day.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+// && day.get(Calendar.MONTH) == today.get(Calendar.MONTH)
+// && day.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH)) {
+// chip.setChecked(true);
+// }
 //
-//        if (selectedDate != null) {
-//            SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-//            String dayStr = dbFormat.format(day.getTime());
-//            if (dayStr.equals(selectedDate)) {
-//                chip.setChecked(true);
-//            }
-//        }
+// if (selectedDate != null) {
+// SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd",
+// Locale.getDefault());
+// String dayStr = dbFormat.format(day.getTime());
+// if (dayStr.equals(selectedDate)) {
+// chip.setChecked(true);
+// }
+// }
 //
-//        // bỏ chọn chip cũ
-//        chip.setOnClickListener(v -> {
-//            for (int j = 0; j < llDateContainer.getChildCount(); j++) {
-//                View child = llDateContainer.getChildAt(j);
-//                if (child instanceof Chip) {
-//                    ((Chip) child).setChecked(false);
-//                }
-//            }
-//            chip.setChecked(true);
+// // bỏ chọn chip cũ
+// chip.setOnClickListener(v -> {
+// for (int j = 0; j < llDateContainer.getChildCount(); j++) {
+// View child = llDateContainer.getChildAt(j);
+// if (child instanceof Chip) {
+// ((Chip) child).setChecked(false);
+// }
+// }
+// chip.setChecked(true);
 //
-//            // Đồng bộ TextView
-//            SimpleDateFormat sdfFull = new SimpleDateFormat("EEEE, dd MMM, yyyy", Locale.ENGLISH);
-//            tvSelectedDate.setText(sdfFull.format(day.getTime()));
+// // Đồng bộ TextView
+// SimpleDateFormat sdfFull = new SimpleDateFormat("EEEE, dd MMM, yyyy",
+// Locale.ENGLISH);
+// tvSelectedDate.setText(sdfFull.format(day.getTime()));
 //
-//            // Lưu ngày để truyền Add
-//            SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-//            selectedDate = dbFormat.format(day.getTime());
+// // Lưu ngày để truyền Add
+// SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd",
+// Locale.getDefault());
+// selectedDate = dbFormat.format(day.getTime());
 //
-//            // Đồng bộ WeekView
-//            weekView.goToDate(day);
-//        });
+// // Đồng bộ WeekView
+// weekView.goToDate(day);
+// });
 //
-//        llDateContainer.addView(chip);
-//    }
-//}
+// llDateContainer.addView(chip);
+// }
+// }

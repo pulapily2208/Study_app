@@ -24,6 +24,7 @@ import com.example.study_app.ui.Deadline.Adapters.AdapterMonHoc;
 import com.example.study_app.ui.Deadline.Adapters.AdapterWeek;
 import com.example.study_app.ui.Deadline.Models.Deadline;
 import com.example.study_app.ui.Subject.Model.Subject;
+import com.example.study_app.ui.common.NavbarHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +37,7 @@ public class MainDeadLine extends AppCompatActivity {
     private DeadlineDao dbHelper;
     private DeadlineNotificationManager notificationManager;
     private AdapterDeadline todayAdapter;
-//    private AdapterMonHoc todayAdapter;
+    // private AdapterMonHoc todayAdapter;
     private AdapterMonHoc allAdapter;
 
     @Override
@@ -72,6 +73,9 @@ public class MainDeadLine extends AppCompatActivity {
         // --- Setup Adapters & Load Data ---
         setupAdapters();
         loadData();
+
+        // Setup navbar and mark Deadline as active
+        NavbarHelper.setupNavbar(this, R.id.btnDeadLine);
     }
 
     @Override
@@ -106,7 +110,7 @@ public class MainDeadLine extends AppCompatActivity {
             public void onStateChanged(Deadline deadline, boolean isCompleted) {
                 deadline.setCompleted(isCompleted);
                 dbHelper.updateDeadline(deadline);
-                if(isCompleted) {
+                if (isCompleted) {
                     notificationManager.cancelNotification(deadline.getId());
                 }
                 loadData();
@@ -121,6 +125,7 @@ public class MainDeadLine extends AppCompatActivity {
         allAdapter.setOnDeadlineInteractionListener(listener);
         rvAll.setAdapter(allAdapter);
     }
+
     private void loadData() {
 
         // ==== Hôm nay ====

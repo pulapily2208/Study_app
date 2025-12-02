@@ -1,6 +1,5 @@
 package com.example.study_app.ui.Score;
 
-import android.database.Cursor;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -32,7 +31,7 @@ public class InputScoreActivity extends AppCompatActivity {
         setupListeners();
     }
 
-    private void mapViews(){
+    private void mapViews() {
         tvMaMon = findViewById(R.id.tvMaMon);
         tvTenMonHoc = findViewById(R.id.tvTenMonHoc);
         tvGpa = findViewById(R.id.tvGpa);
@@ -51,27 +50,19 @@ public class InputScoreActivity extends AppCompatActivity {
         tvMaMon.setText(maMon);
         tvTenMonHoc.setText(tenMonHoc);
 
-        // Lấy điểm đã có từ CSDL
-        ScoreDao scoreDao = new ScoreDao(this);
-        Cursor cursor = scoreDao.getScore(maMon);
-
-        if (cursor != null && cursor.moveToFirst()) {
-            // Giả định tên các cột điểm trong CSDL
-            int ccIndex = cursor.getColumnIndex("diem_chuyen_can");
-            int gkIndex = cursor.getColumnIndex("diem_giua_ki");
-            int ckIndex = cursor.getColumnIndex("diem_cuoi_ki");
-
-            if (ccIndex != -1) {
-                edtDiemChuyenCan.setText(String.valueOf(cursor.getFloat(ccIndex)));
-            }
-            if (gkIndex != -1) {
-                edtDiemGiuaKi.setText(String.valueOf(cursor.getFloat(gkIndex)));
-            }
-            if (ckIndex != -1) {
-                edtDiemCuoiKi.setText(String.valueOf(cursor.getFloat(ckIndex)));
-            }
-
-            cursor.close();
+        // Lấy điểm đã có từ CSDL (dùng chung DatabaseHelper)
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        ScoreDao scoreDao = new ScoreDao(dbHelper);
+        ScoreDao.ScoreDetails details = scoreDao.getScoreDetails(maMon);
+        if (details != null) {
+            if (details.cc != null)
+                edtDiemChuyenCan.setText(String.valueOf(details.cc));
+            if (details.gk != null)
+                edtDiemGiuaKi.setText(String.valueOf(details.gk));
+            if (details.ck != null)
+                edtDiemCuoiKi.setText(String.valueOf(details.ck));
+            if (details.gpa != null)
+                tvGpa.setText(String.format("%.1f", details.gpa));
         }
     }
 
@@ -112,8 +103,8 @@ public class InputScoreActivity extends AppCompatActivity {
 
         Float gpa = calculateGpa(cc, gk, ck);
 
-        ScoreDao db = new ScoreDao(this);
-
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        ScoreDao db = new ScoreDao(dbHelper);
         db.saveScore(tvMaMon.getText().toString(), cc, gk, ck, gpa);
 
         Toast.makeText(this, "Đã lưu điểm", Toast.LENGTH_SHORT).show();
@@ -136,7 +127,8 @@ public class InputScoreActivity extends AppCompatActivity {
     }
 
     private Float calculateGpa(Float cc, Float gk, Float ck) {
-        if(cc == null || gk == null || ck == null) return null;
+        if (cc == null || gk == null || ck == null)
+            return null;
         return (cc * 0.1f + gk * 0.3f + ck * 0.6f);
     }
 
