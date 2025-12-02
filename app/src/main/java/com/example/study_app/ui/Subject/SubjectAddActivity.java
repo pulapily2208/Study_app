@@ -45,31 +45,31 @@ import java.util.concurrent.TimeUnit;
 
 public class SubjectAddActivity extends AppCompatActivity {
 
-    private AutoCompleteTextView etSubjectCode;
-    private EditText etSubjectName, etLecturerName, etCredits, etStartDate, etEndDate, etStartTime, etEndTime,
-            etLocation, etNotes;
-    private RadioGroup rgSubjectType;
-    private RadioButton rbCompulsory, rbElective;
-    private TextView tvCalculatedWeeks, tvChoiceGroup;
-    private LinearLayout colorPickerContainer, layoutStartDate, layoutEndDate;
-    private ImageView ivBack, ivSave;
-    private TextView tvActivityTitle;
+    private AutoCompleteTextView etMaMon;
+    private EditText etTenMon, etTenGv, etSoTc, etNgayBatDau, etNgayKetThuc, etGioBatDau, etGioKetThuc,
+            etPhongHoc, etGhiChu;
+    private RadioGroup rgLoaiMon;
+    private RadioButton rbBatBuoc, rbTuChon;
+    private TextView tvSoTuan, tvNhomTuChon;
+    private LinearLayout khungChonMau, layoutNgayBatDau, layoutNgayKetThuc;
+    private ImageView ivQuayLai, ivLuu;
+    private TextView tvTieuDeHoatDong;
 
     private DatabaseHelper dbHelper;
     private SubjectDao subjectDao;
     private CurriculumDao curriculumDao;
-    private boolean isEditMode = false;
+    private boolean cheDoChinhSua = false;
     private String maHpToEdit = null;
-    private String currentSemesterName;
+    private String tenHocKyHienTai;
 
-    private String selectedColor = null;
-    private final List<View> colorViews = new ArrayList<>();
-    private View selectedColorView = null;
+    private String mauDuocChon = null;
+    private final List<View> cacViewMau = new ArrayList<>();
+    private View viewMauDuocChon = null;
 
-    private Calendar startDateCalendar = null;
-    private Calendar endDateCalendar = null;
-    private int calculatedWeeks = 0;
-    private ArrayAdapter<String> subjectCodeAdapter;
+    private Calendar lichNgayBatDau = null;
+    private Calendar lichNgayKetThuc = null;
+    private int soTuanTinhDuoc = 0;
+    private ArrayAdapter<String> maMonAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,86 +86,55 @@ public class SubjectAddActivity extends AppCompatActivity {
         dbHelper = new DatabaseHelper(this);
         subjectDao = new SubjectDao(dbHelper);
         curriculumDao = new CurriculumDao(dbHelper);
+
         findViews();
         setupAutoComplete();
         setClickListeners();
-        setupColorPicker();
+        caiDatBoChonMau();
         NavbarHelper.setupNavbar(this, R.id.btnSubject);
 
-        tvChoiceGroup.setVisibility(View.GONE);
+        tvNhomTuChon.setVisibility(View.GONE);
 
         if (getIntent().hasExtra("SEMESTER_NAME")) {
-            currentSemesterName = getIntent().getStringExtra("SEMESTER_NAME");
+            tenHocKyHienTai = getIntent().getStringExtra("SEMESTER_NAME");
         } else {
             Toast.makeText(this, R.string.error_no_semester_info, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        // Nếu được truyền `selectedDate` từ TimetableWeek (format: yyyy-MM-dd),
-        // tiền điền `etStartDate` và set `startDateCalendar` để tránh mất ngày khi thêm
-        // môn từ timetable.
-        if (getIntent().hasExtra("selectedDate")) {
-            String selectedDateStr = getIntent().getStringExtra("selectedDate");
-            if (selectedDateStr != null && !selectedDateStr.isEmpty()) {
-                try {
-                    java.text.SimpleDateFormat dbFormat = new java.text.SimpleDateFormat("yyyy-MM-dd",
-                            java.util.Locale.getDefault());
-                    java.util.Date parsed = dbFormat.parse(selectedDateStr);
-                    if (parsed != null) {
-                        startDateCalendar = java.util.Calendar.getInstance();
-                        startDateCalendar.setTime(parsed);
-                        java.text.SimpleDateFormat displayFormat = new java.text.SimpleDateFormat("dd/MM/yyyy",
-                                java.util.Locale.getDefault());
-                        etStartDate.setText(displayFormat.format(parsed));
-                        // Tự động tính ngày kết thúc nếu có thông tin số tuần
-                        autoCalculateEndDate();
-                    }
-                } catch (java.text.ParseException e) {
-                    // Ignore invalid format
-                }
-            }
-        }
-
-        checkForEditOrAddMode();
-
-        if (!isEditMode) {
-            if (!colorViews.isEmpty()) {
-                colorViews.get(0).performClick();
-            }
-            rbCompulsory.setChecked(true);
-        }
+        kiemTraCheDoChinhSuaHoacThem();
     }
 
     private void findViews() {
-        etSubjectCode = findViewById(R.id.etSubjectCode);
-        etSubjectName = findViewById(R.id.etSubjectName);
-        etLecturerName = findViewById(R.id.etLecturerName);
-        etCredits = findViewById(R.id.etCredits);
-        etStartDate = findViewById(R.id.etStartDate);
-        etEndDate = findViewById(R.id.etEndDate);
-        etStartTime = findViewById(R.id.etStartTime);
-        etEndTime = findViewById(R.id.etEndTime);
-        etLocation = findViewById(R.id.etLocation);
-        etNotes = findViewById(R.id.etNotes);
-        rgSubjectType = findViewById(R.id.rgSubjectType);
-        rbCompulsory = findViewById(R.id.rb_compulsory);
-        rbElective = findViewById(R.id.rb_elective);
-        tvCalculatedWeeks = findViewById(R.id.tvCalculatedWeeks);
-        tvChoiceGroup = findViewById(R.id.tvChoiceGroup);
-        colorPickerContainer = findViewById(R.id.colorPickerContainer);
-        ivBack = findViewById(R.id.ivBack);
-        ivSave = findViewById(R.id.ivSave);
-        tvActivityTitle = findViewById(R.id.tvActivityTitle);
-        layoutStartDate = findViewById(R.id.layoutStartDate);
-        layoutEndDate = findViewById(R.id.layoutEndDate);
+        etMaMon = findViewById(R.id.etSubjectCode);
+        etTenMon = findViewById(R.id.etSubjectName);
+        etTenGv = findViewById(R.id.etLecturerName);
+        etSoTc = findViewById(R.id.etCredits);
+        etNgayBatDau = findViewById(R.id.etStartDate);
+        etNgayKetThuc = findViewById(R.id.etEndDate);
+        etGioBatDau = findViewById(R.id.etStartTime);
+        etGioKetThuc = findViewById(R.id.etEndTime);
+        etPhongHoc = findViewById(R.id.etLocation);
+        etGhiChu = findViewById(R.id.etNotes);
+        rgLoaiMon = findViewById(R.id.rgSubjectType);
+        rbBatBuoc = findViewById(R.id.rb_compulsory);
+        rbTuChon = findViewById(R.id.rb_elective);
+        tvSoTuan = findViewById(R.id.tvCalculatedWeeks);
+        tvNhomTuChon = findViewById(R.id.tvChoiceGroup);
+        khungChonMau = findViewById(R.id.colorPickerContainer);
+        ivQuayLai = findViewById(R.id.ivBack);
+        ivLuu = findViewById(R.id.ivSave);
+        tvTieuDeHoatDong = findViewById(R.id.tvActivityTitle);
+        layoutNgayBatDau = findViewById(R.id.layoutStartDate);
+        layoutNgayKetThuc = findViewById(R.id.layoutEndDate);
     }
 
     private void setupAutoComplete() {
-        subjectCodeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line);
-        etSubjectCode.setAdapter(subjectCodeAdapter);
+        maMonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line);
+        etMaMon.setAdapter(maMonAdapter);
 
-        etSubjectCode.addTextChangedListener(new TextWatcher() {
+        etMaMon.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -176,29 +145,29 @@ public class SubjectAddActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (etSubjectCode.isPerformingCompletion()) {
+                if (etMaMon.isPerformingCompletion()) {
                     return;
                 }
                 List<String> suggestions = curriculumDao.searchSubjectCodes(s.toString());
-                subjectCodeAdapter.clear();
-                subjectCodeAdapter.addAll(suggestions);
-                subjectCodeAdapter.notifyDataSetChanged();
+                maMonAdapter.clear();
+                maMonAdapter.addAll(suggestions);
+                maMonAdapter.notifyDataSetChanged();
             }
         });
 
-        etSubjectCode.setOnItemClickListener((parent, view, position, id) -> {
-            String selectedMaHp = subjectCodeAdapter.getItem(position);
+        etMaMon.setOnItemClickListener((parent, view, position, id) -> {
+            String selectedMaHp = maMonAdapter.getItem(position);
             if (selectedMaHp != null) {
                 Curriculum curriculum = curriculumDao.getCurriculumDetailsByMaHp(selectedMaHp);
                 if (curriculum != null) {
-                    autoFillSubjectDetails(curriculum);
+                    tuDienThongTinMonHoc(curriculum);
                 }
             }
         });
 
-        etSubjectCode.setOnFocusChangeListener((v, hasFocus) -> {
+        etMaMon.setOnFocusChangeListener((v, hasFocus) -> {
             if (!hasFocus) {
-                String currentCode = etSubjectCode.getText().toString().trim();
+                String currentCode = etMaMon.getText().toString().trim();
                 if (!TextUtils.isEmpty(currentCode)) {
                     Curriculum curriculum = curriculumDao.getCurriculumDetailsByMaHp(currentCode);
                     if (curriculum == null) {
@@ -210,156 +179,156 @@ public class SubjectAddActivity extends AppCompatActivity {
         });
     }
 
-    private void autoFillSubjectDetails(Curriculum curriculum) {
-        etSubjectName.setText(curriculum.getTenHp());
-        etCredits.setText(String.valueOf(curriculum.getSoTinChi()));
+    private void tuDienThongTinMonHoc(Curriculum curriculum) {
+        etTenMon.setText(curriculum.getTenHp());
+        etSoTc.setText(String.valueOf(curriculum.getSoTinChi()));
 
         if (curriculum.getLoaiHp() != null) {
             if ("Tự chọn".equals(curriculum.getLoaiHp())) {
-                rbElective.setChecked(true);
-                tvChoiceGroup.setText("Nhóm: " + curriculum.getNhomTuChon());
-                tvChoiceGroup.setVisibility(View.VISIBLE);
+                rbTuChon.setChecked(true);
+                tvNhomTuChon.setText("Nhóm: " + curriculum.getNhomTuChon());
+                tvNhomTuChon.setVisibility(View.VISIBLE);
             } else {
-                rbCompulsory.setChecked(true);
-                tvChoiceGroup.setText("");
-                tvChoiceGroup.setVisibility(View.GONE);
+                rbBatBuoc.setChecked(true);
+                tvNhomTuChon.setText("");
+                tvNhomTuChon.setVisibility(View.GONE);
             }
         } else {
-            rbCompulsory.setChecked(true);
-            tvChoiceGroup.setText("");
-            tvChoiceGroup.setVisibility(View.GONE);
+            rbBatBuoc.setChecked(true);
+            tvNhomTuChon.setText("");
+            tvNhomTuChon.setVisibility(View.GONE);
         }
 
         int totalPeriods = curriculum.getSoTietLyThuyet() + curriculum.getSoTietThucHanh();
         int credits = curriculum.getSoTinChi();
-        String codeUpper = etSubjectCode.getText() != null ? etSubjectCode.getText().toString().trim().toUpperCase()
+        String codeUpper = etMaMon.getText() != null ? etMaMon.getText().toString().trim().toUpperCase()
                 : "";
         if (codeUpper.startsWith("DEFE")) {
-            calculatedWeeks = 4;
+            soTuanTinhDuoc = 4;
         } else if (codeUpper.startsWith("PHYE")) {
-            calculatedWeeks = 7;
+            soTuanTinhDuoc = 7;
         } else if (credits > 0) {
-            calculatedWeeks = totalPeriods / credits;
+            soTuanTinhDuoc = totalPeriods / credits;
         } else {
-            calculatedWeeks = 0;
+            soTuanTinhDuoc = 0;
         }
-        tvCalculatedWeeks.setText(String.valueOf(calculatedWeeks));
+        tvSoTuan.setText(String.valueOf(soTuanTinhDuoc));
 
-        if (startDateCalendar != null) {
-            autoCalculateEndDate();
+        if (lichNgayBatDau != null) {
+            tuTinhNgayKetThuc();
         }
     }
 
-    private void autoCalculateEndDate() {
-        if (startDateCalendar != null && calculatedWeeks > 0) {
-            endDateCalendar = (Calendar) startDateCalendar.clone();
-            endDateCalendar.add(Calendar.DAY_OF_YEAR, (calculatedWeeks * 7) - 1);
+    private void tuTinhNgayKetThuc() {
+        if (lichNgayBatDau != null && soTuanTinhDuoc > 0) {
+            lichNgayKetThuc = (Calendar) lichNgayBatDau.clone();
+            lichNgayKetThuc.add(Calendar.DAY_OF_YEAR, (soTuanTinhDuoc * 7) - 1);
 
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-            etEndDate.setText(dateFormat.format(endDateCalendar.getTime()));
+            etNgayKetThuc.setText(dateFormat.format(lichNgayKetThuc.getTime()));
         } else {
-            etEndDate.setText("");
-            endDateCalendar = null;
+            etNgayKetThuc.setText("");
+            lichNgayKetThuc = null;
         }
     }
 
     private void setClickListeners() {
-        ivBack.setOnClickListener(v -> finish());
-        ivSave.setOnClickListener(v -> saveSubject());
+        ivQuayLai.setOnClickListener(v -> finish());
+        ivLuu.setOnClickListener(v -> luuMonHoc());
 
-        layoutStartDate.setOnClickListener(v -> showDatePickerDialog(etStartDate));
-        etStartDate.setOnClickListener(v -> showDatePickerDialog(etStartDate));
-        layoutEndDate.setOnClickListener(v -> showDatePickerDialog(etEndDate));
-        etEndDate.setOnClickListener(v -> showDatePickerDialog(etEndDate));
+        layoutNgayBatDau.setOnClickListener(v -> chonNgay(etNgayBatDau));
+        etNgayBatDau.setOnClickListener(v -> chonNgay(etNgayBatDau));
+        layoutNgayKetThuc.setOnClickListener(v -> chonNgay(etNgayKetThuc));
+        etNgayKetThuc.setOnClickListener(v -> chonNgay(etNgayKetThuc));
 
-        etStartTime.setOnClickListener(v -> showTimePickerDialog(etStartTime));
-        etEndTime.setOnClickListener(v -> showTimePickerDialog(etEndTime));
+        etGioBatDau.setOnClickListener(v -> chonGio(etGioBatDau));
+        etGioKetThuc.setOnClickListener(v -> chonGio(etGioKetThuc));
     }
 
-    private void checkForEditOrAddMode() {
+    private void kiemTraCheDoChinhSuaHoacThem() {
         if (getIntent().hasExtra("SUBJECT_ID")) {
-            isEditMode = true;
+            cheDoChinhSua = true;
             maHpToEdit = getIntent().getStringExtra("SUBJECT_ID");
-            tvActivityTitle.setText(R.string.activity_title_edit);
-            etSubjectCode.setEnabled(false);
+            tvTieuDeHoatDong.setText(R.string.activity_title_edit);
+            etMaMon.setEnabled(false);
 
             Subject subject = subjectDao.getSubjectByMaHp(maHpToEdit);
             if (subject != null) {
-                populateUI(subject);
+                napDuLieuLenUI(subject);
             } else {
                 Toast.makeText(this, R.string.error_subject_not_found, Toast.LENGTH_SHORT).show();
                 finish();
             }
         } else {
-            isEditMode = false;
-            tvActivityTitle.setText(R.string.activity_title_add);
+            cheDoChinhSua = false;
+            tvTieuDeHoatDong.setText(R.string.activity_title_add);
         }
     }
 
-    private void populateUI(Subject subject) {
-        etSubjectCode.setText(subject.maHp);
-        etSubjectName.setText(subject.tenHp);
-        etLecturerName.setText(subject.tenGv);
-        etCredits.setText(String.valueOf(subject.soTc));
-        etNotes.setText(subject.ghiChu);
-        etLocation.setText(subject.phongHoc);
+    private void napDuLieuLenUI(Subject subject) {
+        etMaMon.setText(subject.maHp);
+        etTenMon.setText(subject.tenHp);
+        etTenGv.setText(subject.tenGv);
+        etSoTc.setText(String.valueOf(subject.soTc));
+        etGhiChu.setText(subject.ghiChu);
+        etPhongHoc.setText(subject.phongHoc);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
         if (subject.ngayBatDau != null) {
-            etStartDate.setText(dateFormat.format(subject.ngayBatDau));
-            startDateCalendar = Calendar.getInstance();
-            startDateCalendar.setTime(subject.ngayBatDau);
+            etNgayBatDau.setText(dateFormat.format(subject.ngayBatDau));
+            lichNgayBatDau = Calendar.getInstance();
+            lichNgayBatDau.setTime(subject.ngayBatDau);
         }
         if (subject.ngayKetThuc != null) {
-            etEndDate.setText(dateFormat.format(subject.ngayKetThuc));
-            endDateCalendar = Calendar.getInstance();
-            endDateCalendar.setTime(subject.ngayKetThuc);
+            etNgayKetThuc.setText(dateFormat.format(subject.ngayKetThuc));
+            lichNgayKetThuc = Calendar.getInstance();
+            lichNgayKetThuc.setTime(subject.ngayKetThuc);
         }
 
-        calculatedWeeks = subject.soTuan;
-        tvCalculatedWeeks.setText(String.valueOf(calculatedWeeks));
+        soTuanTinhDuoc = subject.soTuan;
+        tvSoTuan.setText(String.valueOf(soTuanTinhDuoc));
 
         if (subject.gioBatDau != null)
-            etStartTime.setText(timeFormat.format(subject.gioBatDau));
+            etGioBatDau.setText(timeFormat.format(subject.gioBatDau));
         if (subject.gioKetThuc != null)
-            etEndTime.setText(timeFormat.format(subject.gioKetThuc));
+            etGioKetThuc.setText(timeFormat.format(subject.gioKetThuc));
 
         Curriculum curriculum = curriculumDao.getCurriculumDetailsByMaHp(subject.maHp);
         if ("Tự chọn".equals(subject.loaiMon)) {
-            rbElective.setChecked(true);
+            rbTuChon.setChecked(true);
             if (curriculum != null && curriculum.getNhomTuChon() != null && !curriculum.getNhomTuChon().isEmpty()) {
-                tvChoiceGroup.setText("Nhóm: " + curriculum.getNhomTuChon());
-                tvChoiceGroup.setVisibility(View.VISIBLE);
+                tvNhomTuChon.setText("Nhóm: " + curriculum.getNhomTuChon());
+                tvNhomTuChon.setVisibility(View.VISIBLE);
             } else {
-                tvChoiceGroup.setVisibility(View.GONE);
+                tvNhomTuChon.setVisibility(View.GONE);
             }
         } else {
-            rbCompulsory.setChecked(true);
-            tvChoiceGroup.setText("");
-            tvChoiceGroup.setVisibility(View.GONE);
+            rbBatBuoc.setChecked(true);
+            tvNhomTuChon.setText("");
+            tvNhomTuChon.setVisibility(View.GONE);
         }
 
         if (subject.mauSac != null && !subject.mauSac.isEmpty()) {
-            for (View colorView : colorViews) {
+            for (View colorView : cacViewMau) {
                 if (colorView.getTag() != null && colorView.getTag().toString().equalsIgnoreCase(subject.mauSac)) {
-                    selectColor(colorView);
+                    chonMau(colorView);
                     break;
                 }
             }
         }
     }
 
-    private void saveSubject() {
+    private void luuMonHoc() {
         Subject subject = new Subject();
-        String error = validateInputsAndBuildSubject(subject);
+        String error = xacThucVaXayDungMonHoc(subject);
         if (error != null) {
             Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String conflictMaHp = findTimeConflict(subject);
+        String conflictMaHp = timXungDotThoiGian(subject);
         if (conflictMaHp != null) {
             Toast.makeText(this, "Trùng giờ với môn: " + conflictMaHp, Toast.LENGTH_LONG).show();
             return;
@@ -367,7 +336,7 @@ public class SubjectAddActivity extends AppCompatActivity {
 
         Intent resultIntent = new Intent();
 
-        if (isEditMode) {
+        if (cheDoChinhSua) {
             int rowsAffected = subjectDao.updateSubject(subject);
             if (rowsAffected > 0) {
                 Toast.makeText(this, R.string.update_subject_success, Toast.LENGTH_SHORT).show();
@@ -380,7 +349,7 @@ public class SubjectAddActivity extends AppCompatActivity {
             long newRowId = subjectDao.addOrEnrollSubject(subject);
             if (newRowId != -1) {
                 Toast.makeText(this, R.string.add_subject_success, Toast.LENGTH_SHORT).show();
-                // Return the semester name and ma_hp so callers can refresh and select
+
                 resultIntent.putExtra("UPDATED_SEMESTER_NAME", subject.tenHk);
                 resultIntent.putExtra("UPDATED_MA_HP", subject.maHp);
                 setResult(RESULT_OK, resultIntent);
@@ -391,33 +360,35 @@ public class SubjectAddActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Thực hiện toàn bộ kiểm tra dữ liệu đầu vào.
-     * Nếu hợp lệ: gán các trường vào đối tượng subject truyền vào và trả về null.
-     * Nếu lỗi: trả về thông báo lỗi (String) và KHÔNG chỉnh sửa subject.
-     */
-    private String validateInputsAndBuildSubject(Subject subject) {
-        String maHp = etSubjectCode.getText().toString().trim();
+    private String xacThucVaXayDungMonHoc(Subject subject) {
+        // 1. Lấy dữ liệu thô từ giao diện
+        String maHp = etMaMon.getText().toString().trim();
+        String tenHp = etTenMon.getText().toString().trim();
+        String soTcStr = etSoTc.getText().toString().trim();
+        String gioBatDauStr = etGioBatDau.getText().toString().trim();
+        String gioKetThucStr = etGioKetThuc.getText().toString().trim();
+
         if (TextUtils.isEmpty(maHp))
             return getString(R.string.subject_code_required);
-
-        Curriculum subjectCurriculumDetails = curriculumDao.getCurriculumDetailsByMaHp(maHp);
-        if (!isEditMode && subjectCurriculumDetails == null)
-            return "Mã môn không tồn tại trong chương trình đào tạo!";
-        if (!isEditMode && subjectCurriculumDetails != null) {
-            final int CURRENT_USER_ID = 1;
-            boolean isPrerequisiteMet = curriculumDao.checkPrerequisiteStatus(maHp, CURRENT_USER_ID, subjectDao);
-            if (!isPrerequisiteMet)
-                return "Chưa đạt điều kiện tiên quyết để thêm môn!";
-        }
-
-        String tenHp = etSubjectName.getText().toString().trim();
         if (TextUtils.isEmpty(tenHp))
             return getString(R.string.subject_name_required);
-
-        String soTcStr = etCredits.getText().toString().trim();
         if (TextUtils.isEmpty(soTcStr))
             return getString(R.string.credits_required);
+        if (TextUtils.isEmpty(gioBatDauStr))
+            return getString(R.string.start_time_required);
+        if (TextUtils.isEmpty(gioKetThucStr))
+            return getString(R.string.end_time_required);
+        if (mauDuocChon == null)
+            return getString(R.string.color_required);
+        if (rgLoaiMon.getCheckedRadioButtonId() == -1)
+            return getString(R.string.subject_type_required);
+
+        if (!cheDoChinhSua) {
+            String loiMaMon = kiemTraDieuKienMaMon(maHp);
+            if (loiMaMon != null)
+                return loiMaMon;
+        }
+
         int soTc;
         try {
             soTc = Integer.parseInt(soTcStr);
@@ -425,163 +396,159 @@ public class SubjectAddActivity extends AppCompatActivity {
             return getString(R.string.credits_invalid);
         }
 
-        ensureEndDateFallback();
-        if (startDateCalendar == null || TextUtils.isEmpty(etStartDate.getText().toString()))
-            return getString(R.string.start_date_required);
-        if (endDateCalendar == null || TextUtils.isEmpty(etEndDate.getText().toString()))
-            return getString(R.string.end_date_required);
-        if (endDateCalendar.before(startDateCalendar))
+        damBaoNgayKetThucTuDong();
+        if (lichNgayBatDau == null || lichNgayKetThuc == null)
+            return "Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc!";
+        if (lichNgayKetThuc.before(lichNgayBatDau))
             return "Ngày kết thúc không thể trước ngày bắt đầu";
 
-        if (TextUtils.isEmpty(etStartTime.getText().toString()))
-            return getString(R.string.start_time_required);
-        if (TextUtils.isEmpty(etEndTime.getText().toString()))
-            return getString(R.string.end_time_required);
-
-        if (selectedColor == null)
-            return getString(R.string.color_required);
-        int selectedRadioButtonId = rgSubjectType.getCheckedRadioButtonId();
-        if (selectedRadioButtonId == -1)
-            return getString(R.string.subject_type_required);
-        RadioButton selectedRadioButton = findViewById(selectedRadioButtonId);
-        String loaiMon = selectedRadioButton.getText().toString();
-
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
         Date gioBatDau, gioKetThuc;
         try {
-            gioBatDau = timeFormat.parse(etStartTime.getText().toString());
-            gioKetThuc = timeFormat.parse(etEndTime.getText().toString());
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            gioBatDau = timeFormat.parse(gioBatDauStr);
+            gioKetThuc = timeFormat.parse(gioKetThucStr);
+            if (!gioBatDau.before(gioKetThuc))
+                return "Giờ bắt đầu phải trước giờ kết thúc";
         } catch (ParseException e) {
             return getString(R.string.date_time_format_invalid);
         }
-        if (!gioBatDau.before(gioKetThuc))
-            return "Giờ bắt đầu phải trước giờ kết thúc";
 
         subject.maHp = maHp;
         subject.tenHp = tenHp;
-        subject.tenGv = etLecturerName.getText().toString().trim();
+        subject.tenGv = etTenGv.getText().toString().trim();
         subject.soTc = soTc;
-        subject.ghiChu = etNotes.getText().toString().trim();
-        subject.phongHoc = etLocation.getText().toString().trim();
-        subject.ngayBatDau = startDateCalendar.getTime();
-        subject.ngayKetThuc = endDateCalendar.getTime();
+        subject.ghiChu = etGhiChu.getText().toString().trim();
+        subject.phongHoc = etPhongHoc.getText().toString().trim();
+        subject.ngayBatDau = lichNgayBatDau.getTime();
+        subject.ngayKetThuc = lichNgayKetThuc.getTime();
         subject.gioBatDau = gioBatDau;
         subject.gioKetThuc = gioKetThuc;
-        subject.loaiMon = loaiMon;
-        subject.mauSac = selectedColor;
-        subject.soTuan = calculatedWeeks;
-        subject.tenHk = currentSemesterName;
+        subject.loaiMon = ((RadioButton) findViewById(rgLoaiMon.getCheckedRadioButtonId())).getText().toString();
+        subject.mauSac = mauDuocChon;
+        subject.soTuan = soTuanTinhDuoc;
+        subject.tenHk = tenHocKyHienTai;
+
         return null;
     }
 
-    // Tự động tính ngày kết thúc nếu người dùng đã chọn mã môn (có số tuần) và ngày
-    // bắt đầu nhưng chưa nhập ngày kết thúc
-    private void ensureEndDateFallback() {
-        if ((endDateCalendar == null || TextUtils.isEmpty(etEndDate.getText().toString()))
-                && startDateCalendar != null && calculatedWeeks > 0) {
-            autoCalculateEndDate();
+    private String kiemTraDieuKienMaMon(String maHp) {
+        Curriculum curriculum = curriculumDao.getCurriculumDetailsByMaHp(maHp);
+        if (curriculum == null)
+            return "Mã môn không tồn tại trong chương trình đào tạo!";
+
+        boolean isPrerequisiteMet = curriculumDao.checkPrerequisiteStatus(maHp, 1, subjectDao); // ID user cố định là 1
+        if (!isPrerequisiteMet)
+            return "Chưa đạt điều kiện tiên quyết để thêm môn!";
+
+        return null;
+    }
+
+    private void damBaoNgayKetThucTuDong() {
+        if ((lichNgayKetThuc == null || TextUtils.isEmpty(etNgayKetThuc.getText().toString()))
+                && lichNgayBatDau != null && soTuanTinhDuoc > 0) {
+            tuTinhNgayKetThuc();
         }
     }
 
-    // Tìm mã môn gây xung đột giờ học; trả về null nếu không có
-    private String findTimeConflict(Subject newSubject) {
-        List<Subject> existing = subjectDao.getSubjectsBySemester(currentSemesterName);
+    private String timXungDotThoiGian(Subject newSubject) {
+        List<Subject> existing = subjectDao.getSubjectsBySemester(tenHocKyHienTai);
         if (existing == null || existing.isEmpty())
             return null;
 
-        Calendar newStartDateCal = Calendar.getInstance();
-        newStartDateCal.setTime(newSubject.ngayBatDau);
-        Calendar newEndDateCal = Calendar.getInstance();
-        newEndDateCal.setTime(newSubject.ngayKetThuc);
+        Date newStartDate = newSubject.ngayBatDau;
+        Date newEndDate = newSubject.ngayKetThuc;
+        Date newStartTime = newSubject.gioBatDau;
+        Date newEndTime = newSubject.gioKetThuc;
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(newStartDate);
+        int newDayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
 
         for (Subject s : existing) {
             if (s == null || s.maHp == null)
                 continue;
             if (s.maHp.equalsIgnoreCase(newSubject.maHp))
-                continue; // bỏ qua chính nó khi chỉnh sửa
+                continue;
             if (s.ngayBatDau == null || s.ngayKetThuc == null || s.gioBatDau == null || s.gioKetThuc == null)
                 continue;
 
-            Calendar sStartDate = Calendar.getInstance();
-            sStartDate.setTime(s.ngayBatDau);
-            Calendar sEndDate = Calendar.getInstance();
-            sEndDate.setTime(s.ngayKetThuc);
-
-            // Kiểm tra khoảng ngày giao nhau
-            boolean dateOverlap = !(newEndDateCal.getTime().before(sStartDate.getTime())
-                    || newStartDateCal.getTime().after(sEndDate.getTime()));
-            if (!dateOverlap)
+            if (newEndDate.before(s.ngayBatDau) || newStartDate.after(s.ngayKetThuc))
                 continue;
 
-            // Chỉ xét trùng ngày trong tuần giống nhau (giả định học cố định mỗi tuần)
-            if (newStartDateCal.get(Calendar.DAY_OF_WEEK) != sStartDate.get(Calendar.DAY_OF_WEEK))
+            cal.setTime(s.ngayBatDau);
+            if (newDayOfWeek != cal.get(Calendar.DAY_OF_WEEK))
                 continue;
 
-            // Kiểm tra overlap thời gian: (startA < endB) && (startB < endA)
-            boolean timeOverlap = newSubject.gioBatDau.before(s.gioKetThuc)
-                    && s.gioBatDau.before(newSubject.gioKetThuc);
-            if (timeOverlap) {
+            boolean timeOverlap = newStartTime.before(s.gioKetThuc) && s.gioBatDau.before(newEndTime);
+            if (timeOverlap)
                 return s.maHp;
-            }
         }
         return null;
     }
 
-    private void showDatePickerDialog(final EditText editText) {
-        Calendar initialCalendar = Calendar.getInstance();
-        if (!TextUtils.isEmpty(editText.getText().toString())) {
+    private void chonNgay(final EditText editText) {
+        com.google.android.material.datepicker.MaterialDatePicker.Builder<Long> builder = com.google.android.material.datepicker.MaterialDatePicker.Builder
+                .datePicker()
+                .setTitleText(getString(R.string.select_date));
+
+        String currentText = editText.getText().toString().trim();
+        if (!TextUtils.isEmpty(currentText)) {
             try {
-                Date d = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(editText.getText().toString());
+                Date d = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).parse(currentText);
                 if (d != null) {
-                    initialCalendar.setTime(d);
+                    builder.setSelection(d.getTime());
                 }
-            } catch (ParseException e) {
-                // Ignore
+            } catch (ParseException ignored) {
             }
         }
 
-        int year = initialCalendar.get(Calendar.YEAR);
-        int month = initialCalendar.get(Calendar.MONTH);
-        int day = initialCalendar.get(Calendar.DAY_OF_MONTH);
+        com.google.android.material.datepicker.MaterialDatePicker<Long> picker = builder.build();
 
-        DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, year1, monthOfYear, dayOfMonth) -> {
-            String selectedDate = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, monthOfYear + 1,
-                    year1);
+        picker.addOnPositiveButtonClickListener(selectionMillis -> {
+            Calendar selectedCalendar = Calendar.getInstance();
+            selectedCalendar.setTimeInMillis(selectionMillis);
+
+            String selectedDate = String.format(Locale.getDefault(), "%02d/%02d/%d",
+                    selectedCalendar.get(Calendar.DAY_OF_MONTH),
+                    selectedCalendar.get(Calendar.MONTH) + 1,
+                    selectedCalendar.get(Calendar.YEAR));
             editText.setText(selectedDate);
 
-            Calendar selectedCalendar = Calendar.getInstance();
-            selectedCalendar.set(year1, monthOfYear, dayOfMonth, 0, 0, 0);
+            selectedCalendar.set(Calendar.HOUR_OF_DAY, 0);
+            selectedCalendar.set(Calendar.MINUTE, 0);
+            selectedCalendar.set(Calendar.SECOND, 0);
+            selectedCalendar.set(Calendar.MILLISECOND, 0);
 
             if (editText.getId() == R.id.etStartDate) {
-                startDateCalendar = selectedCalendar;
-                autoCalculateEndDate();
+                lichNgayBatDau = selectedCalendar;
+                tuTinhNgayKetThuc();
             } else if (editText.getId() == R.id.etEndDate) {
-                endDateCalendar = selectedCalendar;
-                calculateAndDisplayWeeks();
+                lichNgayKetThuc = selectedCalendar;
+                tinhVaHienSoTuan();
             }
+        });
 
-        }, year, month, day);
-        datePickerDialog.show();
+        picker.show(getSupportFragmentManager(), "date_picker");
     }
 
-    private void calculateAndDisplayWeeks() {
-        if (startDateCalendar != null && endDateCalendar != null) {
-            if (endDateCalendar.before(startDateCalendar)) {
-                tvCalculatedWeeks.setText("0");
-                calculatedWeeks = 0;
+    private void tinhVaHienSoTuan() {
+        if (lichNgayBatDau != null && lichNgayKetThuc != null) {
+            if (lichNgayKetThuc.before(lichNgayBatDau)) {
+                tvSoTuan.setText("0");
+                soTuanTinhDuoc = 0;
                 return;
             }
-            long diffMillis = endDateCalendar.getTimeInMillis() - startDateCalendar.getTimeInMillis();
+            long diffMillis = lichNgayKetThuc.getTimeInMillis() - lichNgayBatDau.getTimeInMillis();
             long diffInDays = TimeUnit.MILLISECONDS.toDays(diffMillis);
-            calculatedWeeks = (int) (diffInDays / 7) + 1;
-            tvCalculatedWeeks.setText(String.valueOf(calculatedWeeks));
+            soTuanTinhDuoc = (int) (diffInDays / 7) + 1;
+            tvSoTuan.setText(String.valueOf(soTuanTinhDuoc));
         } else {
-            tvCalculatedWeeks.setText("0");
-            calculatedWeeks = 0;
+            tvSoTuan.setText("0");
+            soTuanTinhDuoc = 0;
         }
     }
 
-    private void showTimePickerDialog(final EditText editText) {
+    private void chonGio(final EditText editText) {
         Calendar calendar = Calendar.getInstance();
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
@@ -593,7 +560,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         timePickerDialog.show();
     }
 
-    private void setupColorPicker() {
+    private void caiDatBoChonMau() {
         String[] colors;
         try {
             colors = getResources().getStringArray(R.array.subject_colors);
@@ -602,8 +569,8 @@ public class SubjectAddActivity extends AppCompatActivity {
             colors = new String[] { "#CCCCCC" };
         }
 
-        colorPickerContainer.removeAllViews();
-        colorViews.clear();
+        khungChonMau.removeAllViews();
+        cacViewMau.clear();
 
         for (String colorHex : colors) {
             ImageView colorSwatch = new ImageView(this);
@@ -618,25 +585,29 @@ public class SubjectAddActivity extends AppCompatActivity {
             colorSwatch.setBackground(background);
 
             colorSwatch.setTag(colorHex);
-            colorSwatch.setOnClickListener(this::selectColor);
+            colorSwatch.setOnClickListener(this::chonMau);
 
-            colorViews.add(colorSwatch);
-            colorPickerContainer.addView(colorSwatch);
+            cacViewMau.add(colorSwatch);
+            khungChonMau.addView(colorSwatch);
+        }
+
+        if (!cheDoChinhSua && viewMauDuocChon == null && !cacViewMau.isEmpty()) {
+            chonMau(cacViewMau.get(0));
         }
     }
 
-    private void selectColor(View view) {
+    private void chonMau(View view) {
         String newColor = (String) view.getTag();
 
-        if (selectedColorView != null) {
-            GradientDrawable oldBg = (GradientDrawable) selectedColorView.getBackground();
+        if (viewMauDuocChon != null) {
+            GradientDrawable oldBg = (GradientDrawable) viewMauDuocChon.getBackground();
             oldBg.setStroke(4, Color.TRANSPARENT);
         }
 
         GradientDrawable newBg = (GradientDrawable) view.getBackground();
         newBg.setStroke(10, Color.BLACK);
 
-        selectedColor = newColor;
-        selectedColorView = view;
+        mauDuocChon = newColor;
+        viewMauDuocChon = view;
     }
 }

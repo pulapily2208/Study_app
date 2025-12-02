@@ -23,18 +23,20 @@ import java.util.Locale;
 
 public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectViewHolder> {
 
-    private List<Subject> subjectList;
-    private final OnSubjectActionClickListener actionListener;
+    private List<Subject> danhSachMonHoc;
+    private final OnSubjectActionClickListener nguoiNgheSuKien;
 
     public interface OnSubjectActionClickListener {
         void onEdit(Subject subject);
+
         void onDelete(Subject subject);
+
         void onViewDeadlines(Subject subject);
     }
 
     public SubjectAdapter(List<Subject> subjectList, OnSubjectActionClickListener listener) {
-        this.subjectList = subjectList;
-        this.actionListener = listener;
+        this.danhSachMonHoc = subjectList;
+        this.nguoiNgheSuKien = listener;
     }
 
     @NonNull
@@ -46,7 +48,7 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
 
     @Override
     public void onBindViewHolder(@NonNull SubjectViewHolder holder, int position) {
-        Subject subject = subjectList.get(position);
+        Subject subject = danhSachMonHoc.get(position);
 
         // Set subject name and description
         holder.tvSubjectName.setText(subject.tenHp != null ? subject.tenHp : "Chưa có tên môn học");
@@ -85,7 +87,7 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
         }
 
         // Set listener for the options menu
-        holder.ivOptionsMenu.setOnClickListener(v -> showPopupMenu(v, subject));
+        holder.ivOptionsMenu.setOnClickListener(v -> hienMenuPopup(v, subject));
 
         // Add click listener to the whole item to view details
         holder.itemView.setOnClickListener(v -> {
@@ -96,23 +98,24 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
         });
     }
 
-    private void showPopupMenu(View view, Subject subject) {
+    private void hienMenuPopup(View view, Subject subject) {
         PopupMenu popup = new PopupMenu(view.getContext(), view);
         popup.getMenuInflater().inflate(R.menu.subject_options_menu, popup.getMenu());
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
 
             // For other actions, use the listener
-            if (actionListener == null) return false;
+            if (nguoiNgheSuKien == null)
+                return false;
 
             if (itemId == R.id.action_edit_subject) {
-                actionListener.onEdit(subject);
+                nguoiNgheSuKien.onEdit(subject);
                 return true;
             } else if (itemId == R.id.action_delete_subject) {
-                actionListener.onDelete(subject);
+                nguoiNgheSuKien.onDelete(subject);
                 return true;
             } else if (itemId == R.id.action_view_deadlines) {
-                actionListener.onViewDeadlines(subject);
+                nguoiNgheSuKien.onViewDeadlines(subject);
                 return true;
             }
             return false;
@@ -122,11 +125,11 @@ public class SubjectAdapter extends RecyclerView.Adapter<SubjectAdapter.SubjectV
 
     @Override
     public int getItemCount() {
-        return subjectList != null ? subjectList.size() : 0;
+        return danhSachMonHoc != null ? danhSachMonHoc.size() : 0;
     }
 
     public void setSubjects(List<Subject> subjects) {
-        this.subjectList = subjects;
+        this.danhSachMonHoc = subjects;
         notifyDataSetChanged();
     }
 

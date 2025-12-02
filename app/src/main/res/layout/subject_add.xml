@@ -51,16 +51,17 @@
     <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navbar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/headerLayout">
 
-        <LinearLayout
+            <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:paddingBottom="84dp">
 
             <!-- Mã và Tên môn học trên 1 dòng -->
             <LinearLayout
@@ -171,6 +172,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:checked="true"
                     android:text="Bắt buộc" />
 
                 <RadioButton
@@ -420,16 +422,9 @@
             </HorizontalScrollView>
         </LinearLayout>
     </ScrollView>
+    <!-- Navbar at bottom (single instance) -->
     <include
-        layout="@layout/navbar_activity"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Navbar at bottom -->
-    <include
+        android:id="@+id/bottom_navbar"
         layout="@layout/navbar_activity"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

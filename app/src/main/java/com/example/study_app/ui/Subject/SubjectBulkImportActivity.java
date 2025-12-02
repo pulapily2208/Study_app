@@ -29,8 +29,8 @@ public class SubjectBulkImportActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private SubjectBulkImportAdapter adapter;
-    private ArrayList<Subject> subjectList;
-    private Button btnAddRow, btnSave;
+    private ArrayList<Subject> danhSachMonHoc;
+    private Button btnThemDong, btnLuu;
     private String tenHocKy;
     private SubjectDao subjectDao;
     private CurriculumDao curriculumDao;
@@ -58,11 +58,11 @@ public class SubjectBulkImportActivity extends AppCompatActivity {
         curriculumDao = new CurriculumDao(dbHelper);
 
         recyclerView = findViewById(R.id.recycler_view_bulk_import);
-        btnAddRow = findViewById(R.id.btn_add_row);
-        btnSave = findViewById(R.id.btn_save_bulk);
+        btnThemDong = findViewById(R.id.btn_add_row);
+        btnLuu = findViewById(R.id.btn_save_bulk);
 
-        subjectList = new ArrayList<>();
-        adapter = new SubjectBulkImportAdapter(subjectList);
+        danhSachMonHoc = new ArrayList<>();
+        adapter = new SubjectBulkImportAdapter(danhSachMonHoc);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
@@ -70,19 +70,15 @@ public class SubjectBulkImportActivity extends AppCompatActivity {
         // Add an initial row
         adapter.addRow();
 
-        btnAddRow.setOnClickListener(v -> {
-            adapter.addRow();
-        });
+        btnThemDong.setOnClickListener(v -> adapter.addRow());
 
-        btnSave.setOnClickListener(v -> {
-            saveSubjects();
-        });
+        btnLuu.setOnClickListener(v -> luuMonHocHangLoat());
 
         // Setup navbar and mark Subject as active
         NavbarHelper.setupNavbar(this, R.id.btnSubject);
     }
 
-    private void saveSubjects() {
+    private void luuMonHocHangLoat() {
         ArrayList<Subject> subjectsToSave = adapter.getSubjectList();
         if (subjectsToSave.isEmpty()) {
             Toast.makeText(this, "Danh sách trống.", Toast.LENGTH_SHORT).show();
