@@ -129,6 +129,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
         }
 
     }
+
     private void scheduleDeadlineNotification(Deadline deadline,String tenMonHoc) {
         Calendar notifyTime = Calendar.getInstance();
         notifyTime.setTime(deadline.getNgayBatDau());
@@ -146,7 +147,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
         intent.putExtra(DeadlineNotificationReceiver.EXTRA_DEADLINE_ID, (int) deadline.getNgayBatDau().getTime());
         intent.putExtra(DeadlineNotificationReceiver.EXTRA_DEADLINE_TITLE,"Deadline sắp tới: " +  deadline.getTieuDe());
         intent.putExtra(DeadlineNotificationReceiver.EXTRA_DEADLINE_CONTENT, deadline.getNoiDung());
-        intent.putExtra(DeadlineNotificationReceiver.EXTRA_DEADLINE_CONTENT, "Môn học: " + tenMonHoc);
+        intent.putExtra(DeadlineNotificationReceiver.EXTRA_SUBJECT_NAME, "Môn học: " + tenMonHoc);
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 this,

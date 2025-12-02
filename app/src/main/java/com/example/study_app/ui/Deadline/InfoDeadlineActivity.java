@@ -36,11 +36,10 @@ public class InfoDeadlineActivity extends AppCompatActivity {
 
         Deadline deadline = (Deadline) getIntent().getSerializableExtra(EXTRA_DEADLINE);
         if (deadline != null) {
-            // Icon
             imgDeadlineIcon.setImageResource(deadline.getIcon());
 
-            // Tiêu đề & ghi chú
             tvTitle.setText("Tên Deadline: "+deadline.getTieuDe());
+
             if(!TextUtils.isEmpty(deadline.getNoiDung())){
                 tvNote.setText("Ghi chú: "+deadline.getNoiDung());
                 tvNote.setVisibility(View.VISIBLE);
@@ -48,12 +47,10 @@ public class InfoDeadlineActivity extends AppCompatActivity {
                 tvNote.setVisibility(View.GONE);
             }
 
-            // Định dạng ngày giờ
             SimpleDateFormat sdf = new SimpleDateFormat("EEE, d MMM yyyy HH:mm", Locale.getDefault());
             tvStart.setText(sdf.format(deadline.getNgayBatDau()));
             tvEnd.setText(sdf.format(deadline.getNgayKetThuc()));
 
-            // Lặp lại & nhắc nhở
             tvRepeat.setText(deadline.getRepeatText());
             tvReminder.setText(deadline.getReminderText());
         }

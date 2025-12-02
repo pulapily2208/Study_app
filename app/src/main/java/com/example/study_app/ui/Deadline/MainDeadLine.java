@@ -36,7 +36,6 @@ public class MainDeadLine extends AppCompatActivity {
     private DeadlineDao dbHelper;
     private DeadlineNotificationManager notificationManager;
     private AdapterDeadline todayAdapter;
-//    private AdapterMonHoc todayAdapter;
     private AdapterMonHoc allAdapter;
 
     @Override
@@ -61,15 +60,12 @@ public class MainDeadLine extends AppCompatActivity {
         dbHelper = new DeadlineDao(this);
         notificationManager = new DeadlineNotificationManager(this);
 
-        // --- Toolbar Setup ---
         toolbar.setTitle("Tổng quan Deadline");
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        // --- RecyclerViews Setup ---
         rvToday.setLayoutManager(new LinearLayoutManager(this));
         rvAll.setLayoutManager(new LinearLayoutManager(this));
 
-        // --- Setup Adapters & Load Data ---
         setupAdapters();
         loadData();
     }
@@ -123,7 +119,6 @@ public class MainDeadLine extends AppCompatActivity {
     }
     private void loadData() {
 
-        // ==== Hôm nay ====
         List<Deadline> todayDeadlines = dbHelper.getTodaysDeadlines();
 
         if (todayDeadlines.isEmpty()) {
@@ -141,7 +136,7 @@ public class MainDeadLine extends AppCompatActivity {
             todayAdapter.updateData(todayDeadlines);
         }
 
-        // ==== Tất cả deadline ====
+
         List<Subject> allSubjects = dbHelper.getSubjectsWithDeadlines();
 
         if (allSubjects.isEmpty()) {
