@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:allowBackup="true"
@@ -26,13 +28,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Study_app.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.Study_app.NoActionBar" />
         <activity android:name=".ui.Deadline.MainDeadLineMonHoc"/>
         <activity android:name=".ui.Deadline.MainDeadLine"/>
         <activity android:name=".ui.Deadline.InputDeadlineActivity"/>
@@ -41,12 +37,20 @@
         <activity android:name=".ui.Subject.SubjectAddActivity"/>
         <activity android:name=".ui.Subject.SubjectDetailActivity"/>
         <activity android:name=".ui.Subject.SubjectBulkImportActivity"/>
+        <activity android:name=".ui.Score.InputScoreActivity" />
+        <activity android:name=".ui.Score.ScoreSummaryActivity" />
         <activity android:name=".ui.Notes.NotesActivity" />
         <activity android:name=".ui.Notes.InputNoteActivity" />
         <activity android:name=".ui.Curriculum.CurriculumActivity" />
 
 
-        <activity android:name=".ui.Timetable.TimetableWeek" />
+        <activity android:name=".ui.Timetable.TimetableWeek"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <provider
             android:name="androidx.core.content.FileProvider"

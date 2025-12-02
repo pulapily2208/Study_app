@@ -19,6 +19,7 @@ import com.example.study_app.data.SubjectDao;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.example.study_app.ui.Subject.Adapter.SubjectBulkImportAdapter;
 import com.example.study_app.ui.Subject.Model.Subject;
+import com.example.study_app.ui.common.NavbarHelper;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
@@ -76,6 +77,9 @@ public class SubjectBulkImportActivity extends AppCompatActivity {
         btnSave.setOnClickListener(v -> {
             saveSubjects();
         });
+
+        // Setup navbar and mark Subject as active
+        NavbarHelper.setupNavbar(this, R.id.btnSubject);
     }
 
     private void saveSubjects() {

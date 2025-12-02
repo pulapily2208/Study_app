@@ -27,7 +27,9 @@ import com.example.study_app.data.TimetableDao;
 import com.example.study_app.ui.Deadline.MainDeadLineMonHoc;
 import com.example.study_app.ui.Subject.Adapter.SubjectAdapter;
 import com.example.study_app.ui.Subject.Model.Subject;
+import com.example.study_app.ui.common.NavbarHelper;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.example.study_app.ui.common.NavbarHelper;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -109,6 +111,11 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
                 Toast.makeText(this, "Vui lòng chọn một học kỳ trước.", Toast.LENGTH_SHORT).show();
             }
         });
+
+        // Setup navbar and mark Subject as active
+        NavbarHelper.setupNavbar(this, R.id.btnSubject);
+
+        NavbarHelper.setupNavbar(this, R.id.btnSubject);
     }
 
     @Override
