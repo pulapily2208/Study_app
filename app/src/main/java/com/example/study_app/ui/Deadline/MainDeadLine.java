@@ -1,6 +1,7 @@
 package com.example.study_app.ui.Deadline;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -15,6 +16,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.study_app.MainActivity;
 import com.example.study_app.R;
 import com.example.study_app.data.DeadlineDao;
 import com.example.study_app.ui.Deadline.Adapters.AdapterDeadline;
@@ -33,7 +35,6 @@ public class MainDeadLine extends AppCompatActivity {
     private TextView tvTodayEmpty, tvAllEmpty;
     private DeadlineDao dbHelper;
     private DeadlineNotificationManager notificationManager;
-
     private AdapterDeadline todayAdapter;
 //    private AdapterMonHoc todayAdapter;
     private AdapterMonHoc allAdapter;
@@ -83,7 +84,9 @@ public class MainDeadLine extends AppCompatActivity {
         AdapterWeek.OnDeadlineInteractionListener listener = new AdapterWeek.OnDeadlineInteractionListener() {
             @Override
             public void onDeadlineClick(Deadline deadline) {
-//                Toast.makeText(MainDeadLine.this, "Bạn vừa chọn: " + deadline.getTieuDe(), Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(MainDeadLine.this, InfoDeadlineActivity.class);
+                intent.putExtra(InfoDeadlineActivity.EXTRA_DEADLINE, deadline);
+                startActivity(intent);
             }
 
             @Override

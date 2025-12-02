@@ -71,7 +71,7 @@ public class InputDeadlineActivity extends AppCompatActivity {
     private final Calendar calendarDen = Calendar.getInstance();
     private final SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
 
-    private int selectedIcon = R.drawable.tasks;
+    private int selectedIcon = R.mipmap.ic_avatar_round;
     private final int[] ICON_LIST = {
             R.drawable.brain, R.drawable.calendar, R.drawable.code, R.drawable.exam,
             R.drawable.library, R.drawable.note, R.drawable.tasks, R.drawable.teacher,

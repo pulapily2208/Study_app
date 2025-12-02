@@ -1,6 +1,5 @@
 package com.example.study_app.ui.Deadline;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -154,7 +153,7 @@ public class MainDeadLineMonHoc extends AppCompatActivity {
         } else if (Deadline.REPEAT_TYPE_DAILY.equals(repeatType)){
             createRepeatingDeadlines(deadline, 1);
         } else if (Deadline.REPEAT_TYPE_WEEKDAYS.equals(repeatType)) {
-            createWeekdaysInOneWeek(deadline);
+            createDeadlinesToEndOfWeek(deadline);
         } else {
              if (dbHelper.addDeadline(deadline, subjectMaHp) == -1) {
                  Toast.makeText(this, "Thêm mới thất bại!", Toast.LENGTH_SHORT).show();
@@ -169,41 +168,43 @@ public class MainDeadLineMonHoc extends AppCompatActivity {
             lvWeeks.post(() -> lvWeeks.smoothScrollToPosition(weekToScroll));
         }
     }
-
-    private void createWeekdaysInOneWeek(Deadline baseDeadline) {
+    private void createDeadlinesToEndOfWeek(Deadline baseDeadline) {
         long duration = baseDeadline.getNgayKetThuc().getTime() - baseDeadline.getNgayBatDau().getTime();
 
-        Calendar startCal = Calendar.getInstance();
-        startCal.setTime(baseDeadline.getNgayBatDau());
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(baseDeadline.getNgayBatDau());
 
-        int hour = startCal.get(Calendar.HOUR_OF_DAY);
-        int minute = startCal.get(Calendar.MINUTE);
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        int minute = cal.get(Calendar.MINUTE);
 
-        startCal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        // Tính số ngày còn lại đến Chủ Nhật
+        int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK); // 1 = CN, 2 = T2, ..., 7 = T7
+        int daysToEndOfWeek = Calendar.SUNDAY - dayOfWeek;
+        if (daysToEndOfWeek < 0) daysToEndOfWeek += 7; // nếu ngày gốc là CN, vẫn tính đúng
 
-        for (int i = 0; i < 5; i++) { 
-            startCal.set(Calendar.HOUR_OF_DAY, hour);
-            startCal.set(Calendar.MINUTE, minute);
+        for (int i = 0; i <= daysToEndOfWeek; i++) {
+            cal.set(Calendar.HOUR_OF_DAY, hour);
+            cal.set(Calendar.MINUTE, minute);
+
+            Date startDate = cal.getTime();
+            Date endDate = new Date(startDate.getTime() + duration);
 
             Deadline instance = new Deadline();
             instance.setTieuDe(baseDeadline.getTieuDe());
             instance.setNoiDung(baseDeadline.getNoiDung());
-            instance.setMaHp(subjectMaHp);
+            instance.setMaHp(baseDeadline.getMaHp());
             instance.setIcon(baseDeadline.getIcon());
             instance.setReminder(baseDeadline.getReminderText());
             instance.setRepeat(Deadline.REPEAT_TYPE_NONE);
-
-            Date startDate = startCal.getTime();
-            Date endDate = new Date(startDate.getTime() + duration);
-
             instance.setNgayBatDau(startDate);
             instance.setNgayKetThuc(endDate);
 
-            dbHelper.addDeadline(instance, subjectMaHp);
+            dbHelper.addDeadline(instance, baseDeadline.getMaHp());
 
-            startCal.add(Calendar.DATE, 1);
+            cal.add(Calendar.DATE, 1); // sang ngày tiếp theo
         }
     }
+
 
     private void createRepeatingDeadlines(Deadline baseDeadline, int intervalInDays) {
         long duration = baseDeadline.getNgayKetThuc().getTime() - baseDeadline.getNgayBatDau().getTime();
@@ -239,11 +240,9 @@ public class MainDeadLineMonHoc extends AppCompatActivity {
         adapterWeek.setOnDeadlineInteractionListener(new AdapterWeek.OnDeadlineInteractionListener() {
             @Override
             public void onDeadlineClick(Deadline deadline) {
-                new AlertDialog.Builder(MainDeadLineMonHoc.this)
-                        .setTitle(deadline.getTieuDe())
-                        .setMessage("Ghi chú: " + deadline.getNoiDung())
-                        .setPositiveButton("Đóng", null)
-                        .show();
+                Intent intent = new Intent(MainDeadLineMonHoc.this, InfoDeadlineActivity.class);
+                intent.putExtra(InfoDeadlineActivity.EXTRA_DEADLINE, deadline);
+                startActivity(intent);
             }
 
             @Override
