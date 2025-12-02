@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.CurriculumViewHolder> {
 
@@ -29,12 +30,19 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
     private final List<Curriculum> courseListDisplayed;
     // Bản sao của danh sách gốc, không bao giờ thay đổi, chỉ dùng để lọc
     private final List<Curriculum> courseListFull;
-    private final ScoreDao scoreDao; // NEW
+    private final ScoreDao scoreDao; // dùng chung DAO điểm để tránh mở DB helper phụ
+    private Map<String, Float> gpaMap; // cache GPA theo mã học phần
 
-    public CurriculumAdapter(Context context, List<Curriculum> courseList) {
+    public CurriculumAdapter(Context context, List<Curriculum> courseList, ScoreDao scoreDao) {
         this.courseListFull = new ArrayList<>(courseList);
         this.courseListDisplayed = new ArrayList<>(courseList);
-        this.scoreDao = new ScoreDao(context); // NEW
+        this.scoreDao = scoreDao;
+        // Tải toàn bộ GPA một lần để tránh query DB trong onBindViewHolder
+        try {
+            this.gpaMap = scoreDao.getAllGpaMap();
+        } catch (Exception e) {
+            this.gpaMap = java.util.Collections.emptyMap();
+        }
     }
 
     @NonNull
@@ -52,8 +60,10 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
         holder.tvMaHp.setText(currentCourse.getMaHp());
         holder.tvTenHp.setText(currentCourse.getTenHp());
         holder.tvSoTinChi.setText(context.getString(R.string.curriculum_credits, currentCourse.getSoTinChi()));
-        holder.tvSoTietLyThuyet.setText(context.getString(R.string.curriculum_theory, currentCourse.getSoTietLyThuyet()));
-        holder.tvSoTietThucHanh.setText(context.getString(R.string.curriculum_practice, currentCourse.getSoTietThucHanh()));
+        holder.tvSoTietLyThuyet
+                .setText(context.getString(R.string.curriculum_theory, currentCourse.getSoTietLyThuyet()));
+        holder.tvSoTietThucHanh
+                .setText(context.getString(R.string.curriculum_practice, currentCourse.getSoTietThucHanh()));
         holder.tvLoaiHp.setText(currentCourse.getLoaiHp());
 
         if (currentCourse.getHocKy() > 0) {
@@ -79,32 +89,34 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
             switch (status) {
                 case DatabaseHelper.STATUS_IN_PROGRESS:
                     holder.tvStatusBadge.setText("Đang học");
-                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(context.getColor(R.color.yellow)));
+                    holder.tvStatusBadge.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(context.getColor(R.color.yellow)));
                     holder.tvStatusBadge.setTextColor(context.getColor(R.color.white));
                     break;
                 case DatabaseHelper.STATUS_COMPLETED:
                     holder.tvStatusBadge.setText("Đã học");
-                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(context.getColor(R.color.green)));
+                    holder.tvStatusBadge.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(context.getColor(R.color.green)));
                     holder.tvStatusBadge.setTextColor(context.getColor(R.color.white));
                     break;
                 case DatabaseHelper.STATUS_NOT_ENROLLED:
                 default:
                     holder.tvStatusBadge.setText("Chưa học");
-                    holder.tvStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(context.getColor(R.color.red)));
+                    holder.tvStatusBadge.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(context.getColor(R.color.red)));
                     holder.tvStatusBadge.setTextColor(context.getColor(R.color.white));
                     break;
             }
         }
 
-        // (NEW) Hiển thị điểm GPA nếu có
-        Float gpa = scoreDao.getGpa(currentCourse.getMaHp());
+        // (NEW) Hiển thị điểm GPA nếu có (dùng cache, tránh query DB trên UI thread)
+        Float gpa = gpaMap != null ? gpaMap.get(currentCourse.getMaHp()) : null;
         if (gpa != null) {
             holder.tvGPA.setText(String.format(Locale.US, "%.1f", gpa));
             holder.tvGPA.setVisibility(View.VISIBLE);
         } else {
             holder.tvGPA.setVisibility(View.GONE);
         }
-
 
         // Khi bấm vào 1 môn → mở InputScoreActivity
         if (DatabaseHelper.STATUS_COMPLETED.equals(status) || DatabaseHelper.STATUS_IN_PROGRESS.equals(status)) {
@@ -114,12 +126,13 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
                 intent.putExtra("subject_name", currentCourse.getTenHp());
                 context.startActivity(intent);
             });
-        }else {
+        } else {
             holder.itemView.setOnClickListener(v -> {
                 Toast.makeText(context, "Môn này chưa học nên không thể nhập điểm", Toast.LENGTH_SHORT).show();
             });
         }
     }
+
     @Override
     public int getItemCount() {
         return courseListDisplayed.size();
@@ -127,14 +140,16 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
 
     /**
      * Phương thức trung tâm để lọc và sắp xếp danh sách môn học.
-     * @param query Từ khóa tìm kiếm (tên hoặc mã HP).
-     * @param facultyId ID của khoa (-1 nếu là 'Tất cả').
-     * @param group Tên nhóm tự chọn ("All" nếu là 'Tất cả').
-     * @param courseType Loại học phần ("Tất cả" nếu là 'Tất cả').
-     * @param status Trạng thái môn học ("All" nếu không lọc).
+     * 
+     * @param query       Từ khóa tìm kiếm (tên hoặc mã HP).
+     * @param facultyId   ID của khoa (-1 nếu là 'Tất cả').
+     * @param group       Tên nhóm tự chọn ("All" nếu là 'Tất cả').
+     * @param courseType  Loại học phần ("Tất cả" nếu là 'Tất cả').
+     * @param status      Trạng thái môn học ("All" nếu không lọc).
      * @param isAscending True để sắp xếp A-Z, false để sắp xếp Z-A.
      */
-    public void filterAndSort(String query, int facultyId, String group, String courseType, String status, boolean isAscending) {
+    public void filterAndSort(String query, int facultyId, String group, String courseType, String status,
+            boolean isAscending) {
         List<Curriculum> filteredList = new ArrayList<>();
         String allGroups = "All";
         String allTypes = "Tất cả";
@@ -146,10 +161,12 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
             final boolean facultyMatch = (facultyId == -1) || (item.getKhoaId() == facultyId);
 
             // Lọc theo Nhóm
-            final boolean groupMatch = allGroups.equals(group) || (item.getNhomTuChon() != null && item.getNhomTuChon().equals(group));
+            final boolean groupMatch = allGroups.equals(group)
+                    || (item.getNhomTuChon() != null && item.getNhomTuChon().equals(group));
 
             // Lọc theo Loại môn học
-            final boolean courseTypeMatch = allTypes.equals(courseType) || (item.getLoaiHp() != null && item.getLoaiHp().equalsIgnoreCase(courseType));
+            final boolean courseTypeMatch = allTypes.equals(courseType)
+                    || (item.getLoaiHp() != null && item.getLoaiHp().equalsIgnoreCase(courseType));
 
             // Lọc theo trạng thái
             String itemStatus = item.getStatus() == null ? DatabaseHelper.STATUS_NOT_ENROLLED : item.getStatus();
@@ -186,7 +203,13 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
     public void setCourses(List<Curriculum> courses) {
         this.courseListFull.clear();
         this.courseListFull.addAll(courses);
-        // Không cần gọi notifyDataSetChanged() ở đây vì Activity sẽ gọi filterAndSort() ngay sau đó
+        // Làm mới cache GPA khi dữ liệu thay đổi
+        try {
+            this.gpaMap = scoreDao.getAllGpaMap();
+        } catch (Exception ignored) {
+        }
+        // Không cần gọi notifyDataSetChanged() ở đây vì Activity sẽ gọi filterAndSort()
+        // ngay sau đó
     }
 
     static class CurriculumViewHolder extends RecyclerView.ViewHolder {

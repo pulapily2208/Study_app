@@ -50,24 +50,23 @@
             android:id="@+id/tvHocKy"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
             android:textColor="#555555"
             android:textSize="13sp"
             android:textStyle="italic"
             app:layout_constraintBaseline_toBaselineOf="@id/tvMaHp"
-            app:layout_constraintEnd_toStartOf="@id/tvGPA"
+            app:layout_constraintEnd_toEndOf="parent"
             tools:text="HK 1" />
 
         <TextView
             android:id="@+id/tvGPA"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#4CAF50"
-            android:textSize="28sp"
+            android:textColor="@color/green"
+            android:textSize="30sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toTopOf="@+id/divider"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvHocKy"
             tools:text="9" />
 
         <TextView

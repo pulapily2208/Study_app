@@ -32,6 +32,7 @@ import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.data.SubjectDao;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.example.study_app.ui.Subject.Model.Subject;
+import com.example.study_app.ui.common.NavbarHelper;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -89,6 +90,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         setupAutoComplete();
         setClickListeners();
         setupColorPicker();
+        NavbarHelper.setupNavbar(this, R.id.btnSubject);
 
         tvChoiceGroup.setVisibility(View.GONE);
 

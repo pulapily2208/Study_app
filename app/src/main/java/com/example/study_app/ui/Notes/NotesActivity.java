@@ -21,6 +21,7 @@ import com.example.study_app.R;
 import com.example.study_app.data.NotesDao;
 import com.example.study_app.ui.Notes.Adapters.NotesAdapter;
 import com.example.study_app.ui.Notes.Model.Note;
+import com.example.study_app.ui.common.NavbarHelper;
 
 import java.util.ArrayList;
 
@@ -60,6 +61,8 @@ public class NotesActivity extends AppCompatActivity {
         });
 
         btnBack.setOnClickListener(v -> finish());
+
+        NavbarHelper.setupNavbar(this, R.id.btnNote);
     }
 
     @Override

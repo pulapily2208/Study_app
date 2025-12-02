@@ -9,14 +9,36 @@
     android:background="#F0F2F5"
     tools:context=".ui.Subject.SubjectDetailActivity">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <!-- Custom Back Header -->
+    <LinearLayout
+        android:id="@+id/custom_header"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        app:title="Chi tiết Môn học"
-        app:titleTextColor="@android:color/white"
-        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"/>
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@color/yellow"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/note_ic_back"
+            app:tint="@color/black"/>
+
+        <TextView
+            android:id="@+id/header_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:gravity="center_vertical"
+            android:text="Chi tiết môn học"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"/>
+    </LinearLayout>
+
+
 
     <ScrollView
         android:layout_width="match_parent"
@@ -84,4 +106,9 @@
 
         </LinearLayout>
     </ScrollView>
+        <!-- Navbar at bottom -->
+        <include
+            layout="@layout/navbar_activity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 </LinearLayout>

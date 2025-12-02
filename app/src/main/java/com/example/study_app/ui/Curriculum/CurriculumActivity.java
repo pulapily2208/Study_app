@@ -20,10 +20,12 @@ import com.example.study_app.data.CurriculumDao;
 import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.data.UserSession;
 import com.example.study_app.ui.Curriculum.Adapter.CurriculumAdapter;
+import com.example.study_app.data.ScoreDao;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.ChipGroup;
+import com.example.study_app.ui.common.NavbarHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,6 +75,7 @@ public class CurriculumActivity extends AppCompatActivity {
         setupFilterControls();
         setupActionListeners();
         loadCurriculumData();
+        NavbarHelper.setupNavbar(this, R.id.btnCurriculum);
     }
 
     private void setupViews() {
@@ -111,10 +114,12 @@ public class CurriculumActivity extends AppCompatActivity {
         facultyNames.add(0, getString(R.string.all_faculties));
         groupNames.add(0, getString(R.string.all_groups));
 
-        ArrayAdapter<String> facultyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, facultyNames);
+        ArrayAdapter<String> facultyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line,
+                facultyNames);
         autoCompleteFaculty.setAdapter(facultyAdapter);
 
-        ArrayAdapter<String> groupAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, groupNames);
+        ArrayAdapter<String> groupAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line,
+                groupNames);
         autoCompleteGroup.setAdapter(groupAdapter);
 
         ArrayAdapter<CharSequence> courseTypeAdapter = ArrayAdapter.createFromResource(this,
@@ -159,7 +164,8 @@ public class CurriculumActivity extends AppCompatActivity {
     }
 
     private void applyAllFilters() {
-        if (adapter == null) return;
+        if (adapter == null)
+            return;
 
         String searchQuery = searchView.getQuery().toString();
         String selectedFacultyName = autoCompleteFaculty.getText().toString();
@@ -195,9 +201,24 @@ public class CurriculumActivity extends AppCompatActivity {
     }
 
     private void loadCurriculumData() {
-        List<Curriculum> allCourses = curriculumDao.getAllCoursesForCurriculumWithStatus(UserSession.getCurrentUserId(this));
-        adapter = new CurriculumAdapter(this, allCourses);
+        List<Curriculum> allCourses = curriculumDao
+                .getAllCoursesForCurriculumWithStatus(UserSession.getCurrentUserId(this));
+        // Khởi tạo ScoreDao dùng chung DatabaseHelper để tránh xung đột DB
+        ScoreDao scoreDao = new ScoreDao(dbHelper);
+        adapter = new CurriculumAdapter(this, allCourses, scoreDao);
         recyclerViewCurriculum.setAdapter(adapter);
         applyAllFilters();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Đóng helper để giải phóng kết nối khi Activity kết thúc
+        if (dbHelper != null) {
+            try {
+                dbHelper.close();
+            } catch (Exception ignored) {
+            }
+        }
     }
 }

@@ -49,6 +49,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:paddingHorizontal="12dp"
+        android:paddingBottom="100dp"
         android:clipToPadding="false"
         android:visibility="gone"
         app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
@@ -82,9 +83,18 @@
         android:foreground="@drawable/note_ic_add"
         android:padding="18dp"
 
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/navbar"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="26dp" />
 
+    <!-- include navbar -->
+    <include
+        android:id="@+id/navbar"
+        layout="@layout/navbar_activity"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

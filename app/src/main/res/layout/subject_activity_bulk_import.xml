@@ -41,7 +41,7 @@
         android:orientation="horizontal"
         android:gravity="end"
         android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/navbar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -70,5 +70,14 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp"/>
     </LinearLayout>
+    <!-- Navbar at bottom -->
+    <include
+        android:id="@+id/navbar"
+        layout="@layout/navbar_activity"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
