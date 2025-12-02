@@ -285,29 +285,29 @@ public class DeadlineDao extends SQLiteOpenHelper {
         return deadlineList;
     }
     public ArrayList<Subject> getSubjectsWithDeadlines() {
-    ArrayList<Subject> list = new ArrayList<>();
-    SQLiteDatabase db = this.getReadableDatabase();
+        ArrayList<Subject> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
 
-    // Chỉ lấy môn học có deadline chưa hoàn thành
-    String distinctMaHpQuery =
-            "SELECT DISTINCT ma_hp FROM deadline WHERE completed = 0";
-//        String query = "SELECT * FROM mon_hoc m JOIN deadline d ON m.ma_hp = d.ma_hp WHERE m.ma_hp = ? AND d.completed = 0";
-    try (Cursor maHpCursor = db.rawQuery(distinctMaHpQuery, null)) {
-        if (maHpCursor != null && maHpCursor.moveToFirst()) {
-            do {
-                String maHp = maHpCursor.getString(0);
-                Subject subject = getSubjectByMaHp(maHp);
-                if (subject != null) {
-                    list.add(subject);
-                }
-            } while (maHpCursor.moveToNext());
+        // Chỉ lấy môn học có deadline chưa hoàn thành
+        String distinctMaHpQuery =
+                "SELECT DISTINCT ma_hp FROM deadline WHERE completed = 0";
+    //        String query = "SELECT * FROM mon_hoc m JOIN deadline d ON m.ma_hp = d.ma_hp WHERE m.ma_hp = ? AND d.completed = 0";
+        try (Cursor maHpCursor = db.rawQuery(distinctMaHpQuery, null)) {
+            if (maHpCursor != null && maHpCursor.moveToFirst()) {
+                do {
+                    String maHp = maHpCursor.getString(0);
+                    Subject subject = getSubjectByMaHp(maHp);
+                    if (subject != null) {
+                        list.add(subject);
+                    }
+                } while (maHpCursor.moveToNext());
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting subjects with deadlines", e);
         }
-    } catch (Exception e) {
-        Log.e("DatabaseHelper", "Error getting subjects with deadlines", e);
-    }
 
-    return list;
-}
+        return list;
+    }
     public ArrayList<Deadline> getTodaysDeadlines() {
         ArrayList<Deadline> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
