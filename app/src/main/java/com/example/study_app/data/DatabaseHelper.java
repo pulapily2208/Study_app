@@ -126,29 +126,66 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     Date parseTime(String timeStr) {
-        if (timeStr == null || timeStr.isEmpty())
+        if (timeStr == null)
             return null;
 
-        // Prefer HH:mm
-        try {
-            return timeFormat.parse(timeStr);
-        } catch (ParseException ignored) {
-        }
-
-        // Try variants like HH:mm:ss or H:mm
-        try {
-            SimpleDateFormat withSeconds = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-            return withSeconds.parse(timeStr);
-        } catch (ParseException ignored) {
-        }
-
-        try {
-            SimpleDateFormat singleHour = new SimpleDateFormat("H:mm", Locale.getDefault());
-            return singleHour.parse(timeStr);
-        } catch (ParseException e) {
-            Log.w("DatabaseHelper", "Could not parse time string: '" + timeStr + "'");
+        String original = timeStr;
+        String s = timeStr.trim();
+        if (s.isEmpty())
             return null;
+
+        // Normalize common variants before parsing
+        // 1) Replace '7h30' or '7 H 30' or '7 giờ 30' with '7:30'
+        s = s.replaceAll("(?i)\\s*giờ\\s*", ":");
+        s = s.replaceAll("(?i)(\\d)\\s*[hH]\\s*(\\d)", "$1:$2");
+        // 2) Replace dot separator like '07.30' -> '07:30'
+        s = s.replaceAll("(\\d)\\.(\\d)", "$1:$2");
+        // 3) Collapse spaces
+        s = s.replaceAll("\\s+", " ");
+
+        // 4) Handle compact forms like 730 or 0730
+        if (s.matches("^\\d{3,4}$")) {
+            if (s.length() == 3) { // e.g., 730 -> 7:30
+                s = s.charAt(0) + ":" + s.substring(1);
+            } else { // 4 digits
+                s = s.substring(0, 2) + ":" + s.substring(2);
+            }
         }
+
+        // 5) Handle AM/PM forms: '07:30 PM' or '7:30pm'
+        if (s.matches("(?i).*[AP]M$")) {
+            try {
+                SimpleDateFormat ampm = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+                return ampm.parse(s.toUpperCase(Locale.getDefault()));
+            } catch (ParseException ignored) {
+            }
+            try {
+                SimpleDateFormat ampm2 = new SimpleDateFormat("h:mm a", Locale.getDefault());
+                return ampm2.parse(s.toUpperCase(Locale.getDefault()));
+            } catch (ParseException ignored) {
+            }
+        }
+
+        // Try preferred and fallback 24-hour patterns
+        String[] patterns = new String[] {
+                "HH:mm",
+                "H:mm",
+                "HH:mm:ss",
+                "H:mm:ss",
+                "HH:m",
+                "H:m"
+        };
+        for (String p : patterns) {
+            try {
+                SimpleDateFormat f = new SimpleDateFormat(p, Locale.getDefault());
+                f.setLenient(false);
+                return f.parse(s);
+            } catch (ParseException ignored) {
+            }
+        }
+
+        Log.w("DatabaseHelper", "Could not parse time string: '" + original + "' (normalized: '" + s + "')");
+        return null;
     }
 
     String formatDate(Date date) {

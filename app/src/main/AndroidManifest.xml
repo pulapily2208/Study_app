@@ -38,6 +38,7 @@
         <activity android:name=".ui.Subject.SubjectDetailActivity"/>
         <activity android:name=".ui.Subject.SubjectBulkImportActivity"/>
         <activity android:name=".ui.Score.InputScoreActivity" />
+        <activity android:name=".ui.Score.ScoreSummaryActivity" />
         <activity android:name=".ui.Notes.NotesActivity" />
         <activity android:name=".ui.Notes.InputNoteActivity" />
         <activity android:name=".ui.Curriculum.CurriculumActivity" />
