@@ -26,15 +26,17 @@
             android:layout_height="30dp"
             android:src="@drawable/tranh_study"
             android:layout_gravity="center_vertical"
-            android:layout_marginLeft="100dp"
+            android:layout_marginLeft="130dp"
           />
 
-        <!-- SEARCH ICON BÊN PHẢI -->
         <ImageView
-            android:id="@+id/btnSearch"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/search"
+            android:id="@+id/btnNotifyAll"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/ic_bell_outline"
+            android:contentDescription="Thông báo"
+            android:clickable="true"
+            android:focusable="true"
             android:layout_gravity="end|center_vertical"
             android:padding="6dp"
             android:layout_marginRight="20dp"/>
@@ -109,7 +111,7 @@
         android:layout_marginEnd="16dp"
         android:backgroundTint="@color/blue"
         android:src="@drawable/ic_add"
-        android:tint="@android:color/white"
+        app:tint="@android:color/white"
         app:fabSize="normal"
         app:layout_constraintBottom_toBottomOf="@+id/weekView"
         app:layout_constraintEnd_toEndOf="parent" />

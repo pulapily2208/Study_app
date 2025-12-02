@@ -3,12 +3,14 @@ package com.example.study_app.ui.Timetable;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -47,6 +49,9 @@ import java.util.Locale;
 
 public class TimetableWeek extends AppCompatActivity {
     LinearLayout btnNote, btnDeadLine, btnSubject, btnCurriculum, btnTimetable, btnKetQuaHocTap;
+    ImageView btnNotifyAll;
+    private boolean isNotificationOn = false;
+
 
     private WeekView weekView;
     private MaterialCalendarView monthCalendar;
@@ -75,6 +80,59 @@ public class TimetableWeek extends AppCompatActivity {
         tvSelectedDate = findViewById(R.id.tvSelectedDate);
         llDateContainer = findViewById(R.id.llDateContainer);
         btnAdd = findViewById(R.id.btnAdd);
+        btnNotifyAll = findViewById(R.id.btnNotifyAll);
+        // load trang thai tb cu
+        SharedPreferences prefs = getSharedPreferences("prefs", MODE_PRIVATE);
+        isNotificationOn = prefs.getBoolean("notifOn", false);
+        btnNotifyAll.setImageResource(isNotificationOn ? R.drawable.ic_bell_filled : R.drawable.ic_bell_outline);
+
+        btnNotifyAll.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String[] options = {"Trước giờ học 5 phút", "Trước giờ học 15 phút", "Trước giờ học 30 phút", "Trước giờ học 1 giờ"};
+
+                if (!isNotificationOn) {
+                    new androidx.appcompat.app.AlertDialog.Builder(TimetableWeek.this)
+                            .setTitle("Chọn thời gian nhắc")
+                            .setItems(options, (dialog, which) -> {
+                                String selectedReminder = options[which];
+
+                                TimetableDao dao = new TimetableDao(new DatabaseHelper(TimetableWeek.this));
+                                int userId = UserSession.getCurrentUserId(TimetableWeek.this);
+                                List<Subject> subjects = dao.getSubjectsForTimetable(userId);
+                                SubjectNotificationManager manager = new SubjectNotificationManager(TimetableWeek.this);
+
+                                for (Subject s : subjects) {
+                                    manager.scheduleWeeklyNotification(s, selectedReminder);
+                                }
+
+                                btnNotifyAll.setImageResource(R.drawable.ic_bell_filled);
+                                isNotificationOn = true;
+                                Toast.makeText(TimetableWeek.this, "Đã bật thông báo: " + selectedReminder, Toast.LENGTH_SHORT).show();
+
+                                SharedPreferences prefs = getSharedPreferences("prefs", MODE_PRIVATE);
+                                prefs.edit().putBoolean("notifOn", true).apply();
+                            })
+                            .show();
+                } else {
+                    TimetableDao dao = new TimetableDao(new DatabaseHelper(TimetableWeek.this));
+                    int userId = UserSession.getCurrentUserId(TimetableWeek.this);
+                    List<Subject> subjects = dao.getSubjectsForTimetable(userId);
+                    SubjectNotificationManager manager = new SubjectNotificationManager(TimetableWeek.this);
+
+                    for (Subject s : subjects) {
+                        manager.cancelNotification(s); // hủy thông báo
+                    }
+
+                    btnNotifyAll.setImageResource(R.drawable.ic_bell_outline);
+                    isNotificationOn = false;
+                    Toast.makeText(TimetableWeek.this, "Đã tắt tất cả thông báo", Toast.LENGTH_SHORT).show();
+
+                    SharedPreferences prefs = getSharedPreferences("prefs", MODE_PRIVATE);
+                    prefs.edit().putBoolean("notifOn", false).apply();
+                }
+            }
+        });
 
         setupViews();
         setupInteractions();
@@ -304,16 +362,23 @@ public class TimetableWeek extends AppCompatActivity {
             });
 
             llDateContainer.addView(chip);
-
-            // final Calendar finalDay = day;
-            // chip.setOnClickListener(v -> {
-            // monthCalendar.setSelectedDate(CalendarDay.from(finalDay.get(Calendar.YEAR),
-            // finalDay.get(Calendar.MONTH) + 1, finalDay.get(Calendar.DAY_OF_MONTH)));
-            // weekView.goToDate(finalDay);
-            // });
-            // llDateContainer.addView(chip);
         }
     }
+    // Set alaem 1 môn
+    // NotiAll
+//    private void scheduleAllSubjects() {
+//        TimetableDao dao = new TimetableDao(new DatabaseHelper(this));
+//        int userId = UserSession.getCurrentUserId(this);
+//
+//        List<Subject> subjects = dao.getSubjectsForTimetable(userId);
+//
+//        for (Subject s : subjects) {
+//            scheduleSubjectNotification(s);
+//        }
+//
+//        Toast.makeText(this, "Đã bật thông báo cho tất cả môn học!", Toast.LENGTH_SHORT).show();
+//    }
+
 
     public void intentMenu() {
         btnDeadLine = findViewById(R.id.btnDeadLine);
@@ -392,60 +457,3 @@ public class TimetableWeek extends AppCompatActivity {
         }
     }
 }
-
-// private void displayWeekChips(Calendar startOfWeek) {
-// llDateContainer.removeAllViews();
-// SimpleDateFormat sdf = new SimpleDateFormat("EEE dd", Locale.getDefault());
-//
-// Calendar today = Calendar.getInstance(); // để highlight hôm nay
-//
-// for (int i = 0; i < 7; i++) {
-// Calendar day = (Calendar) startOfWeek.clone();
-// day.add(Calendar.DAY_OF_MONTH, i);
-//
-// Chip chip = new Chip(this);
-// chip.setText(sdf.format(day.getTime()));
-// chip.setCheckable(true);
-//
-// if (day.get(Calendar.YEAR) == today.get(Calendar.YEAR)
-// && day.get(Calendar.MONTH) == today.get(Calendar.MONTH)
-// && day.get(Calendar.DAY_OF_MONTH) == today.get(Calendar.DAY_OF_MONTH)) {
-// chip.setChecked(true);
-// }
-//
-// if (selectedDate != null) {
-// SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd",
-// Locale.getDefault());
-// String dayStr = dbFormat.format(day.getTime());
-// if (dayStr.equals(selectedDate)) {
-// chip.setChecked(true);
-// }
-// }
-//
-// // bỏ chọn chip cũ
-// chip.setOnClickListener(v -> {
-// for (int j = 0; j < llDateContainer.getChildCount(); j++) {
-// View child = llDateContainer.getChildAt(j);
-// if (child instanceof Chip) {
-// ((Chip) child).setChecked(false);
-// }
-// }
-// chip.setChecked(true);
-//
-// // Đồng bộ TextView
-// SimpleDateFormat sdfFull = new SimpleDateFormat("EEEE, dd MMM, yyyy",
-// Locale.ENGLISH);
-// tvSelectedDate.setText(sdfFull.format(day.getTime()));
-//
-// // Lưu ngày để truyền Add
-// SimpleDateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd",
-// Locale.getDefault());
-// selectedDate = dbFormat.format(day.getTime());
-//
-// // Đồng bộ WeekView
-// weekView.goToDate(day);
-// });
-//
-// llDateContainer.addView(chip);
-// }
-// }
