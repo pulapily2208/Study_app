@@ -251,7 +251,7 @@ public class NotesDao extends SQLiteOpenHelper {
             }
         } catch (Exception e) {
             Log.e("DatabaseHelper", "Lỗi khi lấy ghi chú theo ID", e);
-            return null; // Trả về null nếu có lỗi
+            return null;
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -262,7 +262,6 @@ public class NotesDao extends SQLiteOpenHelper {
     public boolean updateNote(Note note) {
         SQLiteDatabase db = this.getWritableDatabase();
 
-        // Tự động cập nhật thời gian
         note.setTimestamp();
 
         ContentValues values = new ContentValues();
@@ -276,10 +275,8 @@ public class NotesDao extends SQLiteOpenHelper {
         values.put("user_id", note.getUser_id());
         int rows = db.update("notes", values, "id=?", new String[]{String.valueOf(note.getId())});
 
-        // XÓA ảnh cũ
         db.delete("note_images", "note_id=?", new String[]{String.valueOf(note.getId())});
 
-        // THÊM ảnh mới
         if (note.getImagePaths() != null) {
             for (String path : note.getImagePaths()) {
                 ContentValues img = new ContentValues();

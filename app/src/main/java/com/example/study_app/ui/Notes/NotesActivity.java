@@ -118,13 +118,11 @@ public class NotesActivity extends AppCompatActivity {
 
         ArrayList<Note> results;
 
-        // Nếu search trống, load tất cả
         if (keyword.isEmpty()) {
             results = (maHpSelected == null)
-                    ? dbHelper.getAllNotes()        // tất cả ghi chú
-                    : dbHelper.getNotesBySubjectCode(maHpSelected); // nếu đang chọn chip
+                    ? dbHelper.getAllNotes()
+                    : dbHelper.getNotesBySubjectCode(maHpSelected);
         } else {
-            // Lọc theo search keyword
             int checkedChipId = chipGroup.getCheckedChipId();
             if (checkedChipId == View.NO_ID) {
                 results = dbHelper.searchNotes(keyword);
@@ -192,7 +190,6 @@ public class NotesActivity extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dbHelper.deleteNote(note.getId());
-                            // Refresh the list after deletion
                             filterNotesBySubject(maHpSelected);
                         }
                     });
@@ -271,12 +268,11 @@ public class NotesActivity extends AppCompatActivity {
                     Chip chipAt = (Chip) group.getChildAt(i);
 
                     if (checkedIds.contains(chipAt.getId())) {
-                        // Chip được chọn
-                        chipAt.setChipBackgroundColorResource(R.color.blue);     // màu nổi bật
+                        chipAt.setChipBackgroundColorResource(R.color.blue);
                         chipAt.setTextColor(getResources().getColor(R.color.white));
                     } else {
                         // Chip chưa chọn
-                        chipAt.setChipBackgroundColorResource(R.color.white); // màu nhạt
+                        chipAt.setChipBackgroundColorResource(R.color.white);
                         chipAt.setTextColor(getResources().getColor(R.color.black));
                     }
                 }
