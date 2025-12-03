@@ -103,7 +103,6 @@ public class SubjectBulkImportAdapter extends RecyclerView.Adapter<SubjectBulkIm
                 }
             }
 
-            // Bind times if already set
             java.text.SimpleDateFormat timeFormat = new java.text.SimpleDateFormat("HH:mm",
                     java.util.Locale.getDefault());
             if (subject.gioBatDau != null) {

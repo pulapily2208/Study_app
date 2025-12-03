@@ -361,7 +361,6 @@ public class SubjectAddActivity extends AppCompatActivity {
     }
 
     private String xacThucVaXayDungMonHoc(Subject subject) {
-        // 1. Lấy dữ liệu thô từ giao diện
         String maHp = etMaMon.getText().toString().trim();
         String tenHp = etTenMon.getText().toString().trim();
         String soTcStr = etSoTc.getText().toString().trim();
@@ -436,7 +435,7 @@ public class SubjectAddActivity extends AppCompatActivity {
         if (curriculum == null)
             return "Mã môn không tồn tại trong chương trình đào tạo!";
 
-        boolean isPrerequisiteMet = curriculumDao.checkPrerequisiteStatus(maHp, 1, subjectDao); // ID user cố định là 1
+        boolean isPrerequisiteMet = curriculumDao.checkPrerequisiteStatus(maHp, 1, subjectDao);
         if (!isPrerequisiteMet)
             return "Chưa đạt điều kiện tiên quyết để thêm môn!";
 

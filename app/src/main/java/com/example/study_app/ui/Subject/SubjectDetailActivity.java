@@ -41,31 +41,24 @@ public class SubjectDetailActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.subject_detail_activity);
 
-        // Fix padding theo hệ thống (status bar / navigation bar)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        // Database
         dbHelper = new DatabaseHelper(this);
         subjectDao = new SubjectDao(dbHelper);
 
-        // Nhận ID môn học
         Intent intent = getIntent();
         subjectId = intent.getStringExtra("SUBJECT_ID");
 
-        // Back button
         ImageView backButton = findViewById(R.id.btn_back);
         backButton.setOnClickListener(v -> finish());
 
-
-        // UI
         subjectNameTextView = findViewById(R.id.subject_detail_name);
         headerView = findViewById(R.id.header_view);
 
-        // Load dữ liệu
         if (subjectId != null) {
             loadSubjectDetails();
         }
@@ -78,18 +71,14 @@ public class SubjectDetailActivity extends AppCompatActivity {
             return;
         }
 
-        // ---- Header color ----
         applyHeaderColor(subject.mauSac);
 
-        // ---- Title (Tên học phần) ----
         subjectNameTextView.setText(subject.tenHp);
 
-        // ---- Format ----
         String notAvailable = "Chưa có";
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
 
-        // ---- Rows ----
         setupDetailRow(R.id.detail_code, R.drawable.barcode_read, "Mã môn học", subject.maHp);
         setupDetailRow(R.id.detail_lecturer, R.drawable.ic_person, "Giảng viên",
                 safe(subject.tenGv, notAvailable));
@@ -98,27 +87,22 @@ public class SubjectDetailActivity extends AppCompatActivity {
         setupDetailRow(R.id.detail_type, R.drawable.ic_category, "Loại môn", subject.loaiMon);
         setupDetailRow(R.id.detail_semester, R.drawable.box_open, "Học kỳ", subject.tenHk);
 
-        // Thời gian
         String timeString = (subject.gioBatDau != null && subject.gioKetThuc != null)
                 ? timeFormat.format(subject.gioBatDau) + " - " + timeFormat.format(subject.gioKetThuc)
                 : notAvailable;
         setupDetailRow(R.id.detail_time, R.drawable.clock_ten, "Thời gian", timeString);
 
-        // Phòng học
         setupDetailRow(R.id.detail_location, R.drawable.land_layer_location, "Phòng học",
                 safe(subject.phongHoc, notAvailable));
 
-        // Ngày học
         String dateString = (subject.ngayBatDau != null && subject.ngayKetThuc != null)
                 ? dateFormat.format(subject.ngayBatDau) + " - " + dateFormat.format(subject.ngayKetThuc)
                 : notAvailable;
         setupDetailRow(R.id.detail_dates, R.drawable.calendar, "Ngày học", dateString);
 
-        // Số tuần
         setupDetailRow(R.id.detail_weeks, R.drawable.calendar, "Số tuần học",
                 (subject.soTuan > 0) ? String.valueOf(subject.soTuan) : notAvailable);
 
-        // Ghi chú
         setupDetailRow(R.id.detail_notes, R.drawable.note, "Ghi chú",
                 safe(subject.ghiChu, notAvailable));
     }

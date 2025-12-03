@@ -213,7 +213,6 @@ public class CurriculumActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Đóng helper để giải phóng kết nối khi Activity kết thúc
         if (dbHelper != null) {
             try {
                 dbHelper.close();

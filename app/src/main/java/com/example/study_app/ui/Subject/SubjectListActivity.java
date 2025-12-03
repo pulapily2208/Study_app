@@ -112,9 +112,6 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
             }
         });
 
-        // Setup navbar and mark Subject as active
-        NavbarHelper.setupNavbar(this, R.id.btnSubject);
-
         NavbarHelper.setupNavbar(this, R.id.btnSubject);
     }
 
@@ -133,61 +130,40 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
             if (data != null && data.hasExtra("UPDATED_SEMESTER_NAME")) {
                 String updatedSemester = data.getStringExtra("UPDATED_SEMESTER_NAME");
                 if (updatedSemester != null && !updatedSemester.isEmpty()) {
-                    // Set the spinner to the semester where the change happened and reload subjects
                     tenHocKyDuocChon = updatedSemester;
-                    taiDanhSachHocKy(); // Reload semesters to ensure list is fresh
-                    // No need to call loadSubjectsForSelectedSemester here, as setSelection in
-                    // loadSemesters will trigger it
+                    taiDanhSachHocKy();
                 }
             } else {
-                // Generic refresh, maintain current selection
                 taiDanhSachHocKy();
             }
         }
     }
 
-    /**
-     * Calculates the current semester ordinal based on a presumed start date.
-     * NOTE: This makes a strong assumption that the user started their program in
-     * Sep 2021.
-     * For true accuracy, the user's actual enrollment date should be stored and
-     * used.
-     * Academic Calendar assumptions:
-     * - Fall Semester (Kỳ 1, 3, 5, 7): From September to January.
-     * - Spring Semester (Kỳ 2, 4, 6, 8): From February to July.
-     * 
-     * @return The calculated current semester number (e.g., 6).
-     */
     private int tinhThuTuHocKyHienTai() {
-        int startYear = 2021;
-        int startMonth = 9; // September
+        int startYear = 2023;
+        int startMonth = 9;
 
         Calendar now = Calendar.getInstance();
         int currentYear = now.get(Calendar.YEAR);
-        int currentMonth = now.get(Calendar.MONTH) + 1; // January is 1
+        int currentMonth = now.get(Calendar.MONTH) + 1;
 
-        // Determine the academic year. An academic year runs from August to July.
         int academicYearOfStart = (startMonth < 8) ? startYear - 1 : startYear;
         int academicYearOfNow = (currentMonth < 8) ? currentYear - 1 : currentYear;
 
         int academicYearsPassed = academicYearOfNow - academicYearOfStart;
         int semesterOrdinal = academicYearsPassed * 2;
 
-        // Check if it's the first or second semester of the academic year.
-        if (currentMonth >= 8 || currentMonth <= 1) { // Fall semester (Aug - Jan)
+        if (currentMonth >= 8 || currentMonth <= 1) {
             semesterOrdinal += 1;
-        } else { // Spring semester (Feb - Jul)
+        } else {
             semesterOrdinal += 2;
         }
         return semesterOrdinal;
     }
 
     /**
-     * Resolve the current semester name from the database based on today's date.
-     * Uses TimetableDao logic to map current year/month to the proper semester
-     * record.
-     * 
-     * @return Semester name like "Học kỳ 6" or null if not found.
+     * Lấy tên học kỳ hiện tại từ CSDL theo ngày hôm nay bằng TimetableDao.
+     * Trả về: Tên học kỳ dạng "Học kỳ X" hoặc null nếu không tìm thấy.
      */
     private String layTenHocKyHienTaiTuDb() {
         Calendar now = Calendar.getInstance();
@@ -209,7 +185,6 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
             danhSachMonHoc.clear();
             adapterMonHoc.notifyDataSetChanged();
             kiemTraTrangThaiRong();
-            // Also clear the spinner
             ArrayAdapter<String> emptyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
                     new ArrayList<>());
             spinnerHocKy.setAdapter(emptyAdapter);
@@ -223,25 +198,19 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
 
         int selectionIndex = -1;
 
-        // 1. If returning to the screen (e.g., after an edit), re-select the previous
-        // semester.
         if (previouslySelected != null && semesterNames.contains(previouslySelected)) {
             selectionIndex = semesterAdapter.getPosition(previouslySelected);
         } else {
-            // 2. Prefer to select the current semester resolved from DB/calendar.
             String currentSemesterName = layTenHocKyHienTaiTuDb();
             if (currentSemesterName != null && semesterNames.contains(currentSemesterName)) {
                 selectionIndex = semesterAdapter.getPosition(currentSemesterName);
             } else {
-                // 3. FALLBACK: If the resolved semester isn't in the list,
-                // select the highest-numbered semester that the user has data for.
                 ArrayList<Integer> semesterNumbers = new ArrayList<>();
                 for (String name : semesterNames) {
                     try {
                         int num = Integer.parseInt(name.replaceAll("\\D+", ""));
                         semesterNumbers.add(num);
                     } catch (NumberFormatException e) {
-                        // Ignore names that don't fit the format "Học kỳ X"
                     }
                 }
                 if (!semesterNumbers.isEmpty()) {
@@ -254,7 +223,6 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
             }
         }
 
-        // 4. FINAL FALLBACK: If nothing has been selected, select the first item.
         if (selectionIndex == -1 && !semesterNames.isEmpty()) {
             selectionIndex = 0;
         }
