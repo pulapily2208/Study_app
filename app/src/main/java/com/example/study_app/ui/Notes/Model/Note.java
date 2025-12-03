@@ -20,7 +20,6 @@ public class Note implements Parcelable {
     private String created_at;
     private String updated_at;
 
-    // NEW: danh sách nhiều ảnh
     private List<String> imagePaths = new ArrayList<>();
     private List<String> pdfPaths = new ArrayList<>();
 
@@ -28,7 +27,6 @@ public class Note implements Parcelable {
 
     public Note() {}
 
-    // Constructor đầy đủ
     public Note(int id, int user_id, String ma_hp, String title, String body, int pinned,
                 String color_tag, String created_at, String updated_at, List<String> imagePaths, List<String> pdfPaths, List<String> audioPaths) {
 
@@ -46,7 +44,6 @@ public class Note implements Parcelable {
         this.audioPaths = audioPaths;
     }
 
-    // Constructor Parcel
     protected Note(Parcel in) {
         id = in.readInt();
         user_id = in.readInt();
@@ -58,7 +55,6 @@ public class Note implements Parcelable {
         created_at = in.readString();
         updated_at = in.readString();
 
-        // NEW: đọc danh sách ảnh
         imagePaths = new ArrayList<>();
         in.readStringList(imagePaths);
 
@@ -81,7 +77,6 @@ public class Note implements Parcelable {
         }
     };
 
-    // ===================== Getter / Setter ==========================
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -110,7 +105,6 @@ public class Note implements Parcelable {
     public String getUpdated_at() { return updated_at; }
     public void setUpdated_at(String updated_at) { this.updated_at = updated_at; }
 
-    // NEW: nhiều ảnh
     public List<String> getImagePaths() {
         return imagePaths;
     }
@@ -147,7 +141,6 @@ public class Note implements Parcelable {
         this.audioPaths.add(audioPath); }
 
 
-    // ====================== Parcelable ==========================
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
@@ -161,7 +154,6 @@ public class Note implements Parcelable {
         dest.writeString(created_at);
         dest.writeString(updated_at);
 
-        // NEW: ghi danh sách ảnh
         dest.writeStringList(imagePaths);
         dest.writeStringList(pdfPaths);
         dest.writeStringList(audioPaths);
@@ -172,7 +164,6 @@ public class Note implements Parcelable {
         return 0;
     }
 
-    // ====================== Khác ===============================
 
     @Override
     public String toString() {
