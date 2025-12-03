@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
+import androidx.appcompat.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +35,7 @@ import com.example.study_app.ui.common.NavbarHelper;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Locale;
 
 public class SubjectListActivity extends AppCompatActivity implements SubjectAdapter.OnSubjectActionClickListener {
 
@@ -41,11 +43,13 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
     private SubjectAdapter adapterMonHoc;
     private SubjectDao subjectDao;
     private ArrayList<Subject> danhSachMonHoc;
+    private ArrayList<Subject> allSubjectsForCurrentSemester; // Danh sách gốc
     private Spinner spinnerHocKy;
     private TextView tvDanhSachRong;
     private String tenHocKyDuocChon;
     private FloatingActionButton fabThemMonHoc;
     private ImageButton btnNhapHangLoatMonHoc;
+    private SearchView searchView;
     private DatabaseHelper dbHelper;
 
     private static final int ADD_SUBJECT_REQUEST = 1;
@@ -69,15 +73,19 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
         tvDanhSachRong = findViewById(R.id.tvEmptyList);
         fabThemMonHoc = findViewById(R.id.fab_add_subject);
         btnNhapHangLoatMonHoc = findViewById(R.id.btn_bulk_add_subject);
+        searchView = findViewById(R.id.searchViewSubjects);
 
         dbHelper = new DatabaseHelper(this);
         subjectDao = new SubjectDao(dbHelper);
 
         danhSachMonHoc = new ArrayList<>();
+        allSubjectsForCurrentSemester = new ArrayList<>(); // Khởi tạo
 
         adapterMonHoc = new SubjectAdapter(danhSachMonHoc, this);
         recyclerViewMonHoc.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewMonHoc.setAdapter(adapterMonHoc);
+
+        setupSearchView(); // Thiết lập SearchView
 
         spinnerHocKy.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -118,6 +126,42 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
         NavbarHelper.setupNavbar(this, R.id.btnSubject);
     }
 
+    private void setupSearchView() {
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                filterSubjects(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filterSubjects(newText);
+                return true;
+            }
+        });
+    }
+
+    private void filterSubjects(String query) {
+        ArrayList<Subject> filteredList = new ArrayList<>();
+        if (query == null || query.trim().isEmpty()) {
+            filteredList.addAll(allSubjectsForCurrentSemester);
+        } else {
+            String filterPattern = query.toLowerCase(Locale.getDefault()).trim();
+            for (Subject subject : allSubjectsForCurrentSemester) {
+                if (subject.tenHp.toLowerCase(Locale.getDefault()).contains(filterPattern)) {
+                    filteredList.add(subject);
+                }
+            }
+        }
+        danhSachMonHoc.clear();
+        danhSachMonHoc.addAll(filteredList);
+        adapterMonHoc.notifyDataSetChanged();
+        // Kiểm tra trạng thái rỗng sau khi lọc
+        kiemTraTrangThaiRong();
+    }
+
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -155,7 +199,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
      * Academic Calendar assumptions:
      * - Fall Semester (Kỳ 1, 3, 5, 7): From September to January.
      * - Spring Semester (Kỳ 2, 4, 6, 8): From February to July.
-     * 
+     *
      * @return The calculated current semester number (e.g., 6).
      */
     private int tinhThuTuHocKyHienTai() {
@@ -186,7 +230,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
      * Resolve the current semester name from the database based on today's date.
      * Uses TimetableDao logic to map current year/month to the proper semester
      * record.
-     * 
+     *
      * @return Semester name like "Học kỳ 6" or null if not found.
      */
     private String layTenHocKyHienTaiTuDb() {
@@ -207,6 +251,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
 
         if (semesterNames.isEmpty()) {
             danhSachMonHoc.clear();
+            allSubjectsForCurrentSemester.clear();
             adapterMonHoc.notifyDataSetChanged();
             kiemTraTrangThaiRong();
             // Also clear the spinner
@@ -266,12 +311,16 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
 
     private void taiDanhSachMonHocTheoHocKy() {
         if (tenHocKyDuocChon != null) {
-            ArrayList<Subject> updatedSubjects = subjectDao.getSubjectsBySemester(tenHocKyDuocChon);
-            danhSachMonHoc.clear();
-            danhSachMonHoc.addAll(updatedSubjects);
-            adapterMonHoc.notifyDataSetChanged();
-            kiemTraTrangThaiRong();
+            allSubjectsForCurrentSemester = subjectDao.getSubjectsBySemester(tenHocKyDuocChon);
+            // Reset search view
+            if (searchView != null) {
+                searchView.setQuery("", false);
+                searchView.clearFocus();
+            }
+            // Now filter (which will load all subjects initially)
+            filterSubjects("");
         } else {
+            allSubjectsForCurrentSemester.clear();
             danhSachMonHoc.clear();
             adapterMonHoc.notifyDataSetChanged();
             kiemTraTrangThaiRong();
@@ -279,7 +328,14 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
     }
 
     private void kiemTraTrangThaiRong() {
+        // Chỉ kiểm tra danh sách đang hiển thị
         if (danhSachMonHoc.isEmpty()) {
+            // Nếu danh sách hiển thị trống, kiểm tra xem có phải do đang tìm kiếm không
+            if (!searchView.getQuery().toString().isEmpty()) {
+                tvDanhSachRong.setText("Không tìm thấy môn học nào khớp với từ khóa.");
+            } else {
+                tvDanhSachRong.setText("Chưa có môn học nào trong học kỳ này. Hãy thêm một môn học mới!");
+            }
             recyclerViewMonHoc.setVisibility(View.GONE);
             tvDanhSachRong.setVisibility(View.VISIBLE);
         } else {
@@ -287,6 +343,7 @@ public class SubjectListActivity extends AppCompatActivity implements SubjectAda
             tvDanhSachRong.setVisibility(View.GONE);
         }
     }
+
 
     @Override
     public void onEdit(Subject subject) {

@@ -49,6 +49,21 @@
             android:paddingHorizontal="8dp" />
     </LinearLayout>
 
+    <androidx.appcompat.widget.SearchView
+        android:id="@+id/searchViewSubjects"
+        android:background="@drawable/note_bg_searchview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        app:queryHint="Tìm kiếm môn học"
+        app:iconifiedByDefault="false"
+        android:textColorHint="#6F6D6D"
+        android:layout_marginTop="3dp"
+        app:queryBackground="@android:color/transparent"
+        app:layout_constraintTop_toBottomOf="@id/headerLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewSubjects"
         android:layout_width="0dp"
@@ -59,7 +74,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerLayout" />
+        app:layout_constraintTop_toBottomOf="@id/searchViewSubjects" />
 
     <TextView
         android:id="@+id/tvEmptyList"
@@ -71,7 +86,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerLayout" />
+        app:layout_constraintTop_toBottomOf="@id/searchViewSubjects" />
 
     <!-- include navbar -->
 
