@@ -68,9 +68,6 @@ public class TimetableWeek extends AppCompatActivity {
         AndroidThreeTen.init(this);
         EdgeToEdge.enable(this);
         setContentView(R.layout.timetable_week);
-        // an lich thang
-//        monthCalendar.setVisibility(View.GONE);
-//        monthCalendar.setAlpha(0f);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main_container), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -84,6 +81,9 @@ public class TimetableWeek extends AppCompatActivity {
         llDateContainer = findViewById(R.id.llDateContainer);
         btnAdd = findViewById(R.id.btnAdd);
         btnNotifyAll = findViewById(R.id.btnNotifyAll);
+        // an lich thang
+        monthCalendar.setVisibility(View.GONE);
+        monthCalendar.setAlpha(0f);
         // load trang thai tb cu
         SharedPreferences prefs = getSharedPreferences("prefs", MODE_PRIVATE);
         isNotificationOn = prefs.getBoolean("notifOn", false);
