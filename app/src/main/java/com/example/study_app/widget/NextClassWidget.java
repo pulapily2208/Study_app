@@ -21,7 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class TimetableWidget extends AppWidgetProvider {
+public class NextClassWidget extends AppWidgetProvider {
 
     private static final String TAG = "TimetableWidget";
 
@@ -30,7 +30,7 @@ public class TimetableWidget extends AppWidgetProvider {
 
         for (int widgetId : appWidgetIds) {
 
-            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.timetable_widget);
+            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.next_class_widget);
 
             NextLessonResult next = computeNextLesson(context);
 
@@ -38,19 +38,16 @@ public class TimetableWidget extends AppWidgetProvider {
 
                 Subject s = next.subject;
                 String weekdayLabel = getWeekdayLabel(s.ngayBatDau);
+//                String weekdayLabel = getWeekdayLabel(next.start.getTime());
 
                 views.setTextViewText(R.id.txtSubjectName, s.tenHp);
 
                 views.setTextViewText(R.id.txtWeekday, weekdayLabel);
 
                 views.setTextViewText(
-                        R.id.txtTime,
-                        formatTime(next.start) + " - " + formatTime(next.end)
-                );
+                        R.id.txtTime, formatTime(next.start) + " - " + formatTime(next.end));
                 views.setTextViewText(
-                        R.id.txtRoom,
-                        "Phòng: " + (s.phongHoc == null ? "--" : s.phongHoc)
-                );
+                        R.id.txtRoom, "Phòng: " + (s.phongHoc == null ? "--" : s.phongHoc));
 
                 // set background color
                 try {
@@ -63,7 +60,9 @@ public class TimetableWidget extends AppWidgetProvider {
                 }
 
             } else {
+                views.setTextViewText(R.id.txtNextSubject, "");
                 views.setTextViewText(R.id.txtSubjectName, "Không có buổi học");
+                views.setTextViewText(R.id.txtWeekday, "");
                 views.setTextViewText(R.id.txtTime, "");
                 views.setTextViewText(R.id.txtRoom, "");
             }
@@ -212,11 +211,11 @@ public class TimetableWidget extends AppWidgetProvider {
 
     public static void refreshAll(Context context) {
         AppWidgetManager awm = AppWidgetManager.getInstance(context);
-        ComponentName me = new ComponentName(context, TimetableWidget.class);
+        ComponentName me = new ComponentName(context, NextClassWidget.class);
         int[] ids = awm.getAppWidgetIds(me);
 
         if (ids != null && ids.length > 0) {
-            Intent i = new Intent(context, TimetableWidget.class);
+            Intent i = new Intent(context, NextClassWidget.class);
             i.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
             i.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
             context.sendBroadcast(i);

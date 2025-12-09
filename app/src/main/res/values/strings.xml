@@ -96,4 +96,8 @@
 
     <!-- Title for MaterialDatePicker -->
     <string name="select_date">Chọn ngày</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="configure">Configure</string>
+    <string name="add_widget">Add widget</string>
+    <string name="app_widget_description">This is an app widget description</string>
 </resources>
