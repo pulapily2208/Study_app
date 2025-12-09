@@ -7,6 +7,9 @@ import android.util.Log;
 import com.example.study_app.ui.Subject.Model.Subject;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
 public class TimetableDao {
     private final DatabaseHelper dbHelper;
@@ -245,5 +248,50 @@ public class TimetableDao {
 
         return subjectList;
     }
+
+    public ArrayList<Subject> getSubjectsForWeekday(int targetWeekday) {
+        ArrayList<Subject> all = getAllSubjects();
+        ArrayList<Subject> result = new ArrayList<>();
+        if (all == null || all.isEmpty()) return result;
+
+        for (Subject s : all) {
+            try {
+                Date startDate = s.getNgayBatDau(); // parseDate done earlier
+                Date endDate = s.getNgayKetThuc();   // may be null
+
+                if (startDate == null || s.getGioBatDau() == null || s.getGioKetThuc() == null) continue;
+
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(startDate);
+                int startWeekday = cal.get(Calendar.DAY_OF_WEEK); // day-of-week subject starts
+
+                // If subject repeats weekly starting from startDate, the subject occurs on targetWeekday
+                // iff startWeekday == targetWeekday AND the occurrence date is within [startDate, endDate] range.
+                if (startWeekday != targetWeekday) {
+                    // not matching weekday
+                    continue;
+                }
+
+                // Now check whether for the current calendar date (next occurrence) it's within the range.
+                // We find the closest occurrence date (with same weekday) >= startDate; then check if it's before endDate.
+                // Simpler: check if there exists a date with that weekday between startDate and endDate (or if endDate null, assume ongoing)
+                if (endDate != null) {
+                    // normalize dates to date-only to compare
+                    Calendar cStart = Calendar.getInstance(); cStart.setTime(startDate);
+                    cStart.set(Calendar.HOUR_OF_DAY, 0); cStart.set(Calendar.MINUTE, 0); cStart.set(Calendar.SECOND,0); cStart.set(Calendar.MILLISECOND,0);
+
+                    Calendar cEnd = Calendar.getInstance(); cEnd.setTime(endDate);
+                    cEnd.set(Calendar.HOUR_OF_DAY, 0); cEnd.set(Calendar.MINUTE, 0); cEnd.set(Calendar.SECOND,0); cEnd.set(Calendar.MILLISECOND,0);
+
+                    // If end is before start => skip
+                    if (cEnd.before(cStart)) continue;
+                }
+                // Accept subject
+                result.add(s);
+            } catch (Exception ignored) {}
+        }
+        return result;
+    }
+
 
 }

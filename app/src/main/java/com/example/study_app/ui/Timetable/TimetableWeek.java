@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -61,7 +62,7 @@ public class TimetableWeek extends AppCompatActivity {
 
     private String selectedDate = null;
 
-    @SuppressLint({ "MissingInflatedId", "ClickableViewAccessibility" })
+    @SuppressLint({"MissingInflatedId", "ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -451,8 +452,8 @@ public class TimetableWeek extends AppCompatActivity {
     }
 
     private void setActiveNavbarItem(int activeId) {
-        int[] ids = new int[] { R.id.btnSubject, R.id.btnNote, R.id.btnDeadLine, R.id.btnTimetable,
-                R.id.btnKetQuaHocTap, R.id.btnCurriculum };
+        int[] ids = new int[]{R.id.btnSubject, R.id.btnNote, R.id.btnDeadLine, R.id.btnTimetable,
+                R.id.btnKetQuaHocTap, R.id.btnCurriculum};
         for (int id : ids) {
             View v = findViewById(id);
             if (v != null)
