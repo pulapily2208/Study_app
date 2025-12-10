@@ -7,6 +7,9 @@ import android.util.Log;
 import com.example.study_app.ui.Subject.Model.Subject;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
 public class TimetableDao {
     private final DatabaseHelper dbHelper;
