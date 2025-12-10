@@ -18,7 +18,6 @@ public class SubjectAdviceProvider {
         void thatBai(Exception e);
     }
 
-    // Giữ API cũ để tương thích với các màn hình đang gọi
     public interface AdviceCallback {
         void onSuccess(String advice);
 
@@ -90,14 +89,10 @@ public class SubjectAdviceProvider {
         if (s == null || s.isEmpty())
             return "";
         String kq = s;
-        // Bỏ các tiêu đề dạng #, ##, ###
         kq = kq.replaceAll("(?m)^#{1,6}\\s*", "");
-        // Bỏ in đậm/nhạt **text** và *text*
         kq = kq.replace("**", "");
         kq = kq.replaceAll("\\*(.+?)\\*", "$1");
-        // Chuẩn hoá gạch đầu dòng
         kq = kq.replaceAll("(?m)^-\\s+", "• ");
-        // Loại bỏ dư thừa khoảng trắng
         kq = kq.replaceAll("[\\t\\f\\r]", " ").replaceAll(" +", " ").trim();
         return kq;
     }

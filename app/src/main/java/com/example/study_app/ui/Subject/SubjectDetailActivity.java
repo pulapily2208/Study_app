@@ -35,6 +35,7 @@ public class SubjectDetailActivity extends AppCompatActivity {
     private TextView subjectNameTextView;
     private LinearLayout headerView;
     private Subject currentSubject;
+    private ImageButton btnAiAdvice;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -63,9 +64,7 @@ public class SubjectDetailActivity extends AppCompatActivity {
         if (subjectId != null) {
             loadSubjectDetails();
         }
-
-        // AI Advisor Button Setup (nút ở header_view bên phải)
-        ImageButton btnAiAdvice = findViewById(R.id.btn_ai_advice);
+        btnAiAdvice = findViewById(R.id.btn_ai_advice);
         btnAiAdvice.setOnClickListener(v -> {
             if (currentSubject != null) {
                 // 1. Show Loading Dialog
@@ -78,14 +77,13 @@ public class SubjectDetailActivity extends AppCompatActivity {
 
                 // 2. Call the new asynchronous Gemini API method
                 SubjectAdviceProvider.getAdviceFromGemini(
-                        currentSubject.tenHp, // Pass the subject name for a better prompt
+                        currentSubject.tenHp,
                         new SubjectAdviceProvider.AdviceCallback() {
                             @Override
                             public void onSuccess(String advice) {
                                 // Run on the main UI thread to update the UI
                                 runOnUiThread(() -> {
                                     loadingDialog.dismiss();
-                                    // Show the success dialog with the AI's response
                                     new AlertDialog.Builder(SubjectDetailActivity.this)
                                             .setTitle("💡 Trợ lý AI")
                                             .setMessage(advice)
@@ -96,16 +94,27 @@ public class SubjectDetailActivity extends AppCompatActivity {
 
                             @Override
                             public void onError(Exception e) {
-                                // Run on the main UI thread to update the UI
                                 runOnUiThread(() -> {
                                     loadingDialog.dismiss();
-                                    // Show an error dialog
+                                    int secs = parseRetrySeconds(e.getMessage());
+                                    boolean isRateLimited = isRateLimitError(e.getMessage());
+
+                                    String baseMsg = "Không thể kết nối với AI: " + e.getMessage()
+                                            + "\n\nVui lòng kiểm tra lại API Key và kết nối mạng.";
+                                    String finalMsg = isRateLimited
+                                            ? baseMsg + "\n\nHệ thống sẽ tạm khoá nút AI khoảng " + secs
+                                                    + " giây để tránh vượt hạn mức."
+                                            : baseMsg;
+
                                     new AlertDialog.Builder(SubjectDetailActivity.this)
                                             .setTitle("Đã xảy ra lỗi")
-                                            .setMessage("Không thể kết nối với AI: " + e.getMessage()
-                                                    + "\n\nVui lòng kiểm tra lại API Key và kết nối mạng.")
+                                            .setMessage(finalMsg)
                                             .setPositiveButton("Đóng", null)
                                             .show();
+
+                                    if (isRateLimited) {
+                                        applyAiCooldown(secs);
+                                    }
                                 });
                             }
                         });
@@ -169,10 +178,10 @@ public class SubjectDetailActivity extends AppCompatActivity {
 
             float radius = getResources().getDimension(R.dimen.card_corner_radius);
             gradientDrawable.setCornerRadii(new float[] {
-                    radius, radius, // top-left & top-right
-                    radius, radius, // top-right & top-left (duplicate but ok)
-                    0, 0, // bottom-right
-                    0, 0 // bottom-left
+                    radius, radius,
+                    radius, radius,
+                    0, 0,
+                    0, 0
             });
 
             headerView.setBackground(gradientDrawable);
@@ -194,5 +203,40 @@ public class SubjectDetailActivity extends AppCompatActivity {
         icon.setImageResource(iconResId);
         titleView.setText(title);
         valueView.setText(value);
+    }
+
+    private boolean isRateLimitError(String message) {
+        if (message == null)
+            return false;
+        String m = message.toLowerCase();
+        return m.contains("429") || m.contains("resource_exhausted") || m.contains("quota exceeded");
+    }
+
+    private int parseRetrySeconds(String message) {
+        if (message == null)
+            return 30;
+        try {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern
+                    .compile("retry in\\s+([0-9]+(?:\\.[0-9]+)?)", java.util.regex.Pattern.CASE_INSENSITIVE)
+                    .matcher(message);
+            if (matcher.find()) {
+                double secs = Double.parseDouble(matcher.group(1));
+                return Math.max(1, (int) Math.ceil(secs));
+            }
+        } catch (Exception ignore) {
+        }
+        return 30;
+    }
+
+    private void applyAiCooldown(int seconds) {
+        if (btnAiAdvice == null)
+            return;
+        int ms = Math.max(1000, seconds * 1000);
+        btnAiAdvice.setEnabled(false);
+        btnAiAdvice.setAlpha(0.5f);
+        new android.os.Handler(getMainLooper()).postDelayed(() -> {
+            btnAiAdvice.setEnabled(true);
+            btnAiAdvice.setAlpha(1f);
+        }, ms);
     }
 }

@@ -27,10 +27,10 @@ public class GeminiClient {
         logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
         this.client = new OkHttpClient.Builder()
                 .addInterceptor(logging)
-                .connectTimeout(java.time.Duration.ofSeconds(10))
-                .readTimeout(java.time.Duration.ofSeconds(20))
-                .writeTimeout(java.time.Duration.ofSeconds(20))
-                .callTimeout(java.time.Duration.ofSeconds(30))
+                .connectTimeout(java.time.Duration.ofSeconds(5))
+                .readTimeout(java.time.Duration.ofSeconds(12))
+                .writeTimeout(java.time.Duration.ofSeconds(12))
+                .callTimeout(java.time.Duration.ofSeconds(15))
                 .build();
     }
 
@@ -73,7 +73,6 @@ public class GeminiClient {
         String msg = "Gemini API lỗi " + code;
         if (bodyStr != null && !bodyStr.isEmpty()) {
             try {
-                // Rút gọn thông điệp lỗi nếu có trường error.message
                 org.json.JSONObject root = new org.json.JSONObject(bodyStr);
                 if (root.has("error")) {
                     org.json.JSONObject err = root.getJSONObject("error");
@@ -94,7 +93,6 @@ public class GeminiClient {
                 msg += ": " + bodyStr;
             }
         }
-        // Gợi ý kiểm tra key/mạng khi gặp 401/403
         if (code == 401 || code == 403) {
             msg += ". Vui lòng kiểm tra API Key và quyền truy cập.";
         }
