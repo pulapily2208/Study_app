@@ -1,5 +1,7 @@
 package com.example.study_app.ui.Timetable;
 
+import static com.example.study_app.ui.Timetable.SubjectDateGenerator.getSubjectDays;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -137,6 +139,18 @@ public class TimetableWeek extends AppCompatActivity {
                 }
             }
         });
+
+        // SET SK LEN LICH THANG
+        MaterialCalendarView calendar = findViewById(R.id.monthCalendar);
+
+        TimetableDao dao = new TimetableDao(new DatabaseHelper(TimetableWeek.this));
+        List<Subject> subjects = dao.getAllSubjects();
+
+// convert sang danh sách ngày có môn
+        List<CalendarDay> eventDays = getSubjectDays(subjects);
+
+// gắn decorator
+        calendar.addDecorator(new SubjectDecorator(eventDays));
 
         setupViews();
         setupInteractions();
