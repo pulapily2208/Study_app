@@ -1,114 +1,144 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#F0F2F5"
     tools:context=".ui.Subject.SubjectDetailActivity">
 
-    <!-- Custom Back Header -->
     <LinearLayout
-        android:id="@+id/custom_header"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@color/yellow"
-        android:paddingHorizontal="16dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/btn_back"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/note_ic_back"
-            app:tint="@color/black"/>
-
-        <TextView
-            android:id="@+id/header_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:gravity="center_vertical"
-            android:text="Chi tiết môn học"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="@color/black"/>
-    </LinearLayout>
-
-
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
+        <!-- Custom Back Header -->
         <LinearLayout
+            android:id="@+id/custom_header"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@color/yellow"
+            android:paddingHorizontal="16dp">
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/subject_card"
+            <ImageView
+                android:id="@+id/btn_back"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/note_ic_back"
+                app:tint="@color/black"/>
+
+            <TextView
+                android:id="@+id/header_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:gravity="center_vertical"
+                android:text="Chi tiết môn học"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"/>
+
+            <!-- Spacer to push AI button to the right -->
+            <View
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <!-- AI advice button on custom header (right side) -->
+            <ImageButton
+                android:id="@+id/btn_ai_advice"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="Tư vấn AI"
+                android:src="@android:drawable/ic_dialog_info"
+                app:tint="@color/black"/>
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                app:cardUseCompatPadding="true">
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <LinearLayout
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/subject_card"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:cardUseCompatPadding="true">
 
-                    <!-- Header with Subject Name and Color -->
                     <LinearLayout
-                        android:id="@+id/header_view"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="24dp">
+                        android:orientation="vertical">
 
-                        <TextView
-                            android:id="@+id/subject_detail_name"
-                            android:layout_width="wrap_content"
+                        <!-- Header with Subject Name and Color -->
+                        <LinearLayout
+                            android:id="@+id/header_view"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textColor="@android:color/white"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            tools:text="Lập trình ứng dụng di động" />
+                            android:orientation="horizontal"
+                            android:padding="24dp">
+
+                            <TextView
+                                android:id="@+id/subject_detail_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@android:color/white"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                tools:text="Lập trình ứng dụng di động" />
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"/>
+
+                            <!-- AI button moved to custom_header above -->
+                        </LinearLayout>
+
+                        <!-- Details Section -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingTop="8dp"
+                            android:paddingBottom="8dp">
+
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_code"/>
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_lecturer"/>
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_credits"/>
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_type"/>
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_semester"/>
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_time"/>
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_location"/>
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_dates"/>
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_weeks"/>
+                            <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_notes"/>
+
+                        </LinearLayout>
                     </LinearLayout>
+                </androidx.cardview.widget.CardView>
 
-                    <!-- Details Section -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingTop="8dp"
-                        android:paddingBottom="8dp">
+            </LinearLayout>
+        </ScrollView>
 
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_code"/>
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_lecturer"/>
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_credits"/>
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_type"/>
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_semester"/>
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_time"/>
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_location"/>
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_dates"/>
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_weeks"/>
-                        <include layout="@layout/subject_detail_item_row" android:id="@+id/detail_notes"/>
-
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-        </LinearLayout>
-    </ScrollView>
         <!-- Navbar at bottom -->
         <include
             layout="@layout/navbar_activity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
-</LinearLayout>
+    </LinearLayout>
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

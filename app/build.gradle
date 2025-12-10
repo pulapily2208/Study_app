@@ -2,18 +2,30 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+// Define properties variable here
+Properties properties = new Properties()
+// Move the property loading logic here, after the plugins block
+if (rootProject.file("local.properties").exists()) {
+    properties.load(rootProject.file("local.properties").newDataInputStream())
+}
+
 android {
     namespace 'com.example.study_app'
-    compileSdk 36
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.example.study_app"
         minSdk 24
-        targetSdk 36
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        def _geminiKey = properties.getProperty('GEMINI_API_KEY', '')
+        if (_geminiKey != null) {
+            _geminiKey = _geminiKey.replace('"', '')
+        }
+        buildConfigField "String", "GEMINI_API_KEY", "\"${_geminiKey}\""
     }
 
     buildTypes {
@@ -27,6 +39,9 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    buildFeatures {
+        buildConfig true
     }
     // --- KẾT THÚC NÂNG CẤP HỆ THỐNG ---
 
@@ -47,8 +62,6 @@ dependencies {
     implementation 'com.github.thellmund:android-week-view:5.3.2'
     // đang dùng theo 5.3.0
 
-
-
     // Material Calendar View (lich thang)
     implementation 'com.github.prolificinteractive:material-calendarview:2.0.1'
 
@@ -58,9 +71,14 @@ dependencies {
     // workmanager (tb trươc gio hoc)
     implementation "androidx.work:work-runtime-ktx:2.9.0"
 
-    // Glide for image loading
-    implementation 'com.github.bumptech.glide:glide:4.12.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.12.0'
+    // Glide for image loading (nâng cấp phiên bản ổn định mới)
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+
+    // Gỡ SDK Gemini; dùng REST client qua OkHttp
+    implementation "com.squareup.okhttp3:okhttp:4.12.0"
+    implementation "com.squareup.okhttp3:logging-interceptor:4.12.0"
+    implementation "com.google.guava:guava:33.2.1-android"
 
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit

@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -12,8 +11,8 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -22,6 +21,7 @@ import com.example.study_app.R;
 import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.data.SubjectDao;
 import com.example.study_app.ui.Subject.Model.Subject;
+import android.widget.ImageButton;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -34,6 +34,7 @@ public class SubjectDetailActivity extends AppCompatActivity {
 
     private TextView subjectNameTextView;
     private LinearLayout headerView;
+    private Subject currentSubject;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -62,49 +63,97 @@ public class SubjectDetailActivity extends AppCompatActivity {
         if (subjectId != null) {
             loadSubjectDetails();
         }
+
+        // AI Advisor Button Setup (nút ở header_view bên phải)
+        ImageButton btnAiAdvice = findViewById(R.id.btn_ai_advice);
+        btnAiAdvice.setOnClickListener(v -> {
+            if (currentSubject != null) {
+                // 1. Show Loading Dialog
+                AlertDialog loadingDialog = new AlertDialog.Builder(this)
+                        .setTitle("Trợ lý AI đang suy nghĩ...")
+                        .setMessage("Vui lòng chờ trong giây lát. Quá trình này có thể mất một chút thời gian.")
+                        .setCancelable(false)
+                        .create();
+                loadingDialog.show();
+
+                // 2. Call the new asynchronous Gemini API method
+                SubjectAdviceProvider.getAdviceFromGemini(
+                        currentSubject.tenHp, // Pass the subject name for a better prompt
+                        new SubjectAdviceProvider.AdviceCallback() {
+                            @Override
+                            public void onSuccess(String advice) {
+                                // Run on the main UI thread to update the UI
+                                runOnUiThread(() -> {
+                                    loadingDialog.dismiss();
+                                    // Show the success dialog with the AI's response
+                                    new AlertDialog.Builder(SubjectDetailActivity.this)
+                                            .setTitle("💡 Trợ lý AI")
+                                            .setMessage(advice)
+                                            .setPositiveButton("Đã hiểu", null)
+                                            .show();
+                                });
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                                // Run on the main UI thread to update the UI
+                                runOnUiThread(() -> {
+                                    loadingDialog.dismiss();
+                                    // Show an error dialog
+                                    new AlertDialog.Builder(SubjectDetailActivity.this)
+                                            .setTitle("Đã xảy ra lỗi")
+                                            .setMessage("Không thể kết nối với AI: " + e.getMessage()
+                                                    + "\n\nVui lòng kiểm tra lại API Key và kết nối mạng.")
+                                            .setPositiveButton("Đóng", null)
+                                            .show();
+                                });
+                            }
+                        });
+            }
+        });
     }
 
     private void loadSubjectDetails() {
-        Subject subject = subjectDao.getSubjectByMaHp(subjectId);
-        if (subject == null) {
+        currentSubject = subjectDao.getSubjectByMaHp(subjectId);
+        if (currentSubject == null) {
             finish();
             return;
         }
 
-        applyHeaderColor(subject.mauSac);
+        applyHeaderColor(currentSubject.mauSac);
 
-        subjectNameTextView.setText(subject.tenHp);
+        subjectNameTextView.setText(currentSubject.tenHp);
 
         String notAvailable = "Chưa có";
         SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
 
-        setupDetailRow(R.id.detail_code, R.drawable.barcode_read, "Mã môn học", subject.maHp);
+        setupDetailRow(R.id.detail_code, R.drawable.barcode_read, "Mã môn học", currentSubject.maHp);
         setupDetailRow(R.id.detail_lecturer, R.drawable.ic_person, "Giảng viên",
-                safe(subject.tenGv, notAvailable));
+                safe(currentSubject.tenGv, notAvailable));
         setupDetailRow(R.id.detail_credits, R.drawable.ic_star, "Số tín chỉ",
-                String.valueOf(subject.soTc));
-        setupDetailRow(R.id.detail_type, R.drawable.ic_category, "Loại môn", subject.loaiMon);
-        setupDetailRow(R.id.detail_semester, R.drawable.box_open, "Học kỳ", subject.tenHk);
+                String.valueOf(currentSubject.soTc));
+        setupDetailRow(R.id.detail_type, R.drawable.ic_category, "Loại môn", currentSubject.loaiMon);
+        setupDetailRow(R.id.detail_semester, R.drawable.box_open, "Học kỳ", currentSubject.tenHk);
 
-        String timeString = (subject.gioBatDau != null && subject.gioKetThuc != null)
-                ? timeFormat.format(subject.gioBatDau) + " - " + timeFormat.format(subject.gioKetThuc)
+        String timeString = (currentSubject.gioBatDau != null && currentSubject.gioKetThuc != null)
+                ? timeFormat.format(currentSubject.gioBatDau) + " - " + timeFormat.format(currentSubject.gioKetThuc)
                 : notAvailable;
         setupDetailRow(R.id.detail_time, R.drawable.clock_ten, "Thời gian", timeString);
 
         setupDetailRow(R.id.detail_location, R.drawable.land_layer_location, "Phòng học",
-                safe(subject.phongHoc, notAvailable));
+                safe(currentSubject.phongHoc, notAvailable));
 
-        String dateString = (subject.ngayBatDau != null && subject.ngayKetThuc != null)
-                ? dateFormat.format(subject.ngayBatDau) + " - " + dateFormat.format(subject.ngayKetThuc)
+        String dateString = (currentSubject.ngayBatDau != null && currentSubject.ngayKetThuc != null)
+                ? dateFormat.format(currentSubject.ngayBatDau) + " - " + dateFormat.format(currentSubject.ngayKetThuc)
                 : notAvailable;
         setupDetailRow(R.id.detail_dates, R.drawable.calendar, "Ngày học", dateString);
 
         setupDetailRow(R.id.detail_weeks, R.drawable.calendar, "Số tuần học",
-                (subject.soTuan > 0) ? String.valueOf(subject.soTuan) : notAvailable);
+                (currentSubject.soTuan > 0) ? String.valueOf(currentSubject.soTuan) : notAvailable);
 
         setupDetailRow(R.id.detail_notes, R.drawable.note, "Ghi chú",
-                safe(subject.ghiChu, notAvailable));
+                safe(currentSubject.ghiChu, notAvailable));
     }
 
     private void applyHeaderColor(String colorString) {
@@ -119,11 +168,11 @@ public class SubjectDetailActivity extends AppCompatActivity {
             gradientDrawable.setColor(color);
 
             float radius = getResources().getDimension(R.dimen.card_corner_radius);
-            gradientDrawable.setCornerRadii(new float[]{
-                    radius, radius,   // top-left & top-right
-                    radius, radius,   // top-right & top-left (duplicate but ok)
-                    0, 0,             // bottom-right
-                    0, 0              // bottom-left
+            gradientDrawable.setCornerRadii(new float[] {
+                    radius, radius, // top-left & top-right
+                    radius, radius, // top-right & top-left (duplicate but ok)
+                    0, 0, // bottom-right
+                    0, 0 // bottom-left
             });
 
             headerView.setBackground(gradientDrawable);

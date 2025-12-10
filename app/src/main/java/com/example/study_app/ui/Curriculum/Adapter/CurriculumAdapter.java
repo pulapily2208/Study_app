@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,6 +18,7 @@ import com.example.study_app.data.DatabaseHelper;
 import com.example.study_app.data.ScoreDao;
 import com.example.study_app.ui.Curriculum.Model.Curriculum;
 import com.example.study_app.ui.Score.InputScoreActivity;
+import com.example.study_app.ui.Subject.SubjectAdviceProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,18 +28,15 @@ import java.util.Map;
 
 public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.CurriculumViewHolder> {
 
-    // Danh sách đang hiển thị trên màn hình
     private final List<Curriculum> courseListDisplayed;
-    // Bản sao của danh sách gốc, không bao giờ thay đổi, chỉ dùng để lọc
     private final List<Curriculum> courseListFull;
-    private final ScoreDao scoreDao; // dùng chung DAO điểm để tránh mở DB helper phụ
-    private Map<String, Float> gpaMap; // cache GPA theo mã học phần
+    private final ScoreDao scoreDao;
+    private Map<String, Float> gpaMap;
 
     public CurriculumAdapter(Context context, List<Curriculum> courseList, ScoreDao scoreDao) {
         this.courseListFull = new ArrayList<>(courseList);
         this.courseListDisplayed = new ArrayList<>(courseList);
         this.scoreDao = scoreDao;
-        // Tải toàn bộ GPA một lần để tránh query DB trong onBindViewHolder
         try {
             this.gpaMap = scoreDao.getAllGpaMap();
         } catch (Exception e) {
@@ -127,8 +126,38 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
                 context.startActivity(intent);
             });
         } else {
+            // Môn chưa học: gọi AI tư vấn thay vì nhập điểm
             holder.itemView.setOnClickListener(v -> {
-                Toast.makeText(context, "Môn này chưa học nên không thể nhập điểm", Toast.LENGTH_SHORT).show();
+                String subjectName = currentCourse.getTenHp();
+                // Hiển thị dialog loading đơn giản
+                AlertDialog loading = new AlertDialog.Builder(context)
+                        .setTitle("Đang tư vấn AI")
+                        .setMessage("Vui lòng đợi trong giây lát...")
+                        .setCancelable(false)
+                        .create();
+                loading.show();
+
+                SubjectAdviceProvider.getAdviceFromGemini(subjectName, new SubjectAdviceProvider.AdviceCallback() {
+                    @Override
+                    public void onSuccess(String advice) {
+                        loading.dismiss();
+                        new AlertDialog.Builder(context)
+                                .setTitle("Tư vấn cho môn: " + subjectName)
+                                .setMessage(advice)
+                                .setPositiveButton("Đóng", (d, w) -> d.dismiss())
+                                .show();
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        loading.dismiss();
+                        new AlertDialog.Builder(context)
+                                .setTitle("Không thể kết nối AI")
+                                .setMessage(e.getMessage() != null ? e.getMessage() : "Đã xảy ra lỗi không xác định")
+                                .setPositiveButton("Đóng", (d, w) -> d.dismiss())
+                                .show();
+                    }
+                });
             });
         }
     }
@@ -157,22 +186,17 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
 
         // BƯỚC 1: LỌC
         for (Curriculum item : courseListFull) {
-            // Lọc theo Khoa
             final boolean facultyMatch = (facultyId == -1) || (item.getKhoaId() == facultyId);
 
-            // Lọc theo Nhóm
             final boolean groupMatch = allGroups.equals(group)
                     || (item.getNhomTuChon() != null && item.getNhomTuChon().equals(group));
 
-            // Lọc theo Loại môn học
             final boolean courseTypeMatch = allTypes.equals(courseType)
                     || (item.getLoaiHp() != null && item.getLoaiHp().equalsIgnoreCase(courseType));
 
-            // Lọc theo trạng thái
             String itemStatus = item.getStatus() == null ? DatabaseHelper.STATUS_NOT_ENROLLED : item.getStatus();
             final boolean statusMatch = allStatus.equals(status) || itemStatus.equals(status);
 
-            // Lọc theo ô tìm kiếm (query) - kiểm tra cả tên và mã học phần
             final boolean searchMatch = query == null || query.isEmpty() ||
                     (item.getTenHp() != null && item.getTenHp().toLowerCase().contains(query.toLowerCase())) ||
                     (item.getMaHp() != null && item.getMaHp().toLowerCase().contains(query.toLowerCase()));
@@ -184,10 +208,8 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
 
         // BƯỚC 2: SẮP XẾP
         if (isAscending) {
-            // Sắp xếp A-Z theo Tên học phần
             Collections.sort(filteredList, (o1, o2) -> o1.getTenHp().compareToIgnoreCase(o2.getTenHp()));
         } else {
-            // Sắp xếp Z-A theo Tên học phần
             Collections.sort(filteredList, (o1, o2) -> o2.getTenHp().compareToIgnoreCase(o1.getTenHp()));
         }
 
@@ -203,19 +225,16 @@ public class CurriculumAdapter extends RecyclerView.Adapter<CurriculumAdapter.Cu
     public void setCourses(List<Curriculum> courses) {
         this.courseListFull.clear();
         this.courseListFull.addAll(courses);
-        // Làm mới cache GPA khi dữ liệu thay đổi
         try {
             this.gpaMap = scoreDao.getAllGpaMap();
         } catch (Exception ignored) {
         }
-        // Không cần gọi notifyDataSetChanged() ở đây vì Activity sẽ gọi filterAndSort()
-        // ngay sau đó
     }
 
     static class CurriculumViewHolder extends RecyclerView.ViewHolder {
         final TextView tvMaHp, tvTenHp, tvSoTinChi, tvSoTietLyThuyet, tvSoTietThucHanh, tvHocKy, tvLoaiHp, tvNhomTuChon;
         final TextView tvStatusBadge;
-        final TextView tvGPA; // NEW
+        final TextView tvGPA;
 
         public CurriculumViewHolder(@NonNull View itemView) {
             super(itemView);
